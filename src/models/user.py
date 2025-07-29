@@ -5,24 +5,44 @@ from decimal import Decimal
 from .transaction import Location
 
 
-class UserProfile(BaseModel):
-    """User profile data needed for rule evaluation"""
-    customer_id: str = Field(..., description="Unique customer identifier")
-    first_name: str = Field(..., description="Customer first name")
-    last_name: str = Field(..., description="Customer last name")
+class User(BaseModel):
+    """User data aligned with database schema"""
+    id: str = Field(..., description="Unique user identifier")
     email: str = Field(..., description="Primary email address")
-    phone: Optional[str] = Field(None, description="Phone number")
+    firstName: str = Field(..., description="User first name")
+    lastName: str = Field(..., description="User last name")
+    phoneNumber: Optional[str] = Field(None, description="Phone number")
     
-    # Financial data
-    current_balance: Decimal = Field(..., description="Current account balance")
-    credit_limit: Decimal = Field(..., description="Credit limit")
-    available_credit: Decimal = Field(..., description="Available credit")
+    # Timestamps
+    createdAt: datetime = Field(default_factory=datetime.utcnow, description="Account creation timestamp")
+    updatedAt: datetime = Field(default_factory=datetime.utcnow, description="Last profile update")
+    isActive: bool = Field(default=True, description="Whether account is active")
     
-    # Location data
-    home_address: Optional[str] = Field(None, description="Home address")
-    home_location: Optional[Location] = Field(None, description="Home coordinates")
-    last_mobile_location: Optional[Location] = Field(None, description="Last known mobile app location")
-    last_transaction_location: Optional[Location] = Field(None, description="Location of last transaction")
+    # Address information
+    addressStreet: Optional[str] = Field(None, description="Street address")
+    addressCity: Optional[str] = Field(None, description="City")
+    addressState: Optional[str] = Field(None, description="State")
+    addressZipCode: Optional[str] = Field(None, description="ZIP code")
+    addressCountry: Optional[str] = Field(default="US", description="Country")
+    
+    # Financial information
+    creditLimit: Optional[Decimal] = Field(None, description="Credit limit")
+    currentBalance: Optional[Decimal] = Field(default=0.00, description="Current account balance")
+    
+    # Location tracking (with privacy consent)
+    locationConsentGiven: bool = Field(default=False, description="Whether user has given location consent")
+    lastAppLocationLatitude: Optional[float] = Field(None, description="Last app location latitude")
+    lastAppLocationLongitude: Optional[float] = Field(None, description="Last app location longitude")
+    lastAppLocationTimestamp: Optional[datetime] = Field(None, description="Last app location timestamp")
+    lastAppLocationAccuracy: Optional[float] = Field(None, description="Location accuracy in meters")
+    
+    # Last transaction location
+    lastTransactionLatitude: Optional[float] = Field(None, description="Last transaction latitude")
+    lastTransactionLongitude: Optional[float] = Field(None, description="Last transaction longitude")
+    lastTransactionTimestamp: Optional[datetime] = Field(None, description="Last transaction timestamp")
+    lastTransactionCity: Optional[str] = Field(None, description="Last transaction city")
+    lastTransactionState: Optional[str] = Field(None, description="Last transaction state")
+    lastTransactionCountry: Optional[str] = Field(None, description="Last transaction country")
     
     # Preferences
     notification_preferences: Dict[str, bool] = Field(
@@ -31,9 +51,6 @@ class UserProfile(BaseModel):
     )
     
     # Metadata
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Account creation timestamp")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last profile update")
-    is_active: bool = Field(default=True, description="Whether account is active")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional user metadata")
 
     class Config:
@@ -45,11 +62,11 @@ class UserProfile(BaseModel):
 
 class UserBalance(BaseModel):
     """Real-time balance information"""
-    customer_id: str = Field(..., description="Customer identifier")
-    current_balance: Decimal = Field(..., description="Current balance")
-    available_credit: Decimal = Field(..., description="Available credit")
-    pending_transactions: Decimal = Field(default=0, description="Sum of pending transactions")
-    last_updated: datetime = Field(default_factory=datetime.utcnow, description="Last balance update")
+    userId: str = Field(..., description="User identifier")
+    currentBalance: Decimal = Field(..., description="Current balance")
+    availableCredit: Optional[Decimal] = Field(None, description="Available credit")
+    pendingTransactions: Decimal = Field(default=0, description="Sum of pending transactions")
+    lastUpdated: datetime = Field(default_factory=datetime.utcnow, description="Last balance update")
     
     class Config:
         json_encoders = {

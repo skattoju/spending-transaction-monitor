@@ -21,17 +21,24 @@ class RuleOperator(str, Enum):
     OUTSIDE_RADIUS = "outside_radius"
 
 
-class RuleType(str, Enum):
-    """Types of rules supported by the system"""
-    AMOUNT_THRESHOLD = "amount_threshold"
-    BALANCE_THRESHOLD = "balance_threshold"
-    MERCHANT_MATCH = "merchant_match"
-    CATEGORY_MATCH = "category_match"
-    LOCATION_BASED = "location_based"
-    HISTORICAL_COMPARISON = "historical_comparison"
-    AGGREGATION_RULE = "aggregation_rule"
-    BEHAVIORAL_ANOMALY = "behavioral_anomaly"
-    COMPOUND_RULE = "compound_rule"
+class AlertType(str, Enum):
+    """Alert types matching database schema"""
+    AMOUNT_THRESHOLD = "AMOUNT_THRESHOLD"
+    BALANCE_THRESHOLD = "BALANCE_THRESHOLD"
+    MERCHANT_MATCH = "MERCHANT_MATCH"
+    CATEGORY_MATCH = "CATEGORY_MATCH"
+    LOCATION_BASED = "LOCATION_BASED"
+    HISTORICAL_COMPARISON = "HISTORICAL_COMPARISON"
+    AGGREGATION_RULE = "AGGREGATION_RULE"
+    BEHAVIORAL_ANOMALY = "BEHAVIORAL_ANOMALY"
+    COMPOUND_RULE = "COMPOUND_RULE"
+
+
+class NotificationMethod(str, Enum):
+    """Notification methods matching database schema"""
+    EMAIL = "EMAIL"
+    SMS = "SMS"
+    PUSH = "PUSH"
 
 
 class AggregationType(str, Enum):
@@ -45,7 +52,7 @@ class AggregationType(str, Enum):
 
 class RuleCondition(BaseModel):
     """Individual condition within a rule"""
-    field: str = Field(..., description="Field to evaluate (e.g., 'amount', 'merchant_name')")
+    field: str = Field(..., description="Field to evaluate (e.g., 'amount', 'merchantName')")
     operator: RuleOperator = Field(..., description="Comparison operator")
     value: Union[str, int, float, Decimal, List[Any]] = Field(..., description="Value to compare against")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional condition metadata")
@@ -69,14 +76,29 @@ class LocationRule(BaseModel):
 
 
 class Rule(BaseModel):
-    """Alert rule model"""
-    rule_id: str = Field(..., description="Unique rule identifier")
-    customer_id: str = Field(..., description="Customer who owns this rule")
+    """Alert rule model aligned with database schema"""
+    id: str = Field(..., description="Unique rule identifier")
+    userId: str = Field(..., description="User who owns this rule")
     name: str = Field(..., description="Human-readable rule name")
-    description: str = Field(..., description="Natural language description of the rule")
-    rule_type: RuleType = Field(..., description="Type of rule")
-    conditions: List[RuleCondition] = Field(..., description="List of conditions to evaluate")
-    is_active: bool = Field(default=True, description="Whether the rule is active")
+    description: Optional[str] = Field(None, description="Natural language description of the rule")
+    alertType: AlertType = Field(..., description="Type of alert rule")
+    isActive: bool = Field(default=True, description="Whether the rule is active")
+    
+    # Condition parameters (matching database schema)
+    amountThreshold: Optional[Decimal] = Field(None, description="Amount threshold for alerts")
+    merchantCategory: Optional[str] = Field(None, description="Merchant category filter")
+    merchantName: Optional[str] = Field(None, description="Merchant name filter")
+    location: Optional[str] = Field(None, description="Location filter")
+    timeframe: Optional[str] = Field(None, description="Time window for aggregation (e.g., 'daily', 'weekly')")
+    
+    # Natural language query for AI-driven alerts
+    naturalLanguageQuery: Optional[str] = Field(None, description="Natural language query for AI processing")
+    
+    # Notification preferences
+    notificationMethods: List[NotificationMethod] = Field(default=[NotificationMethod.EMAIL], description="Notification methods")
+    
+    # Additional rule configurations
+    conditions: List[RuleCondition] = Field(default_factory=list, description="List of conditions to evaluate")
     priority: int = Field(default=1, description="Rule priority (higher = more important)")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Rule creation timestamp")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update timestamp")
@@ -87,7 +109,6 @@ class Rule(BaseModel):
     compound_rules: Optional[List[str]] = Field(None, description="List of rule IDs for compound rules")
     
     # Notification settings
-    notification_channels: List[str] = Field(default=["email"], description="Channels to send notifications")
     notification_template: Optional[str] = Field(None, description="Custom notification template")
     
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional rule metadata")
@@ -102,7 +123,7 @@ class RuleEvaluationResult(BaseModel):
     """Result of evaluating a rule against a transaction"""
     rule_id: str = Field(..., description="Rule that was evaluated")
     transaction_id: str = Field(..., description="Transaction that was evaluated")
-    customer_id: str = Field(..., description="Customer ID")
+    userId: str = Field(..., description="User ID")
     triggered: bool = Field(..., description="Whether the rule was triggered")
     evaluation_time: datetime = Field(default_factory=datetime.utcnow, description="When evaluation occurred")
     matched_conditions: List[str] = Field(default_factory=list, description="Conditions that matched")

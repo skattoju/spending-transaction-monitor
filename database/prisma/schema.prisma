@@ -9,6 +9,12 @@ generator client {
   output   = "../generated/prisma"
 }
 
+generator client_python {
+  provider = "prisma-client-py"
+  output   = "../../generated/prisma"
+  enable_experimental_decimal = true
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
