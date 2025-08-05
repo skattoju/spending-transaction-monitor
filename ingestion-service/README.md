@@ -1,4 +1,4 @@
-### Ingestion Service
+# Ingestion Service
 
 This project contains a transaction ingestion service that receives transaction data, validates it, and pushes it to a Kafka topic for downstream processing. The service is implemented in both Python and TypeScript, and can be deployed to Kubernetes using Helm.
 
