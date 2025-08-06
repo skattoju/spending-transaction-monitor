@@ -1,13 +1,10 @@
 name: Ingestion Services CI
-defaults:
-  run:
-    working-directory: ./ingestion-service
 
 on:
   push:
-    branches: [ add_ingestion_service ]
+    branches: [ main, test-* ]
   pull_request:
-    branches: [ add_ingestion_service ]
+    branches: [ main ]
 
 jobs:
   lint-py:
@@ -19,10 +16,12 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install dependencies
+      working-directory: ./ingestion-service
       run: |
         python -m pip install --upgrade pip
         pip install flake8
     - name: Lint with flake8
+      working-directory: ./ingestion-service
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -37,10 +36,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Helm
+      working-directory: ./ingestion-service
       run: |
         chmod +x scripts/get_helm.sh
         ./scripts/get_helm.sh
     - name: Lint Helm chart
+      working-directory: ./ingestion-service
       run: |
         helm lint deploy/ingestion-service-py/helm
     - name: Log in to the Container registry
@@ -50,6 +51,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and push the Docker image
+      working-directory: ./ingestion-service
       run: |
         docker build ./ingestion-service-py --file ./ingestion-service-py/Dockerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
         docker push ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
@@ -62,10 +64,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Helm
+      working-directory: ./ingestion-service
       run: |
         chmod +x scripts/get_helm.sh
         ./scripts/get_helm.sh
     - name: Lint Helm chart
+      working-directory: ./ingestion-service
       run: |
         helm lint deploy/ingestion-service-ts/helm
     - name: Log in to the Container registry
@@ -75,6 +79,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and push the Docker image
+      working-directory: ./ingestion-service
       run: |
         docker build ./ingestion-service-ts --file ./ingestion-service-ts/Dockerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-ts:${{ github.sha }}
         docker push ghcr.io/${{ github.repository }}/ingestion-service-ts:${{ github.sha }}
@@ -88,10 +93,12 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install dependencies
+      working-directory: ./ingestion-service
       run: |
         python -m pip install --upgrade pip
         pip install -r ingestion-service-py/requirements.txt
     - name: Run tests
+      working-directory: ./ingestion-service
       run: python -m pytest ingestion-service-py/test_main.py
 
   test-ts:
@@ -103,11 +110,11 @@ jobs:
       with:
         node-version: '18'
     - name: Install dependencies
+      working-directory: ./ingestion-service/ingestion-service-ts
       run: npm ci
-      working-directory: ./ingestion-service-ts
     - name: Run tests
+      working-directory: ./ingestion-service/ingestion-service-ts
       run: npm test
-      working-directory: ./ingestion-service-ts
 
   e2e-test:
     runs-on: ubuntu-latest
@@ -121,17 +128,25 @@ jobs:
     - name: Set up kubectl
       uses: azure/setup-kubectl@v1
     - name: Install dependencies
+      working-directory: ./ingestion-service
       run: |
         python -m pip install --upgrade pip
         pip install requests kafka-python
     - name: Set up Helm
+      working-directory: ./ingestion-service
       run: |
         chmod +x scripts/get_helm.sh
         ./scripts/get_helm.sh
+    - name: Update Kafka Helm chart dependencies
+      working-directory: ./ingestion-service
+      run: |
+        helm dependency update deploy/kafka
     - name: Lint Kafka Helm chart
+      working-directory: ./ingestion-service
       run: |
         helm lint deploy/kafka
     - name: Deploy Kafka
+      working-directory: ./ingestion-service
       run: |
         echo "Giving the cluster some time to initialize..."
         sleep 30
@@ -146,6 +161,7 @@ jobs:
         kubectl wait --for=condition=Ready kafka/${{ env.KAFKA_RELEASE_NAME }}-kafka --timeout=300s
         echo "Kafka is ready."
     - name: Deploy Ingestion Service - Python
+      working-directory: ./ingestion-service
       run: |
         echo "Deploying Ingestion Service - Python..."
         helm install ingestion-py ./deploy/ingestion-service-py/helm -n default \
@@ -167,6 +183,7 @@ jobs:
         kubectl get all -n default
         kubectl describe pods -n default
     - name: Run E2E Test - Python
+      working-directory: ./ingestion-service
       run: |
         echo "Creating e2e test runner pod..."
         kubectl run e2e-test-runner --image=python:3.10-slim -- sleep 3600
@@ -188,6 +205,7 @@ jobs:
         echo "Uninstalling Ingestion Service - Python..."
         helm uninstall ingestion-py -n default
     - name: Deploy Ingestion Service - TypeScript
+      working-directory: ./ingestion-service
       run: |
         echo "Deploying Ingestion Service - TypeScript..."
         KAFKA_IP=$(kubectl get svc kafka-kafka-kafka-bootstrap -n default -o jsonpath='{.spec.clusterIP}')
@@ -205,6 +223,7 @@ jobs:
         kubectl get all -n default
         kubectl describe pods -n default
     - name: Run E2E Test - TypeScript
+      working-directory: ./ingestion-service
       run: |
         echo "Running e2e test for typescript..."
         kubectl exec e2e-test-runner -- \
