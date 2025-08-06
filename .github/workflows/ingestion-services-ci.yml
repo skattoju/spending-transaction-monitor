@@ -2,9 +2,9 @@ name: Ingestion Services CI
 
 on:
   push:
-    branches: [ add_ingestion_service ]
+    branches: [ main ]
   pull_request:
-    branches: [ add_ingestion_service ]
+    branches: [ main ]
 
 jobs:
   lint-py:
