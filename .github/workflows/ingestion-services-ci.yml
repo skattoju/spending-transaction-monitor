@@ -137,6 +137,10 @@ jobs:
       run: |
         chmod +x scripts/get_helm.sh
         ./scripts/get_helm.sh
+    - name: Update Kafka Helm chart dependencies
+      working-directory: ./ingestion-service
+      run: |
+        helm dependency update deploy/kafka
     - name: Lint Kafka Helm chart
       working-directory: ./ingestion-service
       run: |
