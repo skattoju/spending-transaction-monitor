@@ -39,22 +39,52 @@ describe('GET /healthz', () => {
 
 describe('POST /transactions', () => {
   it('should send a message to Kafka and return the transaction', async () => {
-    const transaction = {
-        user_id: 1,
-        card_id: 1,
-        amount: 10.0,
-        description: 'test',
+    const incomingTransaction = {
+        "User": 1,
+        "Card": 1,
+        "Year": 2023,
+        "Month": 1,
+        "Day": 1,
+        "Time": "12:00:00",
+        "Amount": "$10.00",
+        "Use Chip": "Swipe Transaction",
+        "Merchant Name": 123456789,
+        "Merchant City": "New York",
+        "Merchant State": "NY",
+        "Zip": "10001",
+        "MCC": 5411,
+        "Errors?": "",
+        "Is Fraud?": "No"
     };
 
     const response = await request(app)
       .post('/transactions')
-      .send(transaction);
+      .send(incomingTransaction);
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(transaction);
+
+    const expectedTransaction = {
+        "user": 1,
+        "card": 1,
+        "year": 2023,
+        "month": 1,
+        "day": 1,
+        "time": "12:00:00",
+        "amount": 10.00,
+        "use_chip": "Swipe Transaction",
+        "merchant_id": 123456789,
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "zip": "10001",
+        "mcc": 5411,
+        "errors": "",
+        "is_fraud": false
+    };
+
+    expect(response.body).toEqual(expectedTransaction);
     expect(mockSend).toHaveBeenCalledWith({
         topic: 'transactions',
-        messages: [{ value: JSON.stringify(transaction) }],
+        messages: [{ value: JSON.stringify(expectedTransaction) }],
     });
   });
 });

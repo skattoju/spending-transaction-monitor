@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { Kafka } from 'kafkajs';
+import { Transaction, IncomingTransaction } from '../common/models';
 
 const app = express();
 app.use(express.json());
@@ -14,17 +15,31 @@ const kafka = new Kafka({
 
 const producer = kafka.producer();
 
-interface Transaction {
-    user_id: number;
-    card_id: number;
-    amount: number;
-    description: string;
-}
-
 const transactionRouter = express.Router();
 
+function transformTransaction(incoming: IncomingTransaction): Transaction {
+    return {
+        user: incoming.User,
+        card: incoming.Card,
+        year: incoming.Year,
+        month: incoming.Month,
+        day: incoming.Day,
+        time: incoming.Time,
+        amount: parseFloat(incoming.Amount.replace('$', '')),
+        use_chip: incoming["Use Chip"],
+        merchant_id: incoming["Merchant Name"],
+        merchant_city: incoming["Merchant City"],
+        merchant_state: incoming["Merchant State"],
+        zip: incoming["Zip"],
+        mcc: incoming.MCC,
+        errors: incoming["Errors?"],
+        is_fraud: incoming["Is Fraud?"] === 'Yes',
+    };
+}
+
 transactionRouter.post('/', async (req: Request, res: Response) => {
-    const transaction: Transaction = req.body;
+    const incomingTransaction: IncomingTransaction = req.body;
+    const transaction = transformTransaction(incomingTransaction);
     try {
         await producer.send({
             topic: 'transactions',

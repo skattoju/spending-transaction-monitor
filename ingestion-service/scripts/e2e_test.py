@@ -6,16 +6,28 @@ import os
 
 def main():
     # Send a request to the ingestion service
-    transaction = {
-        "user_id": 1,
-        "card_id": 1,
-        "amount": 10.0,
-        "description": "e2e test"
+    incoming_transaction = {
+        "User": 1,
+        "Card": 1,
+        "Year": 2023,
+        "Month": 1,
+        "Day": 1,
+        "Time": "12:00",
+        "Amount": "$10.00",
+        "Use Chip": "Swipe Transaction",
+        "Merchant Name": 123456789,
+        "Merchant City": "New York",
+        "Merchant State": "NY",
+        "Zip": "10001",
+        "MCC": 5411,
+        "Errors?": "",
+        "Is Fraud?": "No"
     }
     ingestion_service_host = os.environ.get("INGESTION_SERVICE_HOST", "localhost")
     ingestion_service_port = os.environ.get("INGESTION_SERVICE_PORT", "8000")
-    print(f"Sending transaction: {transaction}")
-    response = requests.post(f"http://{ingestion_service_host}:{ingestion_service_port}/transactions/", json=transaction)
+    print(f"Sending transaction: {incoming_transaction}")
+    time.sleep(5)
+    response = requests.post(f"http://{ingestion_service_host}:{ingestion_service_port}/transactions/", json=incoming_transaction)
     response.raise_for_status()
     print("Waiting for message to be processed by Kafka...")
     time.sleep(5)
@@ -31,9 +43,27 @@ def main():
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
+    expected_transaction = {
+        "user": 1,
+        "card": 1,
+        "year": 2023,
+        "month": 1,
+        "day": 1,
+        "time": "12:00:00",
+        "amount": 10.0,
+        "use_chip": "Swipe Transaction",
+        "merchant_id": 123456789,
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "zip": "10001",
+        "mcc": 5411,
+        "errors": "",
+        "is_fraud": False
+    }
+
     for message in consumer:
         print(f"Received message: {message.value}")
-        if message.value == transaction:
+        if message.value == expected_transaction:
             print("Successfully received message from Kafka")
             return
 

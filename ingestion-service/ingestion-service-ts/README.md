@@ -2,6 +2,8 @@
 
 This service is a TypeScript-based implementation of the transaction ingestion service. It uses Express to create a REST API and `kafkajs` to produce messages to a Kafka topic.
 
+The service uses a common data model defined in the `common` directory. See the main `README.md` for more details on the data model.
+
 ## Local Development
 
 **Note:** The service requires a running Kafka instance. For local development, you can use the provided Docker Compose file to start Kafka: `docker-compose -f ../deploy/kafka/compose.yaml up -d`
@@ -75,9 +77,20 @@ The ingestion service is deployed to Kubernetes using Helm. For instructions on 
     curl -X POST "http://localhost:8081/transactions/" \
     -H "Content-Type: application/json" \
     -d '{
-        "user_id": 123,
-        "card_id": 456,
-        "amount": 78.90,
-        "description": "Test transaction"
+        "user": 1,
+        "card": 1,
+        "year": 2023,
+        "month": 1,
+        "day": 1,
+        "time": "12:00:00",
+        "amount": "$10.00",
+        "use_chip": "Swipe Transaction",
+        "merchant_name": 123456789,
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "zip": 10001.0,
+        "mcc": 5411,
+        "errors": "",
+        "is_fraud": "No"
     }'
     ```

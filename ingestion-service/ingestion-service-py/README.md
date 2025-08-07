@@ -2,6 +2,8 @@
 
 This service is a Python-based implementation of the transaction ingestion service. It uses FastAPI to create a REST API and `kafka-python` to produce messages to a Kafka topic.
 
+The service uses a common data model defined in the `common` directory. See the main `README.md` for more details on the data model.
+
 ## Running the service
 
 To run the service locally, you will need to have Python and Docker installed.
