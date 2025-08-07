@@ -6,7 +6,7 @@ The service uses a common data model defined in the `common` directory. See the 
 
 ## Running the service
 
-To run the service locally, you will need to have Python and Docker installed.
+To run the service locally, you will need to have Python and Podman installed.
 
 1. Install the dependencies:
 ```bash

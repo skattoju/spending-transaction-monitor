@@ -25,13 +25,13 @@ This section provides instructions on how to work with the Python implementation
 ### Prerequisites
 
 *   Python 3.9+
-*   Docker
+*   Podman
 *   kubectl
 *   Helm
 
 ### Local Development
 
-**Note:** The service requires a running Kafka instance. For local development, you can use the provided Docker Compose file to start Kafka: `docker-compose -f deploy/kafka/compose.yaml up -d`
+**Note:** The service requires a running Kafka instance. For local development, you can use the provided Compose file to start Kafka: `podman-compose -f deploy/kafka/compose.yaml up -d`
 
 1.  **Install dependencies:**
 
@@ -60,7 +60,7 @@ This section provides instructions on how to work with the Python implementation
 1.  **Login to your container registry (e.g., quay.io):**
 
     ```bash
-    docker login quay.io
+    podman login quay.io
     ```
 
 2.  **Build and push the image:**
@@ -69,8 +69,8 @@ This section provides instructions on how to work with the Python implementation
 
     ```bash
     cd ingestion-service-py
-    docker build -t quay.io/<your-username>/ingestion-service-py:latest .
-    docker push quay.io/<your-username>/ingestion-service-py:latest
+    podman build -t quay.io/<your-username>/ingestion-service-py:latest .
+    podman push quay.io/<your-username>/ingestion-service-py:latest
     cd ..
     ```
 

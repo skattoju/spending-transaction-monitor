@@ -6,7 +6,7 @@ The service uses a common data model defined in the `common` directory. See the 
 
 ## Local Development
 
-**Note:** The service requires a running Kafka instance. For local development, you can use the provided Docker Compose file to start Kafka: `docker-compose -f ../deploy/kafka/compose.yaml up -d`
+**Note:** The service requires a running Kafka instance. For local development, you can use the provided Compose file to start Kafka: `podman-compose -f ../deploy/kafka/compose.yaml up -d`
 
 To run the service locally, you will need to have Node.js and npm installed.
 
@@ -37,7 +37,7 @@ To run the service locally, you will need to have Node.js and npm installed.
 1.  **Login to your container registry (e.g., quay.io):**
 
     ```bash
-    docker login quay.io
+    podman login quay.io
     ```
 
 2.  **Build and push the image:**
@@ -45,8 +45,8 @@ To run the service locally, you will need to have Node.js and npm installed.
     Replace `<your-username>` with your container registry username.
 
     ```bash
-    docker build -t quay.io/<your-username>/ingestion-service-ts:latest .
-    docker push quay.io/<your-username>/ingestion-service-ts:latest
+    podman build -t quay.io/<your-username>/ingestion-service-ts:latest .
+    podman push quay.io/<your-username>/ingestion-service-ts:latest
     ```
 
 ## Deployment

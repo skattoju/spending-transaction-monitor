@@ -45,7 +45,7 @@ jobs:
       run: |
         helm lint deploy/ingestion-service-py/helm
     - name: Log in to the Container registry
-      uses: docker/login-action@v2
+      uses: redhat-actions/podman-login@v1
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -53,8 +53,8 @@ jobs:
     - name: Build and push the Docker image
       working-directory: ./ingestion-service
       run: |
-        docker build ./ingestion-service-py --file ./ingestion-service-py/Dockerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
-        docker push ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
+        podman build ./ingestion-service-py --file ./ingestion-service-py/Containerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
+        podman push ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
 
   build-ts:
     runs-on: ubuntu-latest
@@ -73,7 +73,7 @@ jobs:
       run: |
         helm lint deploy/ingestion-service-ts/helm
     - name: Log in to the Container registry
-      uses: docker/login-action@v2
+      uses: redhat-actions/podman-login@v1
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -81,8 +81,8 @@ jobs:
     - name: Build and push the Docker image
       working-directory: ./ingestion-service
       run: |
-        docker build ./ingestion-service-ts --file ./ingestion-service-ts/Dockerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-ts:${{ github.sha }}
-        docker push ghcr.io/${{ github.repository }}/ingestion-service-ts:${{ github.sha }}
+        podman build ./ingestion-service-ts --file ./ingestion-service-ts/Containerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-ts:${{ github.sha }}
+        podman push ghcr.io/${{ github.repository }}/ingestion-service-ts:${{ github.sha }}
 
   test-py:
     runs-on: ubuntu-latest

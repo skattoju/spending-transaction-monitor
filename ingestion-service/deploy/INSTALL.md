@@ -4,7 +4,7 @@ This document provides instructions on how to build and push the container image
 
 ## Prerequisites
 
-*   [Docker](https://docs.docker.com/get-docker/)
+*   [Podman](https://podman.io/getting-started/installation)
 *   [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 *   [Helm](https://helm.sh/docs/intro/install/)
 *   A Kubernetes cluster
@@ -15,15 +15,15 @@ This document provides instructions on how to build and push the container image
 1.  **Login to your container registry:**
 
     ```bash
-    docker login quay.io
+    podman login quay.io
     ```
 
 2.  **Build and push the `ingestion-service-py` image:**
 
     ```bash
     cd ../ingestion-service-py
-    docker build -t quay.io/<your-username>/ingestion-service-py:latest .
-    docker push quay.io/<your-username>/ingestion-service-py:latest
+    podman build -t quay.io/<your-username>/ingestion-service-py:latest .
+    podman push quay.io/<your-username>/ingestion-service-py:latest
     cd ../deploy
     ```
 
@@ -31,8 +31,8 @@ This document provides instructions on how to build and push the container image
 
     ```bash
     cd ../ingestion-service-ts
-    docker build -t quay.io/<your-username>/ingestion-service-ts:latest .
-    docker push quay.io/<your-username>/ingestion-service-ts:latest
+    podman build -t quay.io/<your-username>/ingestion-service-ts:latest .
+    podman push quay.io/<your-username>/ingestion-service-ts:latest
     cd ../deploy
     ```
 
