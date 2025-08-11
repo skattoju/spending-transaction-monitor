@@ -13,9 +13,14 @@ case "$BRANCH_NAME" in
 esac
 
 # Lint all commits since upstream or since default remote branch (origin/HEAD)
+AUTHOR_EMAIL=$(git config user.email)
+
 if git rev-parse --abbrev-ref --symbolic-full-name @{upstream} >/dev/null 2>&1; then
   BASE=$(git merge-base HEAD @{upstream})
-  pnpm commitlint --from "$BASE" --to HEAD || exit 1
+  COMMITS=$(git rev-list --no-merges --author="$AUTHOR_EMAIL" "$BASE"..HEAD)
+  for c in $COMMITS; do
+    git show -s --format=%B "$c" | pnpm commitlint || exit 1
+  done
 else
   # Ensure we know the default branch on origin
   git fetch origin --quiet >/dev/null 2>&1 || true
@@ -45,7 +50,10 @@ else
     fi
   fi
 
-  pnpm commitlint --from "$BASE" --to HEAD || exit 1
+  COMMITS=$(git rev-list --no-merges --author="$AUTHOR_EMAIL" "$BASE"..HEAD)
+  for c in $COMMITS; do
+    git show -s --format=%B "$c" | pnpm commitlint || exit 1
+  done
 fi
 
 # Run quick checks before pushing
