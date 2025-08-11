@@ -12,7 +12,7 @@
     "revision": "uv run alembic revision --autogenerate",
     "history": "uv run alembic history",
     "current": "uv run alembic current",
-    "install:deps": "uv sync",
+    "install:deps": "uv sync --extra dev",
     "seed": "uv run python -m db.scripts.seed",
     "verify": "uv run python -m db.scripts.verify_user",
     "test": "uv run pytest"
