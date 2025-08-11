@@ -12,5 +12,3 @@ class UserOut(BaseModel):
     updatedAt: str | None = None
     creditCardsCount: int
     transactionsCount: int
-
-

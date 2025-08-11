@@ -1,6 +1,5 @@
 """User endpoints"""
 
-
 from db import get_db
 from db.models import AlertRule, User
 from fastapi import APIRouter, Depends, HTTPException
