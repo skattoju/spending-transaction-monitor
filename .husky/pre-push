@@ -12,12 +12,19 @@ case "$BRANCH_NAME" in
     ;;
 esac
 
-# Lint all commits since upstream (or last 20 if no upstream)
+# Lint all commits since upstream (or a safe range if no upstream)
 if git rev-parse --abbrev-ref --symbolic-full-name @{upstream} >/dev/null 2>&1; then
   BASE=$(git merge-base HEAD @{upstream})
   pnpm commitlint --from "$BASE" --to HEAD || exit 1
 else
-  pnpm commitlint --from HEAD~20 --to HEAD || exit 1
+  # Compute a safe base commit even for very short histories
+  COMMIT_COUNT=$(git rev-list --count HEAD)
+  if [ "$COMMIT_COUNT" -gt 20 ]; then
+    BASE=$(git rev-list --max-count=1 --skip=20 HEAD)
+  else
+    BASE=$(git rev-list --max-parents=0 --max-count=1 HEAD)
+  fi
+  pnpm commitlint --from "$BASE" --to HEAD || exit 1
 fi
 
 # Run quick checks before pushing
