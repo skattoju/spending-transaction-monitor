@@ -56,7 +56,40 @@ else
   done
 fi
 
-# Run quick checks before pushing
-pnpm format:check && pnpm lint && pnpm test
+# Run quick checks only for changed packages before pushing
+
+# Determine changed files since BASE computed above
+CHANGED_FILES=$(git diff --name-only "$BASE"..HEAD)
+
+echo "Running pre-push checks for changed packages..."
+
+STATUS=0
+
+# UI package checks
+if echo "$CHANGED_FILES" | grep -Eq '^packages/ui/'; then
+  echo "• Detected changes in packages/ui → running UI checks"
+  pnpm -C packages/ui prettier --check . || STATUS=$?
+  pnpm -C packages/ui eslint . --ext ts,tsx --max-warnings 0 || STATUS=$?
+  pnpm -C packages/ui test || STATUS=$?
+fi
+
+# API package checks
+if echo "$CHANGED_FILES" | grep -Eq '^packages/api/'; then
+  echo "• Detected changes in packages/api → running API checks"
+  pnpm -C packages/api run format:check || STATUS=$?
+  pnpm -C packages/api run lint || STATUS=$?
+  pnpm -C packages/api run test || STATUS=$?
+fi
+
+# DB package checks (tests only for now)
+if echo "$CHANGED_FILES" | grep -Eq '^packages/db/'; then
+  echo "• Detected changes in packages/db → running DB tests"
+  pnpm -C packages/db run test || STATUS=$?
+fi
+
+if [ $STATUS -ne 0 ]; then
+  echo "Pre-push checks failed. See output above."
+  exit $STATUS
+fi
 
 
