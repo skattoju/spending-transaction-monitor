@@ -12,18 +12,39 @@ case "$BRANCH_NAME" in
     ;;
 esac
 
-# Lint all commits since upstream (or a safe range if no upstream)
+# Lint all commits since upstream or since default remote branch (origin/HEAD)
 if git rev-parse --abbrev-ref --symbolic-full-name @{upstream} >/dev/null 2>&1; then
   BASE=$(git merge-base HEAD @{upstream})
   pnpm commitlint --from "$BASE" --to HEAD || exit 1
 else
-  # Compute a safe base commit even for very short histories
-  COMMIT_COUNT=$(git rev-list --count HEAD)
-  if [ "$COMMIT_COUNT" -gt 20 ]; then
-    BASE=$(git rev-list --max-count=1 --skip=20 HEAD)
+  # Ensure we know the default branch on origin
+  git fetch origin --quiet >/dev/null 2>&1 || true
+  DEFAULT_REMOTE=origin
+  DEFAULT_REF=$(git symbolic-ref --quiet --short refs/remotes/${DEFAULT_REMOTE}/HEAD 2>/dev/null || true)
+  if [ -n "$DEFAULT_REF" ]; then
+    DEFAULT_BRANCH=${DEFAULT_REF#${DEFAULT_REMOTE}/}
   else
-    BASE=$(git rev-list --max-parents=0 --max-count=1 HEAD)
+    if git show-ref --quiet refs/remotes/${DEFAULT_REMOTE}/main; then
+      DEFAULT_BRANCH=main
+    elif git show-ref --quiet refs/remotes/${DEFAULT_REMOTE}/master; then
+      DEFAULT_BRANCH=master
+    else
+      DEFAULT_BRANCH=
+    fi
   fi
+
+  if [ -n "$DEFAULT_BRANCH" ]; then
+    BASE=$(git merge-base HEAD ${DEFAULT_REMOTE}/${DEFAULT_BRANCH})
+  else
+    # Fallback: lint only the last 10 commits or from root if fewer
+    COMMIT_COUNT=$(git rev-list --count HEAD)
+    if [ "$COMMIT_COUNT" -gt 10 ]; then
+      BASE=$(git rev-list --max-count=1 --skip=10 HEAD)
+    else
+      BASE=$(git rev-list --max-parents=0 --max-count=1 HEAD)
+    fi
+  fi
+
   pnpm commitlint --from "$BASE" --to HEAD || exit 1
 fi
 
