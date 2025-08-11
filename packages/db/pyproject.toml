@@ -26,5 +26,15 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/db"]
 
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = ["E", "F", "UP", "B", "SIM", "I"]
+ignore = ["E501", "B008", "UP007"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+
 [tool.hatch.version]
 path = "src/db/__init__.py"

@@ -1,0 +1,17 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Enforce conventional branch names: <type>/<short-description>
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+
+case "$BRANCH_NAME" in
+  feat/*|fix/*|chore/*|docs/*|refactor/*|test/*|ci/*|build/*|perf/*)
+    ;;
+  *)
+    echo "Invalid branch name: $BRANCH_NAME" >&2
+    echo "Expected: feat/*, fix/*, chore/*, docs/*, refactor/*, test/*, ci/*, build/*, perf/*" >&2
+    exit 1
+    ;;
+esac
+
+

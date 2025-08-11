@@ -14,14 +14,14 @@ PostgreSQL database setup with Docker Compose and Alembic migrations.
 ## Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
+- Podman (preferred) or Docker
 - Python 3.11+ (for running migrations)
 
 ### Setup
 
 1. **Start the database**:
 ```bash
-pnpm db:start
+pnpm db:start   # uses `podman compose` if available, falls back to `docker compose`
 ```
 
 This starts a PostgreSQL container with the following configuration:

@@ -13,7 +13,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -37,7 +37,10 @@
     "lucide-react": "^0.378.0",
     "zod": "^3.22.4"
   },
+  "prettier": "@spending-monitor/prettier-config",
   "devDependencies": {
+    "@spending-monitor/eslint-config": "workspace:*",
+    "@spending-monitor/prettier-config": "workspace:*",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.2",
     "@types/node": "^20.12.7",

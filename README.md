@@ -1,98 +1,185 @@
-# spending-monitor
+<!-- omit from toc -->
+# Spending Transaction Monitor
 
-AI-powered alerts for credit card transactions
+Alerting for credit card transactions with rule-based and future natural-language rules.
 
-## Architecture
+For contribution guidelines and repo conventions, see [CONTRIBUTING.md](CONTRIBUTING.md).
+<!-- omit from toc -->
+## Table of contents
 
-This project is built with:
+- [Overview](#overview)
+- [How it works](#how-it-works)
+- [Getting started](#getting-started)
+- [Components](#components)
+- [Standards](#standards)
+- [Releases](#releases)
+- [Structure](#structure)
 
-- **Turborepo** - High-performance build system for the monorepo
-- **React + Vite** - Modern frontend with TanStack Router
-- **FastAPI** - Python backend with async support
-- **PostgreSQL** - Database with Alembic migrations
+## Overview
 
-## Project Structure
+- Monorepo managed with Turborepo
+- UI: React + Vite
+- API: FastAPI (async SQLAlchemy)
+- DB: PostgreSQL with SQLAlchemy models and Alembic migrations
 
+Packages
+- `packages/ui`: web app and Storybook
+- `packages/api`: API service and routes
+- `packages/db`: models, engine, Alembic, seed/verify scripts
+- `packages/evaluation`: rule evaluation (scaffold)
+- `packages/alerts`: alert delivery (scaffold)
+- `packages/configs/*`: shared ESLint/Prettier configs
+
+## How it works
+
+- Users create alert rules (amount, merchant, category, timeframe, location; notification methods: email/SMS/push/webhook).
+- Incoming transactions are stored and evaluated against active rules.
+- Triggered rules produce alert notifications which are delivered via configured channels.
+
+```mermaid
+graph TD
+
+  %% UI
+  subgraph UI["UI (packages/ui)"]
+    U["User"] --> WUI["Web UI"]
+  end
+
+  %% API
+  subgraph API["API (packages/api)"]
+    API_APP["FastAPI App"]
+    IN["Transaction API"]
+  end
+
+  %% Evaluation
+  subgraph EVAL["Evaluation (packages/evaluation)"]
+    EV["Rule Evaluation Service"]
+  end
+
+  %% Alerts
+  subgraph ALERTS["Alerts (packages/alerts)"]
+    AL["Alerts Service"]
+  end
+
+  %% DB
+  subgraph DB["DB (packages/db) - PostgreSQL"]
+    USERS["users"]
+    CARDS["credit_cards"]
+    AR["alert_rules"]
+    TRX["transactions"]
+    AN["alert_notifications"]
+  end
+
+  %% Delivery
+  subgraph DELIV["Delivery Channels"]
+    EM["Email"]
+    SM["SMS"]
+    PS["Push"]
+    WH["Webhook"]
+  end
+
+  %% External Source
+  subgraph EXT["External"]
+    TS["Transaction Source"]
+  end
+
+  %% Rule authoring
+  WUI -->|Create/Update Rule| API_APP
+  API_APP -->|Persist| AR
+
+  %% Transaction ingestion
+  TS --> IN
+  IN --> API_APP
+  API_APP -->|Store| TRX
+
+  %% Evaluation path
+  API_APP -->|Evaluate| EV
+  EV -->|Read| AR
+  EV -->|Read| TRX
+  EV -->|Create| AN
+  EV -->|Dispatch| AL
+
+  %% Alerts delivery
+  AL -->|Update| AN
+  AL --> EM
+  AL --> SM
+  AL --> PS
+  AL --> WH
 ```
-spending-monitor/
-├── packages/
-│   ├── ui/           # React frontend application
-│   ├── api/          # FastAPI backend service
-│   └── db/           # Database and migrations
-├── turbo.json        # Turborepo configuration
-└── package.json      # Root package configuration
-```
 
-## Quick Start
+## Getting started
 
-### Prerequisites
-- Node.js 18+
-- pnpm 9+
-- Python 3.11+
-- uv (Python package manager)
-- Docker (for database)
+Prerequisites: Node 18+, pnpm 9+, Python 3.11+, uv, Podman (preferred) or Docker
 
-### Development
-
-1. **Install all dependencies** (Node.js + Python):
+Install
 ```bash
 pnpm setup
 ```
 
-   Or install them separately:
-```bash
-pnpm install          # Install Node.js dependencies
-pnpm install:deps     # Install Python dependencies in API package
-```
-
-2. **Start the database**:
-```bash
-pnpm db:start
-```
-
-3. **Run database migrations**:
-```bash
-pnpm db:upgrade
-```
-
-4. **Start development servers**:
+Develop (starts DB, API, UI)
 ```bash
 pnpm dev
 ```
 
-### Available Commands
-
+Common tasks
 ```bash
-# Development
-pnpm dev              # Start all development servers
-pnpm build            # Build all packages
-pnpm test             # Run tests across all packages
-pnpm lint             # Check code formatting
-pnpm format           # Format code
-
-# Database
-pnpm db:start         # Start database containers
-pnpm db:stop          # Stop database containers  
-pnpm db:upgrade       # Run database migrations
-pnpm db:revision      # Create new migration
-# Utilities
-pnpm clean            # Clean build artifacts (turbo prune)
+pnpm build
+pnpm test
+pnpm lint
+pnpm format
+pnpm db:revision
+pnpm db:verify
 ```
 
-## Development URLs
+Dev URLs
+- Web UI: http://localhost:3000
+- API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Component Storybook: http://localhost:6006
 
-- **Frontend App**: http://localhost:3000
-- **API Server**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Database**: postgresql://localhost:5432
+Manual DB control (optional)
+```bash
+pnpm db:start    # podman compose (fallback to docker compose)
+pnpm db:upgrade
+pnpm db:seed
+pnpm db:stop
+```
 
-## Learn More
+Python virtual environments
+```bash
+# Each Python package uses uv-managed venvs under the package directory
+pnpm --filter @spending-monitor/api install:deps
+pnpm --filter @spending-monitor/db install:deps
+```
 
-- [Turborepo](https://turbo.build/) - Monorepo build system
-- [TanStack Router](https://tanstack.com/router) - Type-safe routing
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
-- [Alembic](https://alembic.sqlalchemy.org/) - Database migrations
+## Components
 
----
+- API (`packages/api`): health, users, transactions; async DB session; foundation for rule evaluation and NLP integration
+- DB (`packages/db`): SQLAlchemy models, Alembic migrations, seed/verify; local Postgres via Podman/Docker
+- UI (`packages/ui`): React app and components in Storybook
 
-Generated with [AI Kickstart CLI](https://github.com/your-org/ai-kickstart)
+## Standards
+
+- Conventional Commits; commitlint enforces messages
+- Branch names must match: `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*`, `test/*`, `ci/*`, `build/*`, `perf/*`
+- Hooks
+  - pre-commit: UI Prettier/ESLint; API Ruff format/check on staged files
+  - pre-push: format:check, lint, test; commitlint on commit range; branch name check
+
+## Releases
+
+Automated with semantic-release on CI, using commit messages to drive versioning and changelogs. Configuration in `.releaserc`.
+
+## Structure
+
+```
+spending-transaction-monitor/
+├── packages/
+│   ├── api/
+│   ├── db/
+│   ├── ui/
+│   └── configs/
+├── docs/
+├── turbo.json
+├── pnpm-workspace.yaml
+└── package.json
+```
