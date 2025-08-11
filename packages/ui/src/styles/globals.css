@@ -120,10 +120,19 @@
 }
 
 @layer base {
+  html {
+    /* Ensure the viewport background is consistent even when body content is short */
+    @apply bg-background;
+  }
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Fill the viewport height so there is no white gap below short pages */
+    @apply bg-background text-foreground min-h-dvh;
+  }
+  #root {
+    /* Allow app containers to stretch to full height if needed */
+    height: 100%;
   }
 }
