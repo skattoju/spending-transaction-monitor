@@ -1,0 +1,32 @@
+{
+  "name": "spending-monitor",
+  "version": "0.1.0",
+  "description": "AI-powered alerts for credit card transactions",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "pnpm install && pnpm -r --if-present install:deps",
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "db:start": "pnpm --filter @*/db run db:start",
+    "db:stop": "pnpm --filter @*/db run db:stop",
+    "db:upgrade": "pnpm --filter @*/db run upgrade",
+    "db:revision": "pnpm --filter @*/db run revision",
+    "db:seed": "pnpm --filter @*/db seed",
+    "db:verify": "pnpm --filter @*/db verify",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "turbo format",
+    "format:check": "turbo format:check",
+    "test": "turbo test",
+    "type-check": "turbo type-check",
+    "storybook": "turbo storybook",
+    "build-storybook": "turbo build-storybook"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@spending-monitor/db",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "pnpm db:start && pnpm upgrade && pnpm db:logs; EXIT_CODE=$?; pnpm db:stop && exit $EXIT_CODE",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "upgrade": "uv run alembic upgrade head",
+    "downgrade": "uv run alembic downgrade -1",
+    "revision": "uv run alembic revision --autogenerate",
+    "history": "uv run alembic history",
+    "current": "uv run alembic current",
+    "install:deps": "uv sync",
+    "seed": "uv run python -m db.scripts.seed",
+    "verify": "uv run python -m db.scripts.verify_user"
+  }
+}
