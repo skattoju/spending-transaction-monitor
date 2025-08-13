@@ -9,6 +9,7 @@ from .core.config import settings
 from .routes import health
 from .routes import transactions as transactions_routes
 from .routes import users as users_routes
+from .routes import alerts as alerts_routes
 
 app = FastAPI(
     title='spending-monitor API',
@@ -30,6 +31,9 @@ app.include_router(health.router, prefix='/health', tags=['health'])
 app.include_router(users_routes.router, prefix='/users', tags=['users'])
 app.include_router(
     transactions_routes.router, prefix='/transactions', tags=['transactions']
+)
+app.include_router(
+    alerts_routes.router, prefix='/alerts', tags=['alerts']
 )
 
 
