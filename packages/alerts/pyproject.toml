@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spending-monitor-alerts"
+dynamic = ["version"]
+description = "Alerts delivery scaffolding"
+requires-python = ">=3.11"
+license = "MIT"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4.0",
+]
+
+[tool.hatch.version]
+path = "src/alerts/__init__.py"
+
+

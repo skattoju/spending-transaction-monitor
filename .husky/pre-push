@@ -1,0 +1,95 @@
+#!/bin/sh
+
+# Enforce conventional branch names on push
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+case "$BRANCH_NAME" in
+  feat/*|fix/*|chore/*|docs/*|refactor/*|test/*|ci/*|build/*|perf/*)
+    ;;
+  *)
+    echo "Invalid branch name: $BRANCH_NAME" >&2
+    echo "Expected: feat/*, fix/*, chore/*, docs/*, refactor/*, test/*, ci/*, build/*, perf/*" >&2
+    exit 1
+    ;;
+esac
+
+# Lint all commits since upstream or since default remote branch (origin/HEAD)
+AUTHOR_EMAIL=$(git config user.email)
+
+if git rev-parse --abbrev-ref --symbolic-full-name @{upstream} >/dev/null 2>&1; then
+  BASE=$(git merge-base HEAD @{upstream})
+  COMMITS=$(git rev-list --no-merges --author="$AUTHOR_EMAIL" "$BASE"..HEAD)
+  for c in $COMMITS; do
+    git show -s --format=%B "$c" | pnpm commitlint || exit 1
+  done
+else
+  # Ensure we know the default branch on origin
+  git fetch origin --quiet >/dev/null 2>&1 || true
+  DEFAULT_REMOTE=origin
+  DEFAULT_REF=$(git symbolic-ref --quiet --short refs/remotes/${DEFAULT_REMOTE}/HEAD 2>/dev/null || true)
+  if [ -n "$DEFAULT_REF" ]; then
+    DEFAULT_BRANCH=${DEFAULT_REF#${DEFAULT_REMOTE}/}
+  else
+    if git show-ref --quiet refs/remotes/${DEFAULT_REMOTE}/main; then
+      DEFAULT_BRANCH=main
+    elif git show-ref --quiet refs/remotes/${DEFAULT_REMOTE}/master; then
+      DEFAULT_BRANCH=master
+    else
+      DEFAULT_BRANCH=
+    fi
+  fi
+
+  if [ -n "$DEFAULT_BRANCH" ]; then
+    BASE=$(git merge-base HEAD ${DEFAULT_REMOTE}/${DEFAULT_BRANCH})
+  else
+    # Fallback: lint only the last 10 commits or from root if fewer
+    COMMIT_COUNT=$(git rev-list --count HEAD)
+    if [ "$COMMIT_COUNT" -gt 10 ]; then
+      BASE=$(git rev-list --max-count=1 --skip=10 HEAD)
+    else
+      BASE=$(git rev-list --max-parents=0 --max-count=1 HEAD)
+    fi
+  fi
+
+  COMMITS=$(git rev-list --no-merges --author="$AUTHOR_EMAIL" "$BASE"..HEAD)
+  for c in $COMMITS; do
+    git show -s --format=%B "$c" | pnpm commitlint || exit 1
+  done
+fi
+
+# Run quick checks only for changed packages before pushing
+
+# Determine changed files since BASE computed above
+CHANGED_FILES=$(git diff --name-only "$BASE"..HEAD)
+
+echo "Running pre-push checks for changed packages..."
+
+STATUS=0
+
+# UI package checks
+if echo "$CHANGED_FILES" | grep -Eq '^packages/ui/'; then
+  echo "• Detected changes in packages/ui → running UI checks"
+  pnpm -C packages/ui prettier --check . || STATUS=$?
+  pnpm -C packages/ui eslint . --ext ts,tsx --max-warnings 0 || STATUS=$?
+  pnpm -C packages/ui test || STATUS=$?
+fi
+
+# API package checks
+if echo "$CHANGED_FILES" | grep -Eq '^packages/api/'; then
+  echo "• Detected changes in packages/api → running API checks"
+  pnpm -C packages/api run format:check || STATUS=$?
+  pnpm -C packages/api run lint || STATUS=$?
+  pnpm -C packages/api run test || STATUS=$?
+fi
+
+# DB package checks (tests only for now)
+if echo "$CHANGED_FILES" | grep -Eq '^packages/db/'; then
+  echo "• Detected changes in packages/db → running DB tests"
+  pnpm -C packages/db run test || STATUS=$?
+fi
+
+if [ $STATUS -ne 0 ]; then
+  echo "Pre-push checks failed. See output above."
+  exit $STATUS
+fi
+
+
