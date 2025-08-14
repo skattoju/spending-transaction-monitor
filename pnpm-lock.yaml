@@ -39,6 +39,8 @@ importers:
 
   packages/db: {}
 
+  packages/ingestion-service: {}
+
   packages/ui:
     dependencies:
       '@radix-ui/react-avatar':
