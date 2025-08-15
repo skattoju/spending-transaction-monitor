@@ -1,6 +1,6 @@
 # Ingestion Service
 
-This project contains a transaction ingestion service that receives transaction data, validates it, and pushes it to a Kafka topic for downstream processing. The service is implemented in both Python and TypeScript, and can be deployed to Kubernetes using Helm.
+This project contains a transaction ingestion service that receives transaction data, validates it, and pushes it to a Kafka topic for downstream processing. The service is implemented in Python and can be deployed to Kubernetes using Helm.
 
 ## Transaction Flow
 
@@ -20,7 +20,7 @@ sequenceDiagram
 
 ## Getting Started
 
-This section provides instructions on how to work with the Python implementation of the ingestion service (`ingestion-service-py`). For instructions on the TypeScript implementation, see the `ingestion-service-ts/README.md` file.
+This section provides instructions on how to work with the Python implementation of the ingestion service (`ingestion-service-py`).
 
 ### Prerequisites
 
@@ -130,7 +130,7 @@ The ingestion service and Kafka are deployed to Kubernetes using Helm.
 
 ## Data Model
 
-The common data model is defined in the `ingestion-service-py/common` and `ingestion-service-ts/common` directories. It consists of three main entities: `Transaction`, `User`, and `Card`.
+The common data model is defined in the `ingestion-service-py/common` directory. It consists of three main entities: `Transaction`, `User`, and `Card`.
 
 ### Transaction
 
