@@ -1,0 +1,2 @@
+strimzi-kafka-operator:
+  kubernetesVersion: "major=1, minor=33"
