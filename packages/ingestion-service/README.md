@@ -83,12 +83,18 @@ The ingestion service and Kafka are deployed to Kubernetes using Helm. The chart
 Perfect for KinD, Minikube, or other local Kubernetes:
 
 ```bash
-# Deploy with defaults - works immediately
+# 1. Build and push your container image
+cd ingestion-service-py
+podman build -t quay.io/your-username/ingestion-service-py:latest .
+podman push quay.io/your-username/ingestion-service-py:latest
+cd ..
+
+# 2. Deploy with your image
 make -C deploy install-kafka
-make -C deploy install-ingestion-py
+make -C deploy install-ingestion-py IMAGE_REPOSITORY=quay.io/your-username/ingestion-service-py IMAGE_TAG=latest
 ```
 
-This creates a single-replica Kafka cluster with ephemeral storage and automatically connects the ingestion service.
+This creates a single-replica Kafka cluster with ephemeral storage and automatically connects the ingestion service using your custom image.
 
 #### Production Deployment
 
