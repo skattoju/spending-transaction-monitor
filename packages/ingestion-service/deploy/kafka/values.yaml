@@ -1,2 +1,31 @@
+# Strimzi Kafka Operator configuration
 strimzi-kafka-operator:
   kubernetesVersion: "major=1, minor=33"
+
+# Development defaults - these work well for local development with KinD
+# For production, override these values during deployment
+kafka:
+  # Cluster configuration
+  cluster:
+    name: "kafka"  # This creates {release-name}-kafka cluster
+    replicas: 1    # Single replica for dev (increase for production)
+    
+  # Storage configuration  
+  storage:
+    type: "ephemeral"  # Use ephemeral storage for dev (use persistent for production)
+    size: "1Gi"       # Only used when type is persistent
+    
+  # Topic configuration
+  topics:
+    transactions:
+      partitions: 1    # Single partition for dev
+      replicas: 1      # Single replica for dev
+      
+# Ingestion service connection defaults
+# These align with the cluster name above and work in KinD
+ingestion:
+  kafka:
+    # This will resolve to: {release-name}-kafka-kafka-bootstrap:9092
+    # For release name "kafka": kafka-kafka-kafka-bootstrap:9092  
+    host: "kafka-kafka-kafka-bootstrap"  # Default for release name "kafka"
+    port: 9092

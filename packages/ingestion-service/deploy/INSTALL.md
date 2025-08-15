@@ -31,20 +31,135 @@ This document provides instructions on how to build and push the container image
 
 ## Deploying to Kubernetes
 
-1.  **Update the image repository in the `values.yaml` file:**
+### Configuration Overview
 
-    Before deploying, you need to update the `image.repository` value in the following file to point to your container registry:
+The Helm charts include sensible defaults for local development but can be customized for different environments:
 
-    *   `ingestion-service-py/helm/values.yaml`
+- **Development (KinD/Minikube)**: Uses ephemeral storage, single replicas, default service names
+- **Production (OpenShift/EKS/GKE)**: Requires persistent storage, multiple replicas, custom configurations
+
+### Deployment Scenarios
+
+#### 🚀 **Scenario 1: Quick Local Development (KinD)**
+
+Perfect for local development with minimal configuration:
+
+```bash
+# Deploy with all defaults - works out of the box
+make install-kafka
+make install-ingestion-py
+```
+
+**What this creates:**
+- Kafka cluster: `kafka-kafka` with ephemeral storage
+- Service: `kafka-kafka-kafka-bootstrap:9092`
+- Single replica, single partition topics
+- Ingestion service connects automatically
+
+#### 🏢 **Scenario 2: Custom Release Names**
+
+When you need different release names (e.g., multiple environments):
+
+```bash
+# Deploy with custom names
+make install-kafka KAFKA_RELEASE_NAME=dev-kafka
+make install-ingestion-py KAFKA_RELEASE_NAME=dev-kafka INGESTION_PY_RELEASE_NAME=dev-ingestion
+```
+
+**What this creates:**
+- Kafka cluster: `dev-kafka-kafka`  
+- Service: `dev-kafka-kafka-kafka-bootstrap:9092`
+- Ingestion service connects to the custom Kafka service
+
+#### 🌐 **Scenario 3: Production Deployment**
+
+For production environments requiring persistence and high availability:
+
+```bash
+# 1. Update image repository first
+# Edit ingestion-service-py/helm/values.yaml:
+# image:
+#   repository: your-registry.com/ingestion-service-py
+
+# 2. Deploy Kafka with production settings
+helm install prod-kafka ./kafka \
+  --set kafka.cluster.replicas=3 \
+  --set kafka.storage.type=persistent \
+  --set kafka.storage.size=10Gi \
+  --set kafka.topics.transactions.partitions=3 \
+  --set kafka.topics.transactions.replicas=3
+
+# 3. Deploy ingestion service
+helm install prod-ingestion ./ingestion-service-py/helm \
+  --set kafka.host=prod-kafka-kafka-kafka-bootstrap \
+  --set replicaCount=3 \
+  --set resources.requests.cpu=100m \
+  --set resources.requests.memory=128Mi \
+  --set resources.limits.cpu=500m \
+  --set resources.limits.memory=512Mi
+```
+
+#### 🔧 **Scenario 4: Cross-Namespace Deployment**
+
+When Kafka and ingestion service are in different namespaces:
+
+```bash
+# Deploy Kafka in kafka namespace
+kubectl create namespace kafka
+helm install kafka ./kafka --namespace kafka
+
+# Deploy ingestion service in apps namespace  
+kubectl create namespace apps
+helm install ingestion ./ingestion-service-py/helm \
+  --namespace apps \
+  --set kafka.host=kafka-kafka-kafka-bootstrap.kafka.svc.cluster.local
+```
+
+### Environment-Specific Values Files
+
+For complex deployments, create environment-specific values files:
+
+**`values-dev.yaml`:**
+```yaml
+kafka:
+  cluster:
+    replicas: 1
+  storage:
+    type: ephemeral
+```
+
+**`values-prod.yaml`:**
+```yaml
+kafka:
+  cluster:
+    replicas: 3
+  storage:
+    type: persistent
+    size: 20Gi
+  topics:
+    transactions:
+      partitions: 6
+      replicas: 3
+```
+
+Then deploy with:
+```bash
+helm install kafka ./kafka -f values-prod.yaml
+```
+
+### Quick Start
+
+For most users, the simple approach works perfectly:
+
+1.  **Update the image repository** (if using custom registry):
+    Edit `ingestion-service-py/helm/values.yaml` and update the `image.repository` value.
 
 2.  **Deploy Kafka:**
-
     ```bash
     make install-kafka
     ```
 
 3.  **Deploy the ingestion service:**
-
     ```bash
     make install-ingestion-py
     ```
