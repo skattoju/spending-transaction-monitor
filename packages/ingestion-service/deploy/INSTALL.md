@@ -45,31 +45,41 @@ The Helm charts include sensible defaults for local development but can be custo
 Perfect for local development with minimal configuration:
 
 ```bash
-# Deploy with all defaults - works out of the box
+# 1. Build and push your image first
+cd ../ingestion-service-py
+podman build -t quay.io/your-username/ingestion-service-py:dev .
+podman push quay.io/your-username/ingestion-service-py:dev
+cd ../deploy
+
+# 2. Deploy with your image
 make install-kafka
-make install-ingestion-py
+make install-ingestion-py IMAGE_REPOSITORY=quay.io/your-username/ingestion-service-py IMAGE_TAG=dev
 ```
 
 **What this creates:**
 - Kafka cluster: `kafka-kafka` with ephemeral storage
 - Service: `kafka-kafka-kafka-bootstrap:9092`
 - Single replica, single partition topics
-- Ingestion service connects automatically
+- Ingestion service connects automatically with your custom image
 
 #### 🏢 **Scenario 2: Custom Release Names**
 
 When you need different release names (e.g., multiple environments):
 
 ```bash
-# Deploy with custom names
+# Deploy with custom names and your image
 make install-kafka KAFKA_RELEASE_NAME=dev-kafka
-make install-ingestion-py KAFKA_RELEASE_NAME=dev-kafka INGESTION_PY_RELEASE_NAME=dev-ingestion
+make install-ingestion-py \
+  KAFKA_RELEASE_NAME=dev-kafka \
+  INGESTION_PY_RELEASE_NAME=dev-ingestion \
+  IMAGE_REPOSITORY=quay.io/your-username/ingestion-service-py \
+  IMAGE_TAG=dev-v1.0.0
 ```
 
 **What this creates:**
 - Kafka cluster: `dev-kafka-kafka`  
 - Service: `dev-kafka-kafka-kafka-bootstrap:9092`
-- Ingestion service connects to the custom Kafka service
+- Ingestion service connects to the custom Kafka service with your image
 
 #### 🌐 **Scenario 3: Production Deployment**
 
@@ -151,17 +161,23 @@ helm install kafka ./kafka -f values-prod.yaml
 
 For most users, the simple approach works perfectly:
 
-1.  **Update the image repository** (if using custom registry):
-    Edit `ingestion-service-py/helm/values.yaml` and update the `image.repository` value.
+1.  **Build and push your container image** (required for deployment):
+    ```bash
+    # Build and push to your container registry
+    cd ../ingestion-service-py
+    podman build -t quay.io/your-username/ingestion-service-py:latest .
+    podman push quay.io/your-username/ingestion-service-py:latest
+    cd ../deploy
+    ```
 
 2.  **Deploy Kafka:**
     ```bash
     make install-kafka
     ```
 
-3.  **Deploy the ingestion service:**
+3.  **Deploy the ingestion service with your image:**
     ```bash
-    make install-ingestion-py
+    make install-ingestion-py IMAGE_REPOSITORY=quay.io/your-username/ingestion-service-py IMAGE_TAG=latest
     ```
 
 ## Testing the Ingestion Service
