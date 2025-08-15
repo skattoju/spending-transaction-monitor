@@ -76,25 +76,47 @@ This section provides instructions on how to work with the Python implementation
 
 ### Deployment
 
-The ingestion service and Kafka are deployed to Kubernetes using Helm.
+The ingestion service and Kafka are deployed to Kubernetes using Helm. The charts include sensible defaults that work out-of-the-box for local development and can be customized for production.
 
-1.  **Deploy Kafka:**
+#### Quick Start (Local Development)
 
-    This will deploy Kafka to your Kubernetes cluster in the `kafka` namespace.
+Perfect for KinD, Minikube, or other local Kubernetes:
 
-    ```bash
-    make -C deploy install-kafka
-    ```
+```bash
+# Deploy with defaults - works immediately
+make -C deploy install-kafka
+make -C deploy install-ingestion-py
+```
 
-2.  **Update the `values.yaml` file:**
+This creates a single-replica Kafka cluster with ephemeral storage and automatically connects the ingestion service.
 
-    Before deploying the ingestion service, you need to update the `image.repository` value in `deploy/ingestion-service-py/helm/values.yaml` to point to your container registry.
+#### Production Deployment
 
-3.  **Deploy the `ingestion-service-py`:**
+For production environments with persistence and high availability:
 
-    ```bash
-    make -C deploy install-ingestion-py
-    ```
+```bash
+# Deploy Kafka with production settings
+helm install prod-kafka ./deploy/kafka \
+  --set kafka.cluster.replicas=3 \
+  --set kafka.storage.type=persistent \
+  --set kafka.storage.size=10Gi
+
+# Deploy ingestion service with scaling
+helm install prod-ingestion ./deploy/ingestion-service-py/helm \
+  --set kafka.host=prod-kafka-kafka-kafka-bootstrap \
+  --set replicaCount=3 \
+  --set resources.requests.cpu=100m \
+  --set resources.requests.memory=128Mi
+```
+
+#### 📚 **Comprehensive Deployment Guide**
+
+See [`deploy/INSTALL.md`](deploy/INSTALL.md) for detailed scenarios including:
+- Local development with KinD
+- Custom release names for multiple environments  
+- Production deployment with persistence and HA
+- Cross-namespace deployments
+- Environment-specific configuration files
 
 ### Testing with cURL
 

@@ -25,3 +25,17 @@ To run the tests, you will need to have `pytest` installed.
 ```bash
 python -m pytest
 ```
+
+## Kubernetes Deployment
+
+This service is designed to run in Kubernetes with Kafka. The Helm charts include development defaults that work out-of-the-box:
+
+```bash
+# Quick local deployment (from project root)
+make -C packages/ingestion-service/deploy install-kafka
+make -C packages/ingestion-service/deploy install-ingestion-py
+```
+
+For detailed deployment scenarios including production configurations, see:
+- [`../README.md`](../README.md) - Overview and quick start
+- [`../deploy/INSTALL.md`](../deploy/INSTALL.md) - Comprehensive deployment guide

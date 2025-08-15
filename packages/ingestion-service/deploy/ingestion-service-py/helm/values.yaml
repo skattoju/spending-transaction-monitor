@@ -57,8 +57,10 @@ service:
   port: 80
 
 # This is for setting up kafka configuration
+# Default assumes Kafka release name is "kafka" (matching our Makefile)
+# Override these for different environments or release names
 kafka:
-  host: "localhost"
+  host: "kafka-kafka-kafka-bootstrap"  # Strimzi service name for release "kafka"
   port: "9092"
 
 # This is for setting up generic configuration for the service
