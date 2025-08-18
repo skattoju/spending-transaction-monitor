@@ -83,21 +83,51 @@ class KafkaConnectionManager:
             return False
             
     def health_check(self) -> dict:
-        """Check Kafka connection health"""
+        """Check Kafka connection health by attempting to connect"""
         current_time = time.time()
         
-        if self.producer is not None:
+        # If we're in cooldown period, return cached status
+        if current_time <= (self.last_connection_attempt + self.connection_cooldown):
+            producer_exists = self.producer is not None
+            return {
+                "kafka_status": "healthy" if producer_exists else "unhealthy",
+                "connection_pool_active": producer_exists,
+                "last_connection_attempt": datetime.datetime.fromtimestamp(self.last_connection_attempt).isoformat() if self.last_connection_attempt > 0 else None,
+                "next_retry_available": False,
+                "in_cooldown": True
+            }
+        
+        # Try to establish connection for health check
+        try:
+            # Create a temporary producer just for health checking
+            test_producer = KafkaProducer(
+                bootstrap_servers=f"{self.kafka_host}:{self.kafka_port}",
+                request_timeout_ms=5000,  # Short timeout for health check
+                api_version=(0, 10, 1),
+                value_serializer=lambda x: json.dumps(x).encode('utf-8')
+            )
+            
+            # Just creating the producer and closing it verifies connectivity
+            # The constructor will fail if Kafka is not reachable
+            test_producer.close()
+            
+            # If we get here, Kafka is reachable
             return {
                 "kafka_status": "healthy",
-                "connection_pool_active": True,
-                "last_connection_attempt": datetime.datetime.fromtimestamp(self.last_connection_attempt).isoformat() if self.last_connection_attempt > 0 else None
+                "connection_pool_active": self.producer is not None,
+                "last_health_check": datetime.datetime.now(datetime.UTC).isoformat(),
+                "kafka_reachable": True
             }
-        else:
+            
+        except Exception as e:
+            print(f"Kafka health check failed: {e}")
             return {
-                "kafka_status": "unhealthy",
+                "kafka_status": "unhealthy", 
                 "connection_pool_active": False,
                 "last_connection_attempt": datetime.datetime.fromtimestamp(self.last_connection_attempt).isoformat() if self.last_connection_attempt > 0 else None,
-                "next_retry_available": current_time > (self.last_connection_attempt + self.connection_cooldown)
+                "next_retry_available": current_time > (self.last_connection_attempt + self.connection_cooldown),
+                "kafka_reachable": False,
+                "last_error": str(e)
             }
             
     def close(self):
