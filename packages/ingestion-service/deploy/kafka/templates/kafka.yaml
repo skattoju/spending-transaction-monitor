@@ -21,8 +21,8 @@ metadata:
     strimzi.io/kraft: enabled
 spec:
   kafka:
-    version: 4.0.0
-    metadataVersion: 4.0-IV3
+    version: 3.9.1
+    replicas: 1
     listeners:
       - name: plain
         port: 9092
@@ -38,6 +38,12 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+    storage:
+      type: ephemeral
+  zookeeper:
+    replicas: 1
+    storage:
+      type: ephemeral
   entityOperator:
     topicOperator: {}
     userOperator: {}

@@ -26,6 +26,7 @@ Packages
 - `packages/ui`: web app and Storybook
 - `packages/api`: API service and routes
 - `packages/db`: models, engine, Alembic, seed/verify scripts
+- `packages/ingestion-service`: transaction ingestion service with Kafka integration
 - `packages/evaluation`: rule evaluation (scaffold)
 - `packages/alerts`: alert delivery (scaffold)
 - `packages/configs/*`: shared ESLint/Prettier configs
@@ -177,6 +178,7 @@ spending-transaction-monitor/
 │   ├── api/
 │   ├── db/
 │   ├── ui/
+│   ├── ingestion-service/
 │   └── configs/
 ├── docs/
 ├── turbo.json

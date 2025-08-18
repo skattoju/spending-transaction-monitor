@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 kafka-python
-pydantic<2
+pydantic>=2.0
 pytest
 httpx

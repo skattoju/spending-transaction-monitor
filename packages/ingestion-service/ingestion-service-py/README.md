@@ -20,11 +20,42 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 ## Running the tests
 
-To run the tests, you will need to have `pytest` installed.
+We provide multiple ways to run tests for maximum reliability:
 
+### Recommended: Use the test runner
 ```bash
-python -m pytest
+# Run all tests (unit + integration + service validation)
+make test
+
+# Or use the test runner directly
+python run_tests.py
 ```
+
+### Run specific test types
+```bash
+make test-unit        # Unit tests only
+make test-integration # Integration tests only
+make test-e2e        # E2E tests (requires running service + Kafka)
+```
+
+### Traditional pytest (if needed)
+```bash
+python -m pytest tests/unit/ -v           # Unit tests
+python -m pytest tests/integration/ -v    # Integration tests
+python -m pytest tests/e2e/ -v -s        # E2E tests
+```
+
+### Test Organization
+- **`tests/unit/`** - Unit tests with mocked dependencies
+- **`tests/integration/`** - Integration tests using FastAPI TestClient
+- **`tests/e2e/`** - End-to-end tests requiring real Kafka
+
+The test runner (`run_tests.py`) provides the most comprehensive testing including:
+- Service validation (imports, basic functionality)
+- Unit tests (mocked Kafka, isolated component testing) 
+- Integration tests (FastAPI TestClient, end-to-end flow)
+
+Unit and integration tests are designed to work without requiring Kafka to be running, using graceful degradation.
 
 ## Kubernetes Deployment
 
