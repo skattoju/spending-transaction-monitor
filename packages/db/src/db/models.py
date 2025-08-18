@@ -213,6 +213,7 @@ class AlertRule(Base):
     timeframe: Mapped[Optional[str]]
 
     naturalLanguageQuery: Mapped[Optional[str]]
+    sqlQuery: Mapped[Optional[str]]
 
     notificationMethods: Mapped[Optional[List[NotificationMethod]]] = mapped_column(
         ARRAY(SAEnum(NotificationMethod)), nullable=True
