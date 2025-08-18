@@ -36,9 +36,8 @@ jobs:
 
   build-py:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    env:
+      IMAGE_TAG: ingestion-service-py:ci
     steps:
     - uses: actions/checkout@v3
     - name: Set up Helm
@@ -50,17 +49,20 @@ jobs:
       working-directory: ./packages/ingestion-service
       run: |
         helm lint deploy/ingestion-service-py/helm
-    - name: Log in to the Container registry
-      uses: redhat-actions/podman-login@v1
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build and push the Docker image
+    - name: Build container image
       working-directory: ./packages/ingestion-service
       run: |
-        podman build ./ingestion-service-py --file ./ingestion-service-py/Containerfile --tag ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
-        podman push ghcr.io/${{ github.repository }}/ingestion-service-py:${{ github.sha }}
+        podman build ./ingestion-service-py --file ./ingestion-service-py/Containerfile --tag ${{ env.IMAGE_TAG }}
+    - name: Save image for E2E tests
+      run: |
+        echo "Saving image: ${{ env.IMAGE_TAG }}"
+        podman save ${{ env.IMAGE_TAG }} -o /tmp/ingestion-service-py.tar
+    - name: Upload image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ingestion-service-image
+        path: /tmp/ingestion-service-py.tar
+        retention-days: 1
 
   test-py:
     runs-on: ubuntu-latest
@@ -84,12 +86,26 @@ jobs:
     needs: [build-py]
     env:
       KAFKA_RELEASE_NAME: kafka
+      IMAGE_TAG: ingestion-service-py:ci
     steps:
     - uses: actions/checkout@v3
     - name: Set up KinD cluster
       uses: helm/kind-action@v1.2.0
+      with:
+        cluster_name: kind
     - name: Set up kubectl
       uses: azure/setup-kubectl@v1
+    - name: Download image artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ingestion-service-image
+        path: /tmp/
+    - name: Load image into KinD cluster
+      run: |
+        echo "Loading image archive into KinD cluster..."
+        kind load image-archive /tmp/ingestion-service-py.tar --name kind
+        echo "Verifying loaded images in cluster..."
+        docker exec kind-control-plane crictl images | grep ingestion || echo "No ingestion images found"
     - name: Install dependencies
       working-directory: ./packages/ingestion-service
       run: |
@@ -130,8 +146,9 @@ jobs:
         helm install ingestion-py ./deploy/ingestion-service-py/helm -n default \
           --set kafka.host=kafka-kafka-kafka-bootstrap \
           --set kafka.port=9092 \
-          --set image.repository=ghcr.io/${{ github.repository }}/ingestion-service-py \
-          --set image.tag=${{ github.sha }}
+          --set image.repository=localhost/ingestion-service-py \
+          --set image.tag=ci \
+          --set image.pullPolicy=Never
         echo "Waiting for Ingestion Service to be ready..."
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=ingestion-service-py -n default --timeout=300s
         echo "Ingestion Service is ready."
