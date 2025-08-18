@@ -101,18 +101,24 @@ This creates a single-replica Kafka cluster with ephemeral storage and automatic
 For production environments with persistence and high availability:
 
 ```bash
-# Deploy Kafka with production settings
+# Option 1: Deploy your own Kafka with production settings
 helm install prod-kafka ./deploy/kafka \
   --set kafka.cluster.replicas=3 \
   --set kafka.storage.type=persistent \
   --set kafka.storage.size=10Gi
 
-# Deploy ingestion service with scaling
-helm install prod-ingestion ./deploy/ingestion-service-py/helm \
-  --set kafka.host=prod-kafka-kafka-kafka-bootstrap \
-  --set replicaCount=3 \
-  --set resources.requests.cpu=100m \
-  --set resources.requests.memory=128Mi
+# Deploy ingestion service connecting to your Kafka
+make -C deploy install-ingestion-py \
+  KAFKA_RELEASE_NAME=prod-kafka \
+  IMAGE_REPOSITORY=your-registry.com/ingestion-service-py \
+  IMAGE_TAG=v1.0.0
+
+# Option 2: Connect to external/cloud Kafka
+make -C deploy install-ingestion-py \
+  KAFKA_HOST=kafka.your-company.com \
+  KAFKA_PORT=9092 \
+  IMAGE_REPOSITORY=your-registry.com/ingestion-service-py \
+  IMAGE_TAG=v1.0.0
 ```
 
 #### 📚 **Comprehensive Deployment Guide**
