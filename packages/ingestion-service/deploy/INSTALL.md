@@ -38,6 +38,19 @@ The Helm charts include sensible defaults for local development but can be custo
 - **Development (KinD/Minikube)**: Uses ephemeral storage, single replicas, default service names
 - **Production (OpenShift/EKS/GKE)**: Requires persistent storage, multiple replicas, custom configurations
 
+### Kafka Connection Options
+
+The ingestion service can connect to Kafka in multiple ways:
+
+1. **Local Kafka** (deployed by same Makefile): Uses auto-generated service names
+2. **External Kafka** (different namespace/cluster): Specify custom `KAFKA_HOST` and `KAFKA_PORT`
+3. **Cloud Kafka** (AWS MSK, Confluent Cloud, etc.): Use external hostnames and ports
+
+**Key Variables:**
+- `KAFKA_HOST`: Kafka bootstrap server hostname (default: auto-generated from `KAFKA_RELEASE_NAME`)
+- `KAFKA_PORT`: Kafka port (default: `9092`)
+- `KAFKA_RELEASE_NAME`: Only used for local Kafka deployment and hostname generation
+
 ### Deployment Scenarios
 
 #### 🚀 **Scenario 1: Quick Local Development (KinD)**
@@ -109,7 +122,28 @@ helm install prod-ingestion ./ingestion-service-py/helm \
   --set resources.limits.memory=512Mi
 ```
 
-#### 🔧 **Scenario 4: Cross-Namespace Deployment**
+#### 🔧 **Scenario 4: External Kafka Connection**
+
+Connect to an existing Kafka cluster (different namespace, external cluster, or cloud service):
+
+```bash
+# Connect to Kafka in different namespace
+make install-ingestion-py \
+  KAFKA_HOST=my-kafka-kafka-bootstrap.kafka-namespace.svc.cluster.local \
+  KAFKA_PORT=9092
+
+# Connect to external Kafka cluster
+make install-ingestion-py \
+  KAFKA_HOST=kafka.example.com \
+  KAFKA_PORT=9092
+
+# Connect to cloud Kafka service
+make install-ingestion-py \
+  KAFKA_HOST=my-cluster.kafka.us-east-1.amazonaws.com \
+  KAFKA_PORT=9092
+```
+
+#### 🔧 **Scenario 5: Cross-Namespace Deployment**
 
 When Kafka and ingestion service are in different namespaces:
 
@@ -118,11 +152,12 @@ When Kafka and ingestion service are in different namespaces:
 kubectl create namespace kafka
 helm install kafka ./kafka --namespace kafka
 
-# Deploy ingestion service in apps namespace  
+# Deploy ingestion service in apps namespace using FQDN
 kubectl create namespace apps
-helm install ingestion ./ingestion-service-py/helm \
-  --namespace apps \
-  --set kafka.host=kafka-kafka-kafka-bootstrap.kafka.svc.cluster.local
+make install-ingestion-py \
+  INGESTION_PY_NAMESPACE=apps \
+  KAFKA_HOST=kafka-kafka-kafka-bootstrap.kafka.svc.cluster.local \
+  KAFKA_PORT=9092
 ```
 
 ### Environment-Specific Values Files

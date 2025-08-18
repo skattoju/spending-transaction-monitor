@@ -5,6 +5,7 @@
 #   make install-kafka KAFKA_RELEASE_NAME=my-kafka       # Custom release name
 #   make install-ingestion-py                             # Uses defaults (connects to "kafka" release)
 #   make install-ingestion-py KAFKA_RELEASE_NAME=my-kafka # Connects to custom Kafka release
+#   make install-ingestion-py KAFKA_HOST=my-kafka-cluster.kafka.svc.cluster.local KAFKA_PORT=9092 # External Kafka
 #   make install-ingestion-py IMAGE_REPOSITORY=quay.io/myuser/ingestion-py IMAGE_TAG=v1.0.0 # Custom image
 
 # Default values - safe for local development with KinD
@@ -17,6 +18,11 @@ INGESTION_PY_NAMESPACE ?= default
 IMAGE_REPOSITORY ?= quay.io/your-username/ingestion-service-py
 IMAGE_TAG ?= latest
 
+# Kafka connection configuration - override these to connect to external Kafka
+# If not set, defaults to Kafka deployed by this Makefile with KAFKA_RELEASE_NAME
+KAFKA_HOST ?= $(KAFKA_RELEASE_NAME)-kafka-kafka-bootstrap
+KAFKA_PORT ?= 9092
+
 # Targets
 install-kafka:
 	helm install $(KAFKA_RELEASE_NAME) ./kafka --namespace $(KAFKA_NAMESPACE)
@@ -24,8 +30,8 @@ install-kafka:
 install-ingestion-py:
 	helm install $(INGESTION_PY_RELEASE_NAME) ./ingestion-service-py/helm \
 		--namespace $(INGESTION_PY_NAMESPACE) \
-		--set kafka.host=$(KAFKA_RELEASE_NAME)-kafka-kafka-bootstrap \
-		--set kafka.port=9092 \
+		--set kafka.host=$(KAFKA_HOST) \
+		--set kafka.port=$(KAFKA_PORT) \
 		--set image.repository=$(IMAGE_REPOSITORY) \
 		--set image.tag=$(IMAGE_TAG)
 
