@@ -24,7 +24,7 @@ This section provides instructions on how to work with the Python implementation
 
 ### Prerequisites
 
-*   Python 3.9+
+*   Python 3.12+
 *   Podman
 *   kubectl
 *   Helm
@@ -52,7 +52,8 @@ This section provides instructions on how to work with the Python implementation
 3.  **Run tests:**
 
     ```bash
-    python -m pytest ingestion-service-py/test_main.py
+    cd ingestion-service-py
+    make test  # Run all tests (unit + integration + service validation)
     ```
 
 ### Building and Pushing the Container Image
