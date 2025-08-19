@@ -1,0 +1,85 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { transactionService, alertService } from '../services/transaction';
+import type { TransactionStats } from '../schemas/transaction';
+
+// Transaction hooks
+export const useRecentTransactions = (page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ['transactions', 'recent', page, limit],
+    queryFn: () => transactionService.getRecentTransactions(page, limit),
+  });
+};
+
+export const useTransaction = (id: string) => {
+  return useQuery({
+    queryKey: ['transactions', id],
+    queryFn: () => transactionService.getTransactionById(id),
+    enabled: !!id,
+  });
+};
+
+export const useTransactionStats = (): {
+  data: TransactionStats | undefined;
+  isLoading: boolean;
+  error: Error | null;
+} => {
+  return useQuery({
+    queryKey: ['transactions', 'stats'],
+    queryFn: () => transactionService.getTransactionStats(),
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+};
+
+export const useTransactionSearch = (query: string) => {
+  return useQuery({
+    queryKey: ['transactions', 'search', query],
+    queryFn: () => transactionService.searchTransactions(query),
+    enabled: query.length > 2, // Only search with 3+ characters
+  });
+};
+
+// Alert hooks
+export const useAlerts = () => {
+  return useQuery({
+    queryKey: ['alerts'],
+    queryFn: () => alertService.getAlerts(),
+    refetchInterval: 60000, // Refetch every minute
+  });
+};
+
+export const useAlertRules = () => {
+  return useQuery({
+    queryKey: ['alertRules'],
+    queryFn: () => alertService.getAlertRules(),
+  });
+};
+
+export const useCreateAlertRule = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (rule: string) => alertService.createAlertRule(rule),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alertRules'] });
+    },
+  });
+};
+
+export const useToggleAlertRule = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => alertService.toggleAlertRule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alertRules'] });
+    },
+  });
+};
+
+export const useTransactionChartData = (timeRange: '7d' | '30d' | '90d' | '1y') => {
+  return useQuery({
+    queryKey: ['transactions', 'chart', timeRange],
+    queryFn: () => transactionService.getTransactionChartData(timeRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
