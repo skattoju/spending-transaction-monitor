@@ -1,23 +1,18 @@
-import { Logo } from "../logo/logo";
+import { ModeToggle } from '../mode-toggle/mode-toggle';
 
 export function Footer() {
   return (
-    <footer className="mt-10">
-      <div className="rounded-2xl border bg-card/60 p-4 text-xs text-muted-foreground backdrop-blur sm:flex sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Logo />
-          <span className="font-medium text-foreground">
-            Built with the <span className="font-bold">AI Kickstart CLI</span>
-          </span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-3 sm:mt-0">
-          <a className="hover:underline" href="#">
-            Docs
-          </a>
-          <a className="hover:underline" href="#">
-            GitHub
-          </a>
-
+    <footer className="border-t border-border bg-card/50 backdrop-blur-sm">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground">RH AI Kickstart</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <ModeToggle />
+          </div>
         </div>
       </div>
     </footer>

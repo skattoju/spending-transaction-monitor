@@ -17,17 +17,20 @@ Modern React frontend application built with Vite and TanStack Router.
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - pnpm 9+
 
 ### Development
 
 1. **Install dependencies**:
+
 ```bash
 pnpm install
 ```
 
 2. **Start development server**:
+
 ```bash
 pnpm dev
 ```
@@ -97,13 +100,16 @@ The API base URL is automatically configured to work with the backend API.
 ## Styling
 
 ### Tailwind CSS
+
 This project uses Tailwind CSS for styling. Key features:
+
 - Utility-first approach for rapid development
 - Responsive design utilities
 - Dark mode support (when implemented)
 - Custom component classes
 
 ### Component Development
+
 - Use TypeScript interfaces for component props
 - Follow React best practices for state management
 - Implement responsive design from mobile-first
@@ -123,6 +129,7 @@ pnpm build
 ```
 
 This creates an optimized production build in the `dist/` directory with:
+
 - Minified JavaScript and CSS
 - Tree-shaken dependencies
 - Gzipped assets
@@ -131,8 +138,9 @@ This creates an optimized production build in the `dist/` directory with:
 ## Deployment
 
 The `dist/` folder can be deployed to any static hosting service:
+
 - Vercel
-- Netlify 
+- Netlify
 - AWS S3 + CloudFront
 - GitHub Pages
 

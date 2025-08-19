@@ -16,7 +16,7 @@ import {
 import { Button } from '../button/button';
 
 const meta: Meta<typeof DropdownMenu> = {
-  title: 'Components/DropdownMenu',
+  title: 'Atoms/DropdownMenu',
   component: DropdownMenu,
   parameters: {
     layout: 'centered',

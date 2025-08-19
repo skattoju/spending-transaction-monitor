@@ -1,7 +1,6 @@
+import { Health, HealthSchema } from '../schemas/health';
 
-import { HealthSchema } from '../schemas/health';
-
-export const getHealth = async (): Promise<HealthSchema> => {
+export const getHealth = async (): Promise<Health> => {
   const response = await fetch('/api/health/');
   if (!response.ok) {
     throw new Error('Failed to fetch health');

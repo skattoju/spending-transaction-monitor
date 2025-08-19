@@ -1,11 +1,8 @@
-
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 @source "/src/routes/**/*.{ts,tsx}";
 @source "/src/components/**/*.{ts,tsx}";
 @source "/src/**/*.{ts,tsx}";
-
-
 
 @custom-variant dark (&:is(.dark *));
 
@@ -25,7 +22,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -35,6 +32,27 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
+
+  /* Semantic Status Colors */
+  --success: oklch(0.55 0.15 142);
+  --success-foreground: oklch(0.98 0 0);
+  --success-muted: oklch(0.94 0.05 142);
+  --success-muted-foreground: oklch(0.45 0.12 142);
+
+  --error: oklch(0.55 0.2 25);
+  --error-foreground: oklch(0.98 0 0);
+  --error-muted: oklch(0.94 0.05 25);
+  --error-muted-foreground: oklch(0.45 0.15 25);
+
+  --warning: oklch(0.6 0.15 85);
+  --warning-foreground: oklch(0.98 0 0);
+  --warning-muted: oklch(0.94 0.05 85);
+  --warning-muted-foreground: oklch(0.45 0.12 85);
+
+  --info: oklch(0.55 0.15 235);
+  --info-foreground: oklch(0.98 0 0);
+  --info-muted: oklch(0.94 0.05 235);
+  --info-muted-foreground: oklch(0.45 0.12 235);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -48,11 +66,11 @@
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
+  --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
+  --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -60,10 +78,10 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -76,8 +94,29 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  /* Semantic Status Colors - Dark Mode */
+  --success: oklch(0.65 0.15 142);
+  --success-foreground: oklch(0.145 0 0);
+  --success-muted: oklch(0.22 0.08 142);
+  --success-muted-foreground: oklch(0.65 0.15 142);
+
+  --error: oklch(0.65 0.2 25);
+  --error-foreground: oklch(0.145 0 0);
+  --error-muted: oklch(0.22 0.08 25);
+  --error-muted-foreground: oklch(0.65 0.2 25);
+
+  --warning: oklch(0.7 0.15 85);
+  --warning-foreground: oklch(0.145 0 0);
+  --warning-muted: oklch(0.22 0.08 85);
+  --warning-muted-foreground: oklch(0.7 0.15 85);
+
+  --info: oklch(0.65 0.15 235);
+  --info-foreground: oklch(0.145 0 0);
+  --info-muted: oklch(0.22 0.08 235);
+  --info-muted-foreground: oklch(0.65 0.15 235);
 }
 
 @theme inline {
@@ -117,6 +156,27 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Semantic Status Colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-success-muted-foreground: var(--success-muted-foreground);
+
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-error-muted: var(--error-muted);
+  --color-error-muted-foreground: var(--error-muted-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-muted-foreground: var(--warning-muted-foreground);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+  --color-info-muted-foreground: var(--info-muted-foreground);
 }
 
 @layer base {
@@ -134,5 +194,142 @@
   #root {
     /* Allow app containers to stretch to full height if needed */
     height: 100%;
+  }
+}
+
+/* Semantic Color Utilities */
+.text-success {
+  color: hsl(var(--success));
+}
+
+.text-success-muted-foreground {
+  color: hsl(var(--success-muted-foreground));
+}
+
+.bg-success-muted {
+  background-color: hsl(var(--success-muted));
+}
+
+.text-error {
+  color: hsl(var(--error));
+}
+
+.text-error-muted-foreground {
+  color: hsl(var(--error-muted-foreground));
+}
+
+.bg-error-muted {
+  background-color: hsl(var(--error-muted));
+}
+
+.text-warning {
+  color: hsl(var(--warning));
+}
+
+.text-warning-muted-foreground {
+  color: hsl(var(--warning-muted-foreground));
+}
+
+.bg-warning-muted {
+  background-color: hsl(var(--warning-muted));
+}
+
+.text-info {
+  color: hsl(var(--info));
+}
+
+.text-info-muted-foreground {
+  color: hsl(var(--info-muted-foreground));
+}
+
+.bg-info-muted {
+  background-color: hsl(var(--info-muted));
+}
+
+/* Status Badge Colors */
+.bg-success-muted.text-success-muted-foreground {
+  background-color: hsl(var(--success-muted));
+  color: hsl(var(--success-muted-foreground));
+}
+
+.bg-error-muted.text-error-muted-foreground {
+  background-color: hsl(var(--error-muted));
+  color: hsl(var(--error-muted-foreground));
+}
+
+.bg-warning-muted.text-warning-muted-foreground {
+  background-color: hsl(var(--warning-muted));
+  color: hsl(var(--warning-muted-foreground));
+}
+
+.bg-info-muted.text-info-muted-foreground {
+  background-color: hsl(var(--info-muted));
+  color: hsl(var(--info-muted-foreground));
+}
+
+/* Additional semantic utilities */
+.bg-success {
+  background-color: hsl(var(--success));
+}
+
+.bg-error {
+  background-color: hsl(var(--error));
+}
+
+.bg-warning {
+  background-color: hsl(var(--warning));
+}
+
+.bg-info {
+  background-color: hsl(var(--info));
+}
+
+/* Chart color utilities */
+.text-chart-1 {
+  color: var(--chart-1);
+}
+
+.text-chart-2 {
+  color: var(--chart-2);
+}
+
+.text-chart-3 {
+  color: var(--chart-3);
+}
+
+.text-chart-4 {
+  color: var(--chart-4);
+}
+
+.text-chart-5 {
+  color: var(--chart-5);
+}
+
+.bg-chart-1 {
+  background-color: var(--chart-1);
+}
+
+.bg-chart-2 {
+  background-color: var(--chart-2);
+}
+
+.bg-chart-3 {
+  background-color: var(--chart-3);
+}
+
+.bg-chart-4 {
+  background-color: var(--chart-4);
+}
+
+.bg-chart-5 {
+  background-color: var(--chart-5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
