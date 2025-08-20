@@ -39,8 +39,7 @@ class KafkaConnectionManager:
                     value_serializer=lambda v: json.dumps(v, default=str).encode('utf-8'),
                     request_timeout_ms=self.connection_timeout * 1000,
                     retries=1,
-                    max_block_ms=5000,
-                    api_version=(0, 10, 1)
+                    max_block_ms=5000
                 )
                 # Test the connection
                 producer.bootstrap_connected()
