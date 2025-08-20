@@ -9,18 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TransactionsRouteImport } from './routes/transactions'
-import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AuthDemoRouteImport } from './routes/auth-demo'
 import { Route as IndexRouteImport } from './routes/index'
 
-const TransactionsRoute = TransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AlertsRoute = AlertsRouteImport.update({
-  id: '/alerts',
-  path: '/alerts',
+const AuthDemoRoute = AuthDemoRouteImport.update({
+  id: '/auth-demo',
+  path: '/auth-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,48 +25,37 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/alerts': typeof AlertsRoute
-  '/transactions': typeof TransactionsRoute
+  '/auth-demo': typeof AuthDemoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/alerts': typeof AlertsRoute
-  '/transactions': typeof TransactionsRoute
+  '/auth-demo': typeof AuthDemoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/alerts': typeof AlertsRoute
-  '/transactions': typeof TransactionsRoute
+  '/auth-demo': typeof AuthDemoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/alerts' | '/transactions'
+  fullPaths: '/' | '/auth-demo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/alerts' | '/transactions'
-  id: '__root__' | '/' | '/alerts' | '/transactions'
+  to: '/' | '/auth-demo'
+  id: '__root__' | '/' | '/auth-demo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AlertsRoute: typeof AlertsRoute
-  TransactionsRoute: typeof TransactionsRoute
+  AuthDemoRoute: typeof AuthDemoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/transactions': {
-      id: '/transactions'
-      path: '/transactions'
-      fullPath: '/transactions'
-      preLoaderRoute: typeof TransactionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alerts': {
-      id: '/alerts'
-      path: '/alerts'
-      fullPath: '/alerts'
-      preLoaderRoute: typeof AlertsRouteImport
+    '/auth-demo': {
+      id: '/auth-demo'
+      path: '/auth-demo'
+      fullPath: '/auth-demo'
+      preLoaderRoute: typeof AuthDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,8 +70,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AlertsRoute: AlertsRoute,
-  TransactionsRoute: TransactionsRoute,
+  AuthDemoRoute: AuthDemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
