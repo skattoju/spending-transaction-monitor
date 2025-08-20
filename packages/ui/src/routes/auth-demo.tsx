@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '../components/atoms/button/button'
 import { Card } from '../components/atoms/card/card'
 
@@ -13,6 +13,8 @@ interface ApiResponse {
   authenticated?: boolean;
   user?: any;
   error?: string;
+  status?: number;
+  statusText?: string;
 }
 
 function AuthDemoPage() {
@@ -125,7 +127,7 @@ function AuthDemoPage() {
                 <strong>User ID:</strong> {auth.user?.profile?.sub}
               </div>
               <div>
-                <strong>Roles:</strong> {auth.user?.profile?.realm_access?.roles?.join(', ') || 'None'}
+                <strong>Roles:</strong> {(auth.user?.profile as any)?.realm_access?.roles?.join(', ') || 'None'}
               </div>
             </div>
           </div>
