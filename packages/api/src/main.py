@@ -10,6 +10,7 @@ from .routes import health
 from .routes import transactions as transactions_routes
 from .routes import users as users_routes
 from .routes import alerts as alerts_routes
+from .routes import auth_demo
 
 app = FastAPI(
     title='spending-monitor API',
@@ -34,6 +35,9 @@ app.include_router(
 )
 app.include_router(
     alerts_routes.router, prefix='/alerts', tags=['alerts']
+)
+app.include_router(
+    auth_demo.router, prefix='/auth-demo', tags=['auth-demo']
 )
 
 
