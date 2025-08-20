@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 # Enforce conventional branch names on push
 BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || true)

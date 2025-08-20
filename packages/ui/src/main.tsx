@@ -9,6 +9,17 @@ import { TooltipProvider } from './components/atoms/tooltip/tooltip.tsx'
 const queryClient = new QueryClient();
 const router = createRouter({ routeTree })
 
+// Keycloak OIDC configuration
+const oidcConfig = {
+  authority: 'http://localhost:8080/realms/spending-monitor',
+  client_id: 'spending-monitor',
+  redirect_uri: 'http://localhost:5173',
+  response_type: 'code',
+  scope: 'openid profile email',
+  automaticSilentRenew: true,
+  includeIdTokenInSilentRenew: true,
+  post_logout_redirect_uri: 'http://localhost:5173',
+}
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router

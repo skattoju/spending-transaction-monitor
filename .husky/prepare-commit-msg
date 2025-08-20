@@ -1,7 +1,11 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+#!/usr/bin/env sh
 
 # Enforce conventional branch names: <type>/<short-description>
+# Skip validation during rebase/merge
+if [ -d ".git/rebase-merge" ] || [ -d ".git/rebase-apply" ] || [ -f ".git/MERGE_HEAD" ]; then
+  exit 0
+fi
+
 BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || true)
 
 case "$BRANCH_NAME" in
