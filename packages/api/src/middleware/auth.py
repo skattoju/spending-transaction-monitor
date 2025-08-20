@@ -100,7 +100,7 @@ class KeycloakJWTBearer:
             logger.error(f'❌ Failed to fetch JWKS from {jwks_uri}: {e}')
             raise HTTPException(
                 status_code=503, detail='Authentication service unavailable'
-            )
+            ) from e
 
     async def validate_token(self, token: str) -> dict:
         """Validate JWT token and return claims using python-jose"""
@@ -157,11 +157,11 @@ class KeycloakJWTBearer:
             
             expected_issuer = oidc_config.get("issuer", "N/A") if "oidc_config" in locals() else "N/A"
             logger.error(f'   Expected issuer: {expected_issuer}')
-            raise HTTPException(status_code=401, detail='Invalid token')
+            raise HTTPException(status_code=401, detail='Invalid token') from e
         except Exception as e:
             logger.error(f'❌ Token validation error: {e}')
             logger.error(f'   Error type: {type(e).__name__}')
-            raise HTTPException(status_code=401, detail='Token validation failed')
+            raise HTTPException(status_code=401, detail='Token validation failed') from e
 
 
 # Global instance
