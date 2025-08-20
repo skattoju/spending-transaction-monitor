@@ -20,6 +20,8 @@ dependencies = [
     "alembic>=1.13.0",
     "asyncpg>=0.29.0",
     "greenlet>=3.2.3",
+    "python-jose[cryptography]>=3.3.0",
+    "requests>=2.31.0",
     
     "spending-monitor-db",
 ]
@@ -64,3 +66,8 @@ packages = ["src"]
 
 [tool.uv.sources]
 "spending-monitor-db" = { path = "../db", editable = true }
+
+[dependency-groups]
+dev = [
+    "responses>=0.25.8",
+]
