@@ -68,23 +68,23 @@ STATUS=0
 # UI package checks
 if echo "$CHANGED_FILES" | grep -Eq '^packages/ui/'; then
   echo "• Detected changes in packages/ui → running UI checks"
-  pnpm -C packages/ui prettier --check . || STATUS=$?
-  pnpm -C packages/ui eslint . --ext ts,tsx --max-warnings 0 || STATUS=$?
-  pnpm -C packages/ui test || STATUS=$?
+  (cd packages/ui && pnpm prettier --check .) || STATUS=$?
+  (cd packages/ui && pnpm eslint . --ext ts,tsx --max-warnings 0) || STATUS=$?
+  (cd packages/ui && pnpm test) || STATUS=$?
 fi
 
 # API package checks
 if echo "$CHANGED_FILES" | grep -Eq '^packages/api/'; then
   echo "• Detected changes in packages/api → running API checks"
-  pnpm -C packages/api run format:check || STATUS=$?
-  pnpm -C packages/api run lint || STATUS=$?
-  pnpm -C packages/api run test || STATUS=$?
+  (cd packages/api && pnpm run format:check) || STATUS=$?
+  (cd packages/api && pnpm run lint) || STATUS=$?
+  (cd packages/api && pnpm run test) || STATUS=$?
 fi
 
 # DB package checks (tests only for now)
 if echo "$CHANGED_FILES" | grep -Eq '^packages/db/'; then
   echo "• Detected changes in packages/db → running DB tests"
-  pnpm -C packages/db run test || STATUS=$?
+  (cd packages/db && pnpm run test) || STATUS=$?
 fi
 
 if [ $STATUS -ne 0 ]; then

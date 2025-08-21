@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 export const ServiceSchema = z.object({
@@ -12,4 +11,4 @@ export const ServiceSchema = z.object({
 export const HealthSchema = z.array(ServiceSchema);
 
 export type Service = z.infer<typeof ServiceSchema>;
-export type HealthSchema = z.infer<typeof HealthSchema>;
+export type Health = z.infer<typeof HealthSchema>;

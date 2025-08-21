@@ -1,23 +1,26 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from './card';
 import { Button } from '../button/button';
 import { Badge } from '../badge/badge';
 
 const meta: Meta<typeof Card> = {
-  title: 'Components/Card',
+  title: 'Atoms/Card',
   component: Card,
   parameters: {
     layout: 'centered',
   },
   tags: ['autodocs'],
   argTypes: {
-    title: {
+    className: {
       control: 'text',
-      description: 'The title of the card',
-    },
-    description: {
-      control: 'text',
-      description: 'The description of the card',
+      description: 'Additional CSS classes for the card',
     },
   },
 };
@@ -112,9 +115,7 @@ export const StatCard: Story = {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">$45,231.89</div>
-        <p className="text-xs text-muted-foreground">
-          +20.1% from last month
-        </p>
+        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
       </CardContent>
     </Card>
   ),
@@ -151,9 +152,7 @@ export const CardGrid: Story = {
           <CardDescription>Dark mode ready</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm">
-            Seamlessly switches between light and dark themes.
-          </p>
+          <p className="text-sm">Seamlessly switches between light and dark themes.</p>
         </CardContent>
       </Card>
     </div>

@@ -3,7 +3,7 @@ import { Button } from './button';
 import { Plus, Download, ArrowRight, Settings } from 'lucide-react';
 
 const meta: Meta<typeof Button> = {
-  title: 'Components/Button',
+  title: 'Atoms/Button',
   component: Button,
   parameters: {
     layout: 'centered',
@@ -62,12 +62,24 @@ export const AllVariants: Story = {
         <Button variant="link">Link</Button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="default" disabled>Default</Button>
-        <Button variant="destructive" disabled>Destructive</Button>
-        <Button variant="outline" disabled>Outline</Button>
-        <Button variant="secondary" disabled>Secondary</Button>
-        <Button variant="ghost" disabled>Ghost</Button>
-        <Button variant="link" disabled>Link</Button>
+        <Button variant="default" disabled>
+          Default
+        </Button>
+        <Button variant="destructive" disabled>
+          Destructive
+        </Button>
+        <Button variant="outline" disabled>
+          Outline
+        </Button>
+        <Button variant="secondary" disabled>
+          Secondary
+        </Button>
+        <Button variant="ghost" disabled>
+          Ghost
+        </Button>
+        <Button variant="link" disabled>
+          Link
+        </Button>
       </div>
     </div>
   ),
@@ -76,9 +88,15 @@ export const AllVariants: Story = {
 export const AllSizes: Story = {
   render: () => (
     <div className="flex items-center gap-2">
-      <Button variant="default" size="sm">Small</Button>
-      <Button variant="default" size="default">Default</Button>
-      <Button variant="default" size="lg">Large</Button>
+      <Button variant="default" size="sm">
+        Small
+      </Button>
+      <Button variant="default" size="default">
+        Default
+      </Button>
+      <Button variant="default" size="lg">
+        Large
+      </Button>
       <Button variant="default" size="icon">
         <Settings />
       </Button>
