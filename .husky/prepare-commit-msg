@@ -1,5 +1,4 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+
 
 # Enforce conventional branch names: <type>/<short-description>
 BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || true)

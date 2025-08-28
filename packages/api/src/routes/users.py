@@ -1,50 +1,61 @@
 """User endpoints"""
 
+import uuid
+
 from db import get_db
 from db.models import AlertRule, User
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..schemas.user import UserOut
-from pydantic import BaseModel, Field
-import uuid
 
 router = APIRouter()
 
+
 class UserCreate(BaseModel):
-    email: str = Field(..., description="User email")
-    firstName: str = Field(..., description="User first name")
-    lastName: str = Field(..., description="User last name")
-    phoneNumber: str | None = Field(None, description="User phone number")
+    email: str = Field(..., description='User email')
+    firstName: str = Field(..., description='User first name')
+    lastName: str = Field(..., description='User last name')
+    phoneNumber: str | None = Field(None, description='User phone number')
 
 
 class UserUpdate(BaseModel):
-    email: str | None = Field(None, description="User email")
-    firstName: str | None = Field(None, description="User first name")
-    lastName: str | None = Field(None, description="User last name")
-    phoneNumber: str | None = Field(None, description="User phone number")
-    isActive: bool | None = Field(None, description="Whether the user is active")
-    addressStreet: str | None = Field(None, description="Street address")
-    addressCity: str | None = Field(None, description="City")
-    addressState: str | None = Field(None, description="State")
-    addressZipCode: str | None = Field(None, description="ZIP code")
-    addressCountry: str | None = Field(None, description="Country")
-    creditLimit: float | None = Field(None, description="Credit limit")
-    currentBalance: float | None = Field(None, description="Current balance")
-    locationConsentGiven: bool | None = Field(None, description="Whether location consent is given")
-    lastAppLocationLatitude: float | None = Field(None, description="Last app location latitude")
-    lastAppLocationLongitude: float | None = Field(None, description="Last app location longitude")
-    lastAppLocationAccuracy: float | None = Field(None, description="Last app location accuracy")
+    email: str | None = Field(None, description='User email')
+    firstName: str | None = Field(None, description='User first name')
+    lastName: str | None = Field(None, description='User last name')
+    phoneNumber: str | None = Field(None, description='User phone number')
+    isActive: bool | None = Field(None, description='Whether the user is active')
+    addressStreet: str | None = Field(None, description='Street address')
+    addressCity: str | None = Field(None, description='City')
+    addressState: str | None = Field(None, description='State')
+    addressZipCode: str | None = Field(None, description='ZIP code')
+    addressCountry: str | None = Field(None, description='Country')
+    creditLimit: float | None = Field(None, description='Credit limit')
+    currentBalance: float | None = Field(None, description='Current balance')
+    locationConsentGiven: bool | None = Field(
+        None, description='Whether location consent is given'
+    )
+    lastAppLocationLatitude: float | None = Field(
+        None, description='Last app location latitude'
+    )
+    lastAppLocationLongitude: float | None = Field(
+        None, description='Last app location longitude'
+    )
+    lastAppLocationAccuracy: float | None = Field(
+        None, description='Last app location accuracy'
+    )
+
 
 @router.get('/', response_model=list[UserOut])
 async def get_users(
     is_active: bool | None = None,
     limit: int = 100,
     offset: int = 0,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
 ):
     """Get all users with optional filtering"""
     try:
@@ -52,15 +63,15 @@ async def get_users(
             selectinload(User.creditCards),
             selectinload(User.transactions),
         )
-        
+
         if is_active is not None:
             query = query.where(User.isActive == is_active)
-        
+
         query = query.offset(offset).limit(limit)
-        
+
         result = await session.execute(query)
         users = result.scalars().all()
-        
+
         return [
             {
                 'id': user.id,
@@ -78,6 +89,7 @@ async def get_users(
         ]
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
+
 
 @router.get('/{user_id}', response_model=UserOut)
 async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
@@ -124,8 +136,10 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_d
             select(User).where(User.email == payload.email)
         )
         if existing.scalar_one_or_none():
-            raise HTTPException(status_code=400, detail='User with this email already exists')
-        
+            raise HTTPException(
+                status_code=400, detail='User with this email already exists'
+            )
+
         user = User(
             id=str(uuid.uuid4()),
             email=payload.email,
@@ -136,7 +150,7 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_d
         session.add(user)
         await session.commit()
         await session.refresh(user)
-        
+
         return {
             'id': user.id,
             'email': user.email,
@@ -154,7 +168,9 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_d
 
 
 @router.put('/{user_id}', response_model=UserOut)
-async def update_user(user_id: str, payload: UserUpdate, session: AsyncSession = Depends(get_db)):
+async def update_user(
+    user_id: str, payload: UserUpdate, session: AsyncSession = Depends(get_db)
+):
     """Update an existing user"""
     try:
         # Check if user exists
@@ -169,35 +185,38 @@ async def update_user(user_id: str, payload: UserUpdate, session: AsyncSession =
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-        
+
         # Check if email is being updated and if it already exists
         if payload.email and payload.email != user.email:
             existing = await session.execute(
                 select(User).where(User.email == payload.email)
             )
             if existing.scalar_one_or_none():
-                raise HTTPException(status_code=400, detail='User with this email already exists')
-        
+                raise HTTPException(
+                    status_code=400, detail='User with this email already exists'
+                )
+
         # Build update data
         update_data = {}
         for field, value in payload.dict(exclude_unset=True).items():
             if value is not None:
                 update_data[field] = value
-        
+
         if update_data:
             from datetime import datetime
-            update_data["updatedAt"] = datetime.utcnow()
-            
+
+            update_data['updatedAt'] = datetime.utcnow()
+
             # Update the user object
             for field, value in update_data.items():
                 setattr(user, field, value)
-            
+
             await session.commit()
             await session.refresh(user)
-        
+
         credit_cards_count = len(user.creditCards)
         transactions_count = len(user.transactions)
-        
+
         return {
             'id': user.id,
             'email': user.email,
@@ -223,12 +242,12 @@ async def delete_user(user_id: str, session: AsyncSession = Depends(get_db)):
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-        
+
         # Delete the user (cascade will handle related data)
         await session.delete(user)
         await session.commit()
-        
-        return {"message": "User deleted successfully"}
+
+        return {'message': 'User deleted successfully'}
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
 
@@ -256,7 +275,7 @@ async def get_user_transactions(
     user_id: str,
     limit: int = 50,
     offset: int = 0,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
 ):
     """Get all transactions for a specific user"""
     try:
@@ -265,17 +284,16 @@ async def get_user_transactions(
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-        
+
         from db.models import Transaction
-        from sqlalchemy import select
-        
+
         query = select(Transaction).where(Transaction.userId == user_id)
         query = query.order_by(Transaction.transactionDate.desc())
         query = query.offset(offset).limit(limit)
-        
+
         result = await session.execute(query)
         transactions = result.scalars().all()
-        
+
         return [
             {
                 'id': tx.id,
@@ -284,7 +302,9 @@ async def get_user_transactions(
                 'description': tx.description,
                 'merchantName': tx.merchantName,
                 'merchantCategory': tx.merchantCategory,
-                'transactionDate': tx.transactionDate.isoformat() if tx.transactionDate else None,
+                'transactionDate': tx.transactionDate.isoformat()
+                if tx.transactionDate
+                else None,
                 'transactionType': tx.transactionType.value,
                 'status': tx.status.value,
             }
@@ -296,9 +316,7 @@ async def get_user_transactions(
 
 @router.get('/{user_id}/credit-cards')
 async def get_user_credit_cards(
-    user_id: str,
-    is_active: bool | None = None,
-    session: AsyncSession = Depends(get_db)
+    user_id: str, is_active: bool | None = None, session: AsyncSession = Depends(get_db)
 ):
     """Get all credit cards for a specific user"""
     try:
@@ -307,18 +325,17 @@ async def get_user_credit_cards(
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-        
+
         from db.models import CreditCard
-        from sqlalchemy import select
-        
+
         query = select(CreditCard).where(CreditCard.userId == user_id)
-        
+
         if is_active is not None:
             query = query.where(CreditCard.isActive == is_active)
-        
+
         result = await session.execute(query)
         cards = result.scalars().all()
-        
+
         return [
             {
                 'id': card.id,
@@ -347,15 +364,16 @@ async def deactivate_user(user_id: str, session: AsyncSession = Depends(get_db))
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-        
+
         user.isActive = False
         from datetime import datetime
+
         user.updatedAt = datetime.utcnow()
-        
+
         await session.commit()
         await session.refresh(user)
-        
-        return {"message": "User deactivated successfully", "isActive": user.isActive}
+
+        return {'message': 'User deactivated successfully', 'isActive': user.isActive}
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
 
@@ -369,14 +387,15 @@ async def activate_user(user_id: str, session: AsyncSession = Depends(get_db)):
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-        
+
         user.isActive = True
         from datetime import datetime
+
         user.updatedAt = datetime.utcnow()
-        
+
         await session.commit()
         await session.refresh(user)
-        
-        return {"message": "User activated successfully", "isActive": user.isActive}
+
+        return {'message': 'User activated successfully', 'isActive': user.isActive}
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err

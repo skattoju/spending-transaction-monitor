@@ -2,14 +2,10 @@
 Health endpoint tests
 """
 
-from fastapi.testclient import TestClient
-
-from src.main import app
-
-client = TestClient(app)
+import pytest
 
 
-def test_health_check_endpoint_exists():
+def test_health_check_endpoint_exists(client):
     """Test health check endpoint is accessible"""
     response = client.get('/health/')
     assert response.status_code == 200
@@ -19,8 +15,9 @@ def test_health_check_endpoint_exists():
     assert len(data) >= 1  # At least API service should be present
 
 
-def test_health_check_includes_database():
-    """Test health check includes database status"""
+@pytest.mark.integration
+def test_health_check_includes_database(client):
+    """Test health check includes database status (requires DB)"""
     response = client.get('/health/')
     assert response.status_code == 200
 
@@ -35,7 +32,7 @@ def test_health_check_includes_database():
     assert db_service['version'] == 'PostgreSQL'
 
 
-def test_health_check_api_service():
+def test_health_check_api_service(client):
     """Test health check includes API service"""
     response = client.get('/health/')
     assert response.status_code == 200
@@ -51,7 +48,7 @@ def test_health_check_api_service():
     assert api_service['version'] == '0.0.0'
 
 
-def test_root_endpoint():
+def test_root_endpoint(client):
     """Test root endpoint"""
     response = client.get('/')
     assert response.status_code == 200
