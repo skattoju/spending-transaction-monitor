@@ -7,7 +7,7 @@ This guide explains how to integrate OAuth2/OIDC authentication into the spendin
 The authentication infrastructure has been set up with the following components:
 
 ### Backend Components
-- **JWT Middleware** (`packages/api/src/middleware/auth.py`)
+- **JWT Middleware** (`packages/api/src/auth/middleware.py`)
 - **Keycloak Setup** (`packages/auth/`)
 - **Test Endpoints** (`packages/api/src/routes/auth_test.py`)
 - **Dependencies** (`python-jose`, `requests`)
@@ -37,7 +37,7 @@ async def get_users(session: AsyncSession = Depends(get_db)):
 # After  
 from fastapi import APIRouter, Depends
 from db import get_db
-from ..middleware.auth import require_authentication, get_current_user
+from ..auth.middleware import require_authentication, get_current_user
 
 @router.get('/')
 async def get_users(

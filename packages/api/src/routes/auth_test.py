@@ -4,7 +4,7 @@ Simple authentication test endpoint for validating auth infrastructure
 
 from fastapi import APIRouter, Depends
 
-from ..middleware.auth import get_current_user, require_authentication
+from ..auth.middleware import get_current_user, require_authentication
 
 router = APIRouter()
 
