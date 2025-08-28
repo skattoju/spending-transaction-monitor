@@ -9,8 +9,13 @@ The authentication infrastructure has been set up with the following components:
 ### Backend Components
 - **JWT Middleware** (`packages/api/src/auth/middleware.py`)
 - **Keycloak Setup** (`packages/auth/`)
+- **Test Endpoints** (`packages/api/src/routes/auth_test.py`)
 - **Dependencies** (`python-jose`, `requests`)
 
+### Test Endpoints
+- `GET /auth-test/public` - No authentication required
+- `GET /auth-test/protected` - Requires valid JWT token  
+- `GET /auth-test/optional-auth` - Optional authentication
 ## Integration Steps
 
 ### 1. Backend Route Integration
@@ -149,7 +154,7 @@ function DevAuthProvider({ children }: { children: React.ReactNode }) {
     id: 'dev-user-123',
     email: 'developer@example.com',
     username: 'developer',
-    name: 'Development User',
+    name: 'John Doe',
     roles: ['user', 'admin'],
     isDevMode: true,
   });
@@ -173,10 +178,8 @@ VITE_BYPASS_AUTH=false  # Explicit override
 ```
 
 **Visual Indicators**: 
-- 🔓 Dev mode badges in UI components
-- 🎯 "Continue (Dev Mode)" login button
-- 🟡 Yellow dot on user avatar when in dev mode
-
+- 🔓 Dev mode banner: "Development Mode - Auth Bypassed"
+- Existing UserAvatar and DashboardHeader patterns maintained
 ## Setup Instructions
 
 ### 1. Start Keycloak
@@ -197,15 +200,15 @@ python3 setup_keycloak.py
 cd packages/api
 uv run uvicorn src.main:app --reload
 
-# Test endpoints (example usage)
-curl http://localhost:8000/health
-curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me
+# Test endpoints
+curl http://localhost:8000/auth-test/public
+curl -H "Authorization: Bearer <token>" http://localhost:8000/auth-test/protected
 ```
 
 ## Environment Variables
 
 ```bash
-# Backend API (.env)
+# API (.env)
 KEYCLOAK_URL=http://localhost:8080
 KEYCLOAK_REALM=spending-monitor
 KEYCLOAK_CLIENT_ID=spending-monitor

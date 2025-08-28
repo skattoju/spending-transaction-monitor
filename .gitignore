@@ -221,4 +221,4 @@ venv.bak/
 *.sqlite
 .vscode
 transactions.db
-storybook-static/
+packages/ui/storybook-static/
