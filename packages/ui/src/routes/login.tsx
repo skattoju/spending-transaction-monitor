@@ -3,7 +3,6 @@ import { useAuth } from 'react-oidc-context'
 import { useEffect } from 'react'
 import { Button } from '../components/atoms/button/button'
 import { Card } from '../components/atoms/card/card'
-import { Logo } from '../components/logo/logo'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -56,7 +55,7 @@ function LoginPage() {
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <Logo />
+            <span className="text-2xl font-bold text-blue-600">💳 spending-monitor</span>
           </div>
           <div>
             <h2 className="text-2xl font-bold">Welcome to Spending Monitor</h2>
