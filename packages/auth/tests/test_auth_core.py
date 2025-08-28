@@ -3,7 +3,7 @@ Core tests for JWT authentication middleware
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt, JWTError
@@ -68,28 +68,34 @@ class TestKeycloakJWTBearer:
     @patch('auth.middleware.requests.get')
     async def test_get_oidc_config_success(self, mock_get):
         """Test successful OIDC configuration retrieval"""
-        mock_response = AsyncMock()
+        mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = MOCK_OIDC_CONFIG
+        mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
         bearer = KeycloakJWTBearer()
         config = await bearer.get_oidc_config()
         
-        assert config == MOCK_OIDC_CONFIG
+        # Should return the mocked OIDC config (not fallback)
+        assert config["issuer"] == MOCK_OIDC_CONFIG["issuer"]
+        assert config["jwks_uri"] == MOCK_OIDC_CONFIG["jwks_uri"]
 
     @pytest.mark.asyncio
     @patch('auth.middleware.requests.get')
-    async def test_get_oidc_config_failure(self, mock_get):
-        """Test OIDC configuration retrieval failure"""
+    async def test_get_oidc_config_failure_fallback(self, mock_get):
+        """Test OIDC configuration graceful fallback when discovery fails"""
         mock_get.side_effect = Exception("Connection failed")
         
         bearer = KeycloakJWTBearer()
         
-        with pytest.raises(HTTPException) as exc_info:
-            await bearer.get_oidc_config()
+        # Should not raise exception - should gracefully fall back
+        config = await bearer.get_oidc_config()
         
-        assert exc_info.value.status_code == 503
+        # Verify fallback config is returned
+        assert config is not None
+        assert config["issuer"] == "http://localhost:8080/realms/spending-monitor"
+        assert config["jwks_uri"] == "http://localhost:8080/realms/spending-monitor/protocol/openid-connect/certs"
 
     @pytest.mark.asyncio
     @patch('auth.middleware.jwt.decode')
