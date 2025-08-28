@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: spending-monitor-keycloak
+    environment:
+      # Admin user for Keycloak console
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      
+      # Database configuration (using embedded H2 for development)
+      KC_DB: dev-file
+      
+      # Development mode settings
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      
+      # Logging
+      KC_LOG_LEVEL: INFO
+      
+    ports:
+      - "8080:8080"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Start Keycloak in development mode
+    command: start-dev
+    
+    # Volumes for persistence (optional - can comment out for completely clean runs)
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
+volumes:
+  keycloak_data:
+    driver: local
