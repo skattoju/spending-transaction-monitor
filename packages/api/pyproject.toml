@@ -67,3 +67,14 @@ packages = ["src"]
 
 [tool.uv.sources]
 "spending-monitor-db" = { path = "../db", editable = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --ignore=tests/integration"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]

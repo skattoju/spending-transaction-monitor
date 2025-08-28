@@ -72,8 +72,11 @@ class TestKafkaConnectionManager:
         assert health["kafka_status"] == "unhealthy"
         assert health["connection_pool_active"] is False
 
-    def test_send_message_no_producer(self):
+    @patch('main.KafkaProducer')
+    def test_send_message_no_producer(self, mock_kafka_producer):
         """Test sending message when no producer is available"""
+        # Mock KafkaProducer to raise exception to simulate connection failure
+        mock_kafka_producer.side_effect = Exception("Connection failed")
         kafka_manager.producer = None
         
         result = kafka_manager.send_message("test-topic", {"test": "data"})
