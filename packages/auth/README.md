@@ -1,84 +1,124 @@
-# Authentication Service
+# 🔐 Authentication Infrastructure
 
-OAuth2/OIDC authentication infrastructure using Keycloak for the Spending Monitor application.
+Complete OAuth2/OIDC authentication system using **Keycloak** for the Spending Monitor application.
 
-## Components
+## 🏗️ Architecture Overview
 
-- **Keycloak**: Identity provider and authorization server
-- **JWT Middleware**: FastAPI middleware for token validation  
-- **Setup Scripts**: Automated Keycloak configuration
-- **Tests**: Comprehensive auth middleware test suite
+```mermaid
+sequenceDiagram
+    participant FE as Frontend (React)
+    participant KC as Keycloak
+    participant API as FastAPI Backend
+    participant JWT as JWT Middleware
+    
+    Note over FE,JWT: 1. Authentication Flow
+    FE->>KC: 1. Redirect to Keycloak login
+    KC->>FE: 2. Authorization code
+    FE->>KC: 3. Exchange code for JWT token
+    KC->>FE: 4. JWT access token
+    
+    Note over FE,JWT: 2. API Access Flow  
+    FE->>API: 5. API call with Bearer token
+    API->>JWT: 6. Validate JWT token
+    JWT->>KC: 7. Verify token signature (JWKS)
+    KC->>JWT: 8. Valid signature confirmation
+    JWT->>API: 9. Decoded user claims
+    API->>FE: 10. Protected resource response
+```
 
-## Quick Start
+## 🎯 Key Features
 
-### 1. Start Keycloak
+- **🔑 JWT Validation** - RS256 signature verification with Keycloak JWKS
+- **🛡️ Role-Based Access** - Fine-grained authorization (`admin`, `user` roles)
+- **🔄 OIDC Discovery** - Automatic configuration with graceful fallback
+- **⚡ Performance** - Token and config caching (1-hour expiry)
+- **🧪 Comprehensive Testing** - 27 tests covering all scenarios
+- **🚀 Production Ready** - Security best practices and error handling
+
+## 📦 Components
+
+| Component | Description | Location |
+|-----------|-------------|----------|
+| **JWT Middleware** | Token validation, role-based access | `packages/api/src/auth/middleware.py` |
+| **Keycloak Setup** | Automated realm/client configuration | `packages/auth/scripts/setup_keycloak.py` |
+| **Test Suite** | 27 comprehensive tests + E2E validation | `packages/auth/tests/` |
+| **Documentation** | Integration guides and testing docs | `AUTH_INTEGRATION_GUIDE.md`, `TESTING.md` |
+
+> **Frontend Integration**: OIDC client with `react-oidc-context` will be delivered in a separate PR
+
+## 🚀 Quick Start
+
 ```bash
+# 1. Start services & setup Keycloak
+cd packages/auth
 make services-up
-```
+make auth-setup
 
-### 2. Configure Realm
-```bash
-cd scripts
-python3 setup_keycloak.py
-```
-
-### 3. Access
-- **Keycloak Admin Console**: http://localhost:8080
-- **Admin Credentials**: admin / admin
-
-## Client Configuration
-
-The setup script automatically creates:
-- **Realm**: `spending-monitor`
-- **Client ID**: `spending-monitor`  
-- **Client Type**: Public (PKCE flow)
-- **Valid Redirect URIs**: `http://localhost:5173/*`
-- **Web Origins**: `http://localhost:5173`
-
-## Test Users
-
-Created automatically by setup script:
-- **Username**: `testuser@example.com`
-- **Password**: `password123`
-- **Roles**: `user`
-
-## Development
-
-### Manual Setup
-
-If automated setup fails:
-
-1. Go to http://localhost:8080 → Administration Console
-2. Login with admin/admin
-3. Create realm: `spending-monitor`
-4. Create client: `spending-monitor`
-5. Configure client settings:
-   - Client type: OpenID Connect
-   - Client authentication: Off (public client)
-   - Valid redirect URIs: `http://localhost:5173/*`
-   - Web origins: `http://localhost:5173`
-
-### Testing
-
-Test the auth infrastructure:
-```bash
-cd ../api
+# 2. Test the integration  
+cd packages/api
 uv run uvicorn src.main:app --reload
-
-# Test endpoints
-curl http://localhost:8000/auth-test/public
-curl -H "Authorization: Bearer <token>" http://localhost:8000/auth-test/protected
+curl http://localhost:8000/auth-test/public     # ✅ Works
+curl http://localhost:8000/auth-test/protected  # ❌ 401 (needs token)
 ```
 
-## Integration
+**For detailed setup and integration:** See [`AUTH_INTEGRATION_GUIDE.md`](./AUTH_INTEGRATION_GUIDE.md)
 
-See `AUTH_INTEGRATION_GUIDE.md` for detailed integration instructions.
+## 🛠️ Usage Examples
 
-## Commands
+### **Protect Any API Route**
+```python
+from ..auth.middleware import require_authentication
+
+@router.get('/protected')
+async def protected_route(user: dict = Depends(require_authentication)):
+    return {"user_id": user["id"], "roles": user["roles"]}
+```
+
+### **Role-Based Access**
+```python
+from ..auth.middleware import require_role
+
+@router.get('/admin')  
+async def admin_route(user: dict = Depends(require_role('admin'))):
+    return {"message": "Admin access granted"}
+```
+
+**For complete integration patterns:** See [`AUTH_INTEGRATION_GUIDE.md`](./AUTH_INTEGRATION_GUIDE.md)
+
+## 🧪 Testing
 
 ```bash
-make services-up    # Start Keycloak
-make services-down  # Stop Keycloak  
-make services-logs  # View logs
-make clean         # Remove volumes
+# Run all 27 auth tests
+pnpm --filter @spending-monitor/api test
+
+# E2E validation
+cd packages/auth && make test-e2e
 ```
+
+**For comprehensive testing approaches:** See [`TESTING.md`](./TESTING.md)
+
+## 🔒 Security & Production
+
+- ✅ **JWT Signature Validation** with Keycloak JWKS  
+- ✅ **Role-Based Authorization** with comprehensive error handling
+- ✅ **OIDC Discovery + Fallback** for robust configuration
+- ✅ **Token Caching** (1-hour expiry) for performance
+- ✅ **Production Security Checklist** implemented
+
+## 🛣️ Roadmap
+
+| Phase | Status | Components |
+|-------|--------|------------|
+| **Backend Foundation** | ✅ **Complete** | JWT middleware, role-based access, testing |
+| **Frontend Integration** | 🔄 **Next PR** | React OIDC client, login UI, protected routes |
+| **Advanced Features** | 📋 **Future** | Multi-tenant, audit logging, SSO |
+
+## 📚 Documentation
+
+- **[Integration Guide](./AUTH_INTEGRATION_GUIDE.md)** - Detailed setup and usage patterns
+- **[Testing Guide](./TESTING.md)** - Comprehensive testing approaches  
+- **[API Docs](http://localhost:8000/docs)** - Interactive OpenAPI documentation
+
+---
+
+**Production-ready backend auth infrastructure providing secure, scalable authentication foundation.** 🎉
