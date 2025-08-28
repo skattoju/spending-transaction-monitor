@@ -22,7 +22,7 @@ function RootComponent() {
                 <span className="text-sm text-muted-foreground">
                   {auth.user?.profile?.preferred_username || auth.user?.profile?.email}
                 </span>
-                <Button 
+                <Button
                   onClick={() => auth.signoutRedirect()}
                   variant="outline"
                   size="sm"
@@ -31,11 +31,7 @@ function RootComponent() {
                 </Button>
               </>
             ) : (
-              <Button 
-                onClick={() => auth.signinRedirect()}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={() => auth.signinRedirect()} variant="outline" size="sm">
                 Login
               </Button>
             )}

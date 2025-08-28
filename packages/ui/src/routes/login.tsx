@@ -1,26 +1,26 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useAuth } from 'react-oidc-context'
-import { useEffect } from 'react'
-import { Button } from '../components/atoms/button/button'
-import { Card } from '../components/atoms/card/card'
+import { createFileRoute } from '@tanstack/react-router';
+import { useAuth } from 'react-oidc-context';
+import { useEffect } from 'react';
+import { Button } from '../components/atoms/button/button';
+import { Card } from '../components/atoms/card/card';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
-})
+});
 
 function LoginPage() {
-  const auth = useAuth()
+  const auth = useAuth();
 
   useEffect(() => {
     // If already authenticated, redirect to home
     if (auth.isAuthenticated) {
-      window.location.href = '/'
+      window.location.href = '/';
     }
-  }, [auth.isAuthenticated])
+  }, [auth.isAuthenticated]);
 
   const handleLogin = () => {
-    auth.signinRedirect()
-  }
+    auth.signinRedirect();
+  };
 
   if (auth.isLoading) {
     return (
@@ -30,23 +30,29 @@ function LoginPage() {
           <p className="mt-4 text-muted-foreground">Loading authentication...</p>
         </Card>
       </div>
-    )
+    );
   }
 
   if (auth.error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <Card className="max-w-md w-full p-8 text-center space-y-4">
-          <h2 className="text-xl font-semibold text-destructive">Authentication Error</h2>
+          <h2 className="text-xl font-semibold text-destructive">
+            Authentication Error
+          </h2>
           <p className="text-muted-foreground">
             {auth.error.message || 'An error occurred during authentication'}
           </p>
-          <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="w-full"
+          >
             Try Again
           </Button>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -72,7 +78,7 @@ function LoginPage() {
           <Button onClick={handleLogin} className="w-full" size="lg">
             Sign In with Keycloak
           </Button>
-          
+
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
               Secure authentication powered by OpenID Connect
@@ -85,20 +91,44 @@ function LoginPage() {
           <h3 className="text-sm font-medium mb-3">What you'll get:</h3>
           <ul className="text-sm text-muted-foreground space-y-2">
             <li className="flex items-center">
-              <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 text-green-500 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Real-time transaction monitoring
             </li>
             <li className="flex items-center">
-              <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 text-green-500 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               AI-powered spending alerts
             </li>
             <li className="flex items-center">
-              <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 text-green-500 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Secure role-based access
             </li>
@@ -106,5 +136,5 @@ function LoginPage() {
         </div>
       </Card>
     </div>
-  )
+  );
 }
