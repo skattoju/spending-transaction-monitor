@@ -15,6 +15,7 @@ from .routes import cleanup_kafka_producer, health
 from .routes import kafka as kafka_routes
 from .routes import transactions as transactions_routes
 from .routes import users as users_routes
+
 from .services import start_transaction_consumer, stop_transaction_consumer
 
 # Configure logging
