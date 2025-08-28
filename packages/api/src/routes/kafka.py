@@ -66,8 +66,8 @@ async def send_test_transaction_endpoint(
     try:
         # Create test transaction in ingestion service format
         test_transaction = {
-            "user": int(request.userId),
-            "card": int(request.creditCardId),
+            "user": request.userId,
+            "card": request.creditCardId,
             "year": datetime.now().year,
             "month": datetime.now().month,
             "day": datetime.now().day,
