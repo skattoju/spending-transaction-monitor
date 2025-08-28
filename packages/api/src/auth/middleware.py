@@ -37,9 +37,11 @@ class KeycloakJWTBearer:
             return _oidc_config_cache
 
         # Try OIDC discovery first
-        discovery_url = f'{KEYCLOAK_URL}/realms/{REALM}/.well-known/openid-configuration'
+        discovery_url = (
+            f'{KEYCLOAK_URL}/realms/{REALM}/.well-known/openid-configuration'
+        )
         logger.info(f'Attempting OIDC discovery from: {discovery_url}')
-        
+
         try:
             response = requests.get(discovery_url, timeout=10.0)
             response.raise_for_status()
@@ -47,7 +49,9 @@ class KeycloakJWTBearer:
             _oidc_config_cache = response.json()
             _cache_expiry = datetime.now() + timedelta(hours=1)
 
-            logger.info('✅ Successfully loaded OIDC configuration from Keycloak discovery')
+            logger.info(
+                '✅ Successfully loaded OIDC configuration from Keycloak discovery'
+            )
             logger.info(f'   Issuer: {_oidc_config_cache.get("issuer", "N/A")}')
             logger.info(f'   JWKS URI: {_oidc_config_cache.get("jwks_uri", "N/A")}')
             return _oidc_config_cache
@@ -56,7 +60,7 @@ class KeycloakJWTBearer:
             logger.warning(f'❌ OIDC discovery failed from {discovery_url}')
             logger.warning(f'   Error: {e}')
             logger.warning('   Falling back to hardcoded OIDC endpoints')
-            
+
             # Fallback to hardcoded endpoints
             _oidc_config_cache = {
                 'issuer': f'{KEYCLOAK_URL}/realms/{REALM}',
@@ -93,7 +97,9 @@ class KeycloakJWTBearer:
 
             _jwks_cache = response.json()
 
-            logger.info(f'✅ Successfully loaded {len(_jwks_cache.get("keys", []))} keys from JWKS')
+            logger.info(
+                f'✅ Successfully loaded {len(_jwks_cache.get("keys", []))} keys from JWKS'
+            )
             return _jwks_cache
 
         except Exception as e:
@@ -105,7 +111,7 @@ class KeycloakJWTBearer:
     async def validate_token(self, token: str) -> dict:
         """Validate JWT token and return claims using python-jose"""
         logger.info(f'🔍 Validating JWT token (length: {len(token)})')
-        
+
         try:
             # Get OIDC config and JWKS
             oidc_config = await self.get_oidc_config()
@@ -126,23 +132,25 @@ class KeycloakJWTBearer:
                 issuer=oidc_config['issuer'],
                 options={'verify_exp': True, 'verify_aud': False},
             )
-            
+
             # Manual audience verification (more flexible for public clients)
             if 'aud' in claims:
                 audience = claims.get('aud')
                 # Handle both string and array audience formats
                 valid_audiences = [CLIENT_ID, 'account']  # Common Keycloak audiences
                 audience_list = [audience] if isinstance(audience, str) else audience
-                    
+
                 if not any(aud in valid_audiences for aud in audience_list):
-                    logger.error(f'❌ Invalid audience: {audience}, expected one of: {valid_audiences}')
-                    raise JWTError("Invalid audience")
+                    logger.error(
+                        f'❌ Invalid audience: {audience}, expected one of: {valid_audiences}'
+                    )
+                    raise JWTError('Invalid audience')
 
             logger.info('✅ Token validation successful')
             logger.info(f'   Subject: {claims.get("sub", "N/A")}')
             logger.info(f'   Username: {claims.get("preferred_username", "N/A")}')
             logger.info(f'   Email: {claims.get("email", "N/A")}')
-            
+
             return claims
 
         except JWTError as e:
@@ -150,18 +158,24 @@ class KeycloakJWTBearer:
             try:
                 # Try to get issuer claim for debugging, but don't fail if token is completely malformed
                 unverified_claims = jwt.get_unverified_claims(token)
-                token_issuer = unverified_claims.get("iss", "N/A")
+                token_issuer = unverified_claims.get('iss', 'N/A')
                 logger.error(f'   Token issuer claim: {token_issuer}')
             except Exception:
-                logger.error('   Token issuer claim: Could not extract (malformed token)')
-            
-            expected_issuer = oidc_config.get("issuer", "N/A") if "oidc_config" in locals() else "N/A"
+                logger.error(
+                    '   Token issuer claim: Could not extract (malformed token)'
+                )
+
+            expected_issuer = (
+                oidc_config.get('issuer', 'N/A') if 'oidc_config' in locals() else 'N/A'
+            )
             logger.error(f'   Expected issuer: {expected_issuer}')
             raise HTTPException(status_code=401, detail='Invalid token') from e
         except Exception as e:
             logger.error(f'❌ Token validation error: {e}')
             logger.error(f'   Error type: {type(e).__name__}')
-            raise HTTPException(status_code=401, detail='Token validation failed') from e
+            raise HTTPException(
+                status_code=401, detail='Token validation failed'
+            ) from e
 
 
 # Global instance

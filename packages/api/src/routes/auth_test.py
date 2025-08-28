@@ -15,7 +15,7 @@ async def public_endpoint() -> dict:
     return {
         'message': 'This is a public endpoint - no authentication required',
         'authenticated': False,
-        'endpoint': '/auth-test/public'
+        'endpoint': '/auth-test/public',
     }
 
 
@@ -27,7 +27,7 @@ async def protected_endpoint(user: dict = Depends(require_authentication)) -> di
         'authenticated': True,
         'user_id': user.get('id'),
         'username': user.get('username'),
-        'endpoint': '/auth-test/protected'
+        'endpoint': '/auth-test/protected',
     }
 
 
@@ -40,11 +40,11 @@ async def optional_auth_endpoint(user: dict | None = Depends(get_current_user)) 
             'authenticated': True,
             'user_id': user.get('id'),
             'username': user.get('username'),
-            'endpoint': '/auth-test/optional-auth'
+            'endpoint': '/auth-test/optional-auth',
         }
     else:
         return {
             'message': 'Hello anonymous user! Authentication is optional for this endpoint.',
             'authenticated': False,
-            'endpoint': '/auth-test/optional-auth'
+            'endpoint': '/auth-test/optional-auth',
         }
