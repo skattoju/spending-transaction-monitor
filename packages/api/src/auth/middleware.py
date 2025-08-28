@@ -50,11 +50,17 @@ class KeycloakJWTBearer:
             return _oidc_config_cache
 
         # Try OIDC discovery first
+<<<<<<< HEAD
         discovery_url = (
             f'{KEYCLOAK_URL}/realms/{REALM}/.well-known/openid-configuration'
         )
         logger.info(f'Attempting OIDC discovery from: {discovery_url}')
 
+=======
+        discovery_url = f'{KEYCLOAK_URL}/realms/{REALM}/.well-known/openid-configuration'
+        logger.info(f'Attempting OIDC discovery from: {discovery_url}')
+        
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
         try:
             response = requests.get(discovery_url, timeout=10.0)
             response.raise_for_status()
@@ -62,9 +68,13 @@ class KeycloakJWTBearer:
             _oidc_config_cache = response.json()
             _cache_expiry = datetime.now() + timedelta(hours=1)
 
+<<<<<<< HEAD
             logger.info(
                 '✅ Successfully loaded OIDC configuration from Keycloak discovery'
             )
+=======
+            logger.info('✅ Successfully loaded OIDC configuration from Keycloak discovery')
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
             logger.info(f'   Issuer: {_oidc_config_cache.get("issuer", "N/A")}')
             logger.info(f'   JWKS URI: {_oidc_config_cache.get("jwks_uri", "N/A")}')
             return _oidc_config_cache
@@ -73,7 +83,11 @@ class KeycloakJWTBearer:
             logger.warning(f'❌ OIDC discovery failed from {discovery_url}')
             logger.warning(f'   Error: {e}')
             logger.warning('   Falling back to hardcoded OIDC endpoints')
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
             # Fallback to hardcoded endpoints
             _oidc_config_cache = {
                 'issuer': f'{KEYCLOAK_URL}/realms/{REALM}',
@@ -110,9 +124,13 @@ class KeycloakJWTBearer:
 
             _jwks_cache = response.json()
 
+<<<<<<< HEAD
             logger.info(
                 f'✅ Successfully loaded {len(_jwks_cache.get("keys", []))} keys from JWKS'
             )
+=======
+            logger.info(f'✅ Successfully loaded {len(_jwks_cache.get("keys", []))} keys from JWKS')
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
             return _jwks_cache
 
         except Exception as e:
@@ -124,7 +142,11 @@ class KeycloakJWTBearer:
     async def validate_token(self, token: str) -> dict:
         """Validate JWT token and return claims using python-jose"""
         logger.info(f'🔍 Validating JWT token (length: {len(token)})')
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
         try:
             # Get OIDC config and JWKS
             oidc_config = await self.get_oidc_config()
@@ -145,25 +167,40 @@ class KeycloakJWTBearer:
                 issuer=oidc_config['issuer'],
                 options={'verify_exp': True, 'verify_aud': False},
             )
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
             # Manual audience verification (more flexible for public clients)
             if 'aud' in claims:
                 audience = claims.get('aud')
                 # Handle both string and array audience formats
                 valid_audiences = [CLIENT_ID, 'account']  # Common Keycloak audiences
                 audience_list = [audience] if isinstance(audience, str) else audience
+<<<<<<< HEAD
 
                 if not any(aud in valid_audiences for aud in audience_list):
                     logger.error(
                         f'❌ Invalid audience: {audience}, expected one of: {valid_audiences}'
                     )
                     raise JWTError('Invalid audience')
+=======
+                    
+                if not any(aud in valid_audiences for aud in audience_list):
+                    logger.error(f'❌ Invalid audience: {audience}, expected one of: {valid_audiences}')
+                    raise JWTError("Invalid audience")
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
 
             logger.info('✅ Token validation successful')
             logger.info(f'   Subject: {claims.get("sub", "N/A")}')
             logger.info(f'   Username: {claims.get("preferred_username", "N/A")}')
             logger.info(f'   Email: {claims.get("email", "N/A")}')
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
             return claims
 
         except JWTError as e:
@@ -171,6 +208,7 @@ class KeycloakJWTBearer:
             try:
                 # Try to get issuer claim for debugging, but don't fail if token is completely malformed
                 unverified_claims = jwt.get_unverified_claims(token)
+<<<<<<< HEAD
                 token_issuer = unverified_claims.get('iss', 'N/A')
                 logger.error(f'   Token issuer claim: {token_issuer}')
             except Exception:
@@ -181,14 +219,26 @@ class KeycloakJWTBearer:
             expected_issuer = (
                 oidc_config.get('issuer', 'N/A') if 'oidc_config' in locals() else 'N/A'
             )
+=======
+                token_issuer = unverified_claims.get("iss", "N/A")
+                logger.error(f'   Token issuer claim: {token_issuer}')
+            except Exception:
+                logger.error('   Token issuer claim: Could not extract (malformed token)')
+            
+            expected_issuer = oidc_config.get("issuer", "N/A") if "oidc_config" in locals() else "N/A"
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
             logger.error(f'   Expected issuer: {expected_issuer}')
             raise HTTPException(status_code=401, detail='Invalid token') from e
         except Exception as e:
             logger.error(f'❌ Token validation error: {e}')
             logger.error(f'   Error type: {type(e).__name__}')
+<<<<<<< HEAD
             raise HTTPException(
                 status_code=401, detail='Token validation failed'
             ) from e
+=======
+            raise HTTPException(status_code=401, detail='Token validation failed') from e
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
 
 
 # Global instance
@@ -197,6 +247,7 @@ keycloak_jwt = KeycloakJWTBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
+<<<<<<< HEAD
     session: AsyncSession = Depends(get_db) if get_db else None,
 ) -> dict | None:
     """Extract user info from JWT token (optional auth) with development bypass"""
@@ -252,6 +303,10 @@ async def get_current_user(
             },
         }
 
+=======
+) -> dict | None:
+    """Extract user info from JWT token (optional auth)"""
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
     if not credentials:
         return None
 
@@ -262,13 +317,17 @@ async def get_current_user(
         'email': claims.get('email'),
         'username': claims.get('preferred_username'),
         'roles': claims.get('realm_access', {}).get('roles', []),
+<<<<<<< HEAD
         'is_dev_mode': False,
+=======
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
         'token_claims': claims,
     }
 
 
 async def require_authentication(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
+<<<<<<< HEAD
     session: AsyncSession = Depends(get_db) if get_db else None,
 ) -> dict:
     """Require valid JWT token with development bypass"""
@@ -324,6 +383,10 @@ async def require_authentication(
             },
         }
 
+=======
+) -> dict:
+    """Require valid JWT token"""
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
     if not credentials:
         raise HTTPException(
             status_code=401,
@@ -331,7 +394,11 @@ async def require_authentication(
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
+<<<<<<< HEAD
     user = await get_current_user(credentials, session)
+=======
+    user = await get_current_user(credentials)
+>>>>>>> 023c754 (refactor: reorganize auth middleware into auth domain folder)
     if not user:
         raise HTTPException(status_code=401, detail='Invalid authentication')
 

@@ -15,7 +15,7 @@ api_path = Path(__file__).parent.parent.parent / "api" / "src"
 sys.path.insert(0, str(api_path))
 
 try:
-    from middleware.auth import (
+    from auth.middleware import (
         KeycloakJWTBearer,
         get_current_user,
         require_authentication,
@@ -65,7 +65,7 @@ class TestKeycloakJWTBearer:
         assert bearer is not None
 
     @pytest.mark.asyncio
-    @patch('middleware.auth.requests.get')
+    @patch('auth.middleware.requests.get')
     async def test_get_oidc_config_success(self, mock_get):
         """Test successful OIDC configuration retrieval"""
         mock_response = AsyncMock()
@@ -79,7 +79,7 @@ class TestKeycloakJWTBearer:
         assert config == MOCK_OIDC_CONFIG
 
     @pytest.mark.asyncio
-    @patch('middleware.auth.requests.get')
+    @patch('auth.middleware.requests.get')
     async def test_get_oidc_config_failure(self, mock_get):
         """Test OIDC configuration retrieval failure"""
         mock_get.side_effect = Exception("Connection failed")
@@ -92,7 +92,7 @@ class TestKeycloakJWTBearer:
         assert exc_info.value.status_code == 503
 
     @pytest.mark.asyncio
-    @patch('middleware.auth.jwt.decode')
+    @patch('auth.middleware.jwt.decode')
     @patch.object(KeycloakJWTBearer, 'get_jwks')
     async def test_validate_token_success(self, mock_get_jwks, mock_jwt_decode):
         """Test successful token validation"""
@@ -105,7 +105,7 @@ class TestKeycloakJWTBearer:
         assert claims == VALID_TOKEN_CLAIMS
 
     @pytest.mark.asyncio
-    @patch('middleware.auth.jwt.decode')
+    @patch('auth.middleware.jwt.decode')
     @patch.object(KeycloakJWTBearer, 'get_jwks')
     async def test_validate_token_invalid(self, mock_get_jwks, mock_jwt_decode):
         """Test invalid token validation"""
@@ -175,7 +175,7 @@ class TestAuthDependencies:
 @pytest.fixture(autouse=True)
 def reset_caches():
     """Reset global caches before each test"""
-    import middleware.auth
-    middleware.auth._oidc_config_cache = None
-    middleware.auth._jwks_cache = None
-    middleware.auth._cache_expiry = None
+    import auth.middleware
+    auth.middleware._oidc_config_cache = None
+    auth.middleware._jwks_cache = None
+    auth.middleware._cache_expiry = None
