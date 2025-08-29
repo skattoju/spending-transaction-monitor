@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from db import get_db
-from db.models import AlertNotification, AlertRule, User
+from db.models import AlertNotification, AlertRule, NotificationMethod, User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, update
@@ -18,6 +18,7 @@ from ..schemas.alert import (
     AlertRuleUpdate,
 )
 from ..services.alert_rule_service import AlertRuleService
+from ..services.notifications import Context, NoopStrategy, SmtpStrategy
 
 router = APIRouter()
 
@@ -348,6 +349,14 @@ async def create_alert_notification(
         notification_method=payload.notification_method,
         status=payload.status,
     )
+
+    strategy = NoopStrategy()
+
+    if payload.notificationMethod == NotificationMethod.EMAIL:
+        strategy = SmtpStrategy()
+
+    ctx = Context(strategy)
+    notification = await ctx.send_notification(notification, session)
 
     session.add(notification)
     await session.commit()
