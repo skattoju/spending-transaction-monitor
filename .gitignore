@@ -173,9 +173,6 @@ node_modules/
 
 # Production builds
 dist/
-build/
-lib/
-out/
 
 # Environment variables
 .env
