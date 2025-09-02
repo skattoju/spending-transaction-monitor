@@ -168,10 +168,41 @@ All endpoints support async database operations with connection pooling.
 
 ## Configuration
 
-Environment variables:
+### Environment Variables
+
+**Core Settings:**
+- `ENVIRONMENT` - Environment mode: `development`, `production`, `staging`, `test` (default: `development`)
+- `DEBUG` - Enable debug logging (auto-enabled in development)
 - `ALLOWED_HOSTS` - Comma-separated list of allowed hosts (default: "localhost,127.0.0.1")
+
+**Authentication (NEW):**
+- `BYPASS_AUTH` - Bypass authentication in development (auto-enabled if `ENVIRONMENT=development`)
+- `KEYCLOAK_URL` - Keycloak server URL (default: "http://localhost:8080")
+- `KEYCLOAK_REALM` - Keycloak realm name (default: "spending-monitor")
+- `KEYCLOAK_CLIENT_ID` - Keycloak client ID (default: "spending-monitor-api")
+
+**Database:**
 - `DATABASE_URL` - PostgreSQL connection string
 - `DB_ECHO` - Enable SQL query logging (default: false)
+
+### Authentication Modes
+
+**Development Mode (Default):**
+```bash
+# Authentication automatically bypassed - no Keycloak required
+ENVIRONMENT=development
+# BYPASS_AUTH=true (auto-set)
+```
+
+**Production Mode:**
+```bash
+# Full Keycloak authentication required
+ENVIRONMENT=production
+BYPASS_AUTH=false
+KEYCLOAK_URL=https://your-keycloak.com
+KEYCLOAK_REALM=your-realm
+KEYCLOAK_CLIENT_ID=your-client
+```
 
 ### Kafka Configuration
 - `KAFKA_BOOTSTRAP_SERVERS` - Kafka broker addresses (default: "localhost:9092")

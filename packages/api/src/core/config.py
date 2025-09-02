@@ -2,11 +2,20 @@
 Application configuration
 """
 
+import os
+from typing import Literal
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    # Environment settings
+    ENVIRONMENT: Literal['development', 'production', 'staging', 'test'] = 'development'
+
+    # Authentication settings
+    BYPASS_AUTH: bool = False
 
     # Basic settings
     APP_NAME: str = 'spending-monitor'
@@ -31,5 +40,20 @@ class Settings(BaseSettings):
         env_file = '.env'
         extra = 'ignore'  # Allow extra environment variables without validation errors
 
+    def __post_init__(self):
+        """Set derived values based on environment"""
+        # Auto-enable auth bypass in development if not explicitly set
+        if (
+            self.ENVIRONMENT == 'development'
+            and not hasattr(self, '_bypass_auth_explicitly_set')
+            and 'BYPASS_AUTH' not in os.environ
+        ):
+            self.BYPASS_AUTH = True
+
+        # Set DEBUG based on environment if not explicitly set
+        if not hasattr(self, '_debug_explicitly_set') and 'DEBUG' not in os.environ:
+            self.DEBUG = self.ENVIRONMENT == 'development'
+
 
 settings = Settings()
+settings.__post_init__()

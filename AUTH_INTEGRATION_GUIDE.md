@@ -55,70 +55,102 @@ Choose the appropriate dependency:
 - **Optional**: `Depends(get_current_user)` - Returns `None` if no token, user dict if valid
 - **Role-based**: `Depends(require_role('admin'))` - Requires specific role
 
-### 3. Development Bypass (TODO)
+### 3. Development Bypass ✅ IMPLEMENTED
 
-For development purposes, implement a bypass mechanism:
+For development purposes, a bypass mechanism has been implemented:
 
+**Backend Configuration** (`packages/api/src/core/config.py`):
 ```python
-# In config.py
-DEVELOPMENT_MODE = os.getenv('DEVELOPMENT_MODE', 'false').lower() == 'true'
-BYPASS_AUTH = os.getenv('BYPASS_AUTH', 'false').lower() == 'true'
+# Environment and auth bypass settings
+ENVIRONMENT: Literal["development", "production", "staging", "test"] = "development"
+BYPASS_AUTH: bool = False  # Auto-enabled in development mode
 
-# In auth middleware  
+# Auto-configuration in __post_init__
+if self.ENVIRONMENT == "development" and 'BYPASS_AUTH' not in os.environ:
+    self.BYPASS_AUTH = True
+```
+
+**Backend Middleware** (`packages/api/src/auth/middleware.py`):
+```python
+# Both get_current_user and require_authentication check for bypass
 if settings.BYPASS_AUTH:
+    logger.info("🔓 Authentication bypassed - development mode enabled")
     return {
-        'id': 'dev-user',
-        'username': 'developer', 
-        'email': 'dev@example.com',
-        'roles': ['user', 'admin']
+        'id': 'dev-user-123',
+        'email': 'developer@example.com',
+        'username': 'developer',
+        'roles': ['user', 'admin'],
+        'is_dev_mode': True
     }
 ```
 
-### 4. Frontend Integration (TODO)
+**Frontend Configuration** (`packages/ui/src/contexts/AuthContext.tsx`):
+```typescript
+// Automatic bypass detection
+const bypassAuth = 
+  import.meta.env.VITE_BYPASS_AUTH === 'true' || 
+  (environment === 'development' && import.meta.env.VITE_BYPASS_AUTH !== 'false');
 
-The frontend needs:
-
-1. **OIDC Provider Setup**:
-```tsx
-import { AuthProvider } from 'react-oidc-context';
-
-const oidcConfig = {
-  authority: 'http://localhost:8080/realms/spending-monitor',
-  client_id: 'spending-monitor',
-  redirect_uri: window.location.origin,
-  response_type: 'code',
-  scope: 'openid profile email',
-  automaticSilentRenew: true,
-  loadUserInfo: true,
+// Development auth provider returns mock user immediately
+const DEV_USER: User = {
+  id: 'dev-user-123',
+  email: 'developer@example.com',
+  username: 'developer',
+  name: 'Development User',
+  roles: ['user', 'admin'],
+  isDevMode: true
 };
+```
 
-// Wrap app with AuthProvider
-<AuthProvider {...oidcConfig}>
+### 4. Frontend Integration ✅ IMPLEMENTED
+
+The frontend authentication has been implemented with both development bypass and production OIDC:
+
+1. **Auth Context Provider** (`packages/ui/src/contexts/AuthContext.tsx`):
+```tsx
+// Automatically chooses dev or production mode
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  if (authConfig.bypassAuth) {
+    return <DevAuthProvider>{children}</DevAuthProvider>;
+  }
+  return <ProductionAuthProvider>{children}</ProductionAuthProvider>;
+}
+
+// Usage in app
+import { AuthProvider } from './contexts/AuthContext';
+
+<AuthProvider>
   <App />
 </AuthProvider>
 ```
 
 2. **Protected Routes**:
 ```tsx
-import { useAuth } from 'react-oidc-context';
+import { useAuth } from '../contexts/AuthContext';
 
 function ProtectedComponent() {
   const auth = useAuth();
   
   if (auth.isLoading) return <div>Loading...</div>;
-  if (auth.error) return <div>Error: {auth.error.message}</div>;
   if (!auth.isAuthenticated) return <div>Please log in</div>;
+  
+  // Show dev mode indicator
+  if (auth.user?.isDevMode) {
+    console.log('🔓 Running in development mode');
+  }
   
   return <div>Protected content</div>;
 }
 ```
 
-3. **API Calls with Auth**:
+3. **API Calls with Auth** (Development mode automatically bypassed):
 ```tsx
-const token = auth.user?.access_token;
+// In development: no token needed, backend bypasses auth
+// In production: token automatically included
+const { user } = useAuth();
 fetch('/api/users', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
+  headers: user?.isDevMode ? {} : {
+    'Authorization': `Bearer ${user?.token}`,
     'Content-Type': 'application/json'
   }
 });
@@ -151,15 +183,61 @@ curl -H "Authorization: Bearer <token>" http://localhost:8000/auth-test/protecte
 
 ## Environment Variables
 
+### Complete Configuration
+Create a `.env` file in the project root:
+
 ```bash
-# API (.env)
+# Environment
+ENVIRONMENT=development  # development | production | staging | test
+
+# Backend Authentication
+BYPASS_AUTH=true         # Explicit bypass control (auto-enabled in development)
+DEBUG=true              # Auto-enabled in development
+
+# Keycloak Configuration (for production)
 KEYCLOAK_URL=http://localhost:8080
 KEYCLOAK_REALM=spending-monitor
-KEYCLOAK_CLIENT_ID=spending-monitor
+KEYCLOAK_CLIENT_ID=spending-monitor-api
+KEYCLOAK_CLIENT_SECRET=
 
-# Development mode (optional)
-DEVELOPMENT_MODE=true
-BYPASS_AUTH=true  # For development only
+# Frontend Authentication
+VITE_ENVIRONMENT=development
+VITE_BYPASS_AUTH=true    # Auto-enabled if VITE_ENVIRONMENT=development
+VITE_KEYCLOAK_URL=http://localhost:8080/realms/spending-monitor
+VITE_KEYCLOAK_CLIENT_ID=spending-monitor
+
+# Database
+DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/spending-monitor
+
+# CORS
+ALLOWED_HOSTS=http://localhost:5173,http://localhost:3000
+```
+
+### Controlling Authentication Bypass
+
+**Development Mode (Default):**
+```bash
+# Authentication automatically bypassed
+ENVIRONMENT=development
+# BYPASS_AUTH automatically set to true
+# VITE_BYPASS_AUTH automatically set to true
+```
+
+**Disable Bypass in Development:**
+```bash
+# Force production auth even in development
+ENVIRONMENT=development
+BYPASS_AUTH=false
+VITE_BYPASS_AUTH=false
+```
+
+**Production Mode:**
+```bash
+# Full authentication required
+ENVIRONMENT=production
+BYPASS_AUTH=false
+VITE_BYPASS_AUTH=false
+# Keycloak configuration required
 ```
 
 ## Migration Strategy
@@ -204,8 +282,27 @@ logging.getLogger('packages.api.src.middleware.auth').setLevel(logging.DEBUG)
 
 ## Next Steps
 
-1. Implement development bypass mechanism
-2. Integrate authentication into main API routes
-3. Set up frontend OIDC provider
-4. Add role-based access control
-5. Configure for production deployment
+1. ✅ ~~Implement development bypass mechanism~~ **COMPLETED**
+2. **Integrate authentication into main API routes** (add `Depends(require_authentication)` to routes)
+3. ✅ ~~Set up frontend OIDC provider~~ **COMPLETED**
+4. **Add role-based access control** (use `Depends(require_role('admin'))`)
+5. **Configure for production deployment**
+
+### Quick Integration Example
+
+To protect existing API routes, simply add the dependency:
+
+```python
+# packages/api/src/routes/users.py
+from ..auth.middleware import require_authentication
+
+@router.get('/')
+async def get_users(
+    session: AsyncSession = Depends(get_db),
+    user: dict = Depends(require_authentication)  # Add this line
+):
+    # In development: user = mock dev user
+    # In production: user = validated JWT claims
+    logger.info(f"User {user['username']} accessed users endpoint")
+    # ... rest of route logic
+```

@@ -10,6 +10,8 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
+from ..core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Global cache for OIDC configuration and keys
@@ -185,7 +187,25 @@ keycloak_jwt = KeycloakJWTBearer()
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict | None:
-    """Extract user info from JWT token (optional auth)"""
+    """Extract user info from JWT token (optional auth) with development bypass"""
+
+    # Development bypass - return mock user
+    if settings.BYPASS_AUTH:
+        logger.info('🔓 Authentication bypassed - development mode enabled')
+        return {
+            'id': 'dev-user-123',
+            'email': 'developer@example.com',
+            'username': 'developer',
+            'roles': ['user', 'admin'],
+            'is_dev_mode': True,
+            'token_claims': {
+                'sub': 'dev-user-123',
+                'preferred_username': 'developer',
+                'email': 'developer@example.com',
+                'realm_access': {'roles': ['user', 'admin']},
+            },
+        }
+
     if not credentials:
         return None
 
@@ -196,6 +216,7 @@ async def get_current_user(
         'email': claims.get('email'),
         'username': claims.get('preferred_username'),
         'roles': claims.get('realm_access', {}).get('roles', []),
+        'is_dev_mode': False,
         'token_claims': claims,
     }
 
@@ -203,7 +224,25 @@ async def get_current_user(
 async def require_authentication(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict:
-    """Require valid JWT token"""
+    """Require valid JWT token with development bypass"""
+
+    # Development bypass - return mock user immediately
+    if settings.BYPASS_AUTH:
+        logger.info('🔓 Authentication bypassed - development mode enabled')
+        return {
+            'id': 'dev-user-123',
+            'email': 'developer@example.com',
+            'username': 'developer',
+            'roles': ['user', 'admin'],
+            'is_dev_mode': True,
+            'token_claims': {
+                'sub': 'dev-user-123',
+                'preferred_username': 'developer',
+                'email': 'developer@example.com',
+                'realm_access': {'roles': ['user', 'admin']},
+            },
+        }
+
     if not credentials:
         raise HTTPException(
             status_code=401,
