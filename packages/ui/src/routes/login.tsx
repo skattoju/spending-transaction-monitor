@@ -81,10 +81,9 @@ function LoginPage() {
 
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              {auth.user?.isDevMode 
+              {auth.user?.isDevMode
                 ? '🔓 Development mode - authentication bypassed'
-                : 'Secure authentication powered by OpenID Connect'
-              }
+                : 'Secure authentication powered by OpenID Connect'}
             </p>
           </div>
         </div>

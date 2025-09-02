@@ -43,6 +43,7 @@ The application will be available at http://localhost:3000
 The UI supports both development and production authentication modes:
 
 ### Development Mode (Default)
+
 Authentication is automatically bypassed for faster development:
 
 ```bash
@@ -52,12 +53,14 @@ VITE_BYPASS_AUTH=true
 ```
 
 Features in development mode:
+
 - 🔓 **No login required** - automatic authentication as dev user
 - 🚀 **Instant access** - no OIDC flow needed
 - 👤 **Mock user data** - consistent dev user for testing
 - 🎯 **Visual indicators** - UI shows "Dev Mode" badges
 
 ### Production Mode
+
 Full OIDC authentication with Keycloak:
 
 ```bash
@@ -69,6 +72,7 @@ VITE_KEYCLOAK_CLIENT_ID=spending-monitor
 ```
 
 ### Force Production Auth in Development
+
 To test authentication flow in development:
 
 ```bash

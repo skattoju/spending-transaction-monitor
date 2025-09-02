@@ -15,21 +15,25 @@ export interface AuthConfig {
 }
 
 // Environment detection
-const environment = (import.meta.env.VITE_ENVIRONMENT || 'development') as AuthConfig['environment'];
+const environment = (import.meta.env.VITE_ENVIRONMENT ||
+  'development') as AuthConfig['environment'];
 
 // Bypass detection - auto-enable in development unless explicitly disabled
-const bypassAuth = 
-  import.meta.env.VITE_BYPASS_AUTH === 'true' || 
+const bypassAuth =
+  import.meta.env.VITE_BYPASS_AUTH === 'true' ||
   (environment === 'development' && import.meta.env.VITE_BYPASS_AUTH !== 'false');
 
 export const authConfig: AuthConfig = {
   environment,
   bypassAuth,
   keycloak: {
-    authority: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080/realms/spending-monitor',
+    authority:
+      import.meta.env.VITE_KEYCLOAK_URL ||
+      'http://localhost:8080/realms/spending-monitor',
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'spending-monitor',
     redirectUri: import.meta.env.VITE_KEYCLOAK_REDIRECT_URI || window.location.origin,
-    postLogoutRedirectUri: import.meta.env.VITE_KEYCLOAK_POST_LOGOUT_REDIRECT_URI || window.location.origin,
+    postLogoutRedirectUri:
+      import.meta.env.VITE_KEYCLOAK_POST_LOGOUT_REDIRECT_URI || window.location.origin,
   },
 };
 

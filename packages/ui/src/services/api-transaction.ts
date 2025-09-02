@@ -318,6 +318,57 @@ export const realAlertService = {
   },
 };
 
+// User service for real API data
+export const userService = {
+  // Get all users
+  async getUsers(): Promise<any[]> {
+    const response = await fetch('/api/users/');
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
+    }
+    return response.json();
+  },
+
+  // Get user by ID
+  async getUserById(id: string): Promise<any> {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error('Failed to fetch user');
+    }
+    return response.json();
+  },
+
+  // Get user transactions
+  async getUserTransactions(userId: string, limit = 50, offset = 0): Promise<any[]> {
+    const response = await fetch(
+      `/api/users/${userId}/transactions?limit=${limit}&offset=${offset}`,
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch user transactions');
+    }
+    return response.json();
+  },
+
+  // Get user credit cards
+  async getUserCreditCards(userId: string): Promise<any[]> {
+    const response = await fetch(`/api/users/${userId}/credit-cards`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch user credit cards');
+    }
+    return response.json();
+  },
+
+  // Get user alert rules
+  async getUserAlertRules(userId: string): Promise<any[]> {
+    const response = await fetch(`/api/users/${userId}/rules`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch user alert rules');
+    }
+    return response.json();
+  },
+};
+
 // Keep old alert service as fallback
 export const alertService = {
   // Get active alerts
