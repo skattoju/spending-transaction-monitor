@@ -1,6 +1,7 @@
 """Verify user data by printing joined info"""
 
 import asyncio
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 

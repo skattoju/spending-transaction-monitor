@@ -5,22 +5,20 @@ Ingestion Service with Kafka Connection Management
 import datetime
 import json
 import os
-import sys
 import time
 from contextlib import asynccontextmanager
-from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from kafka import KafkaProducer
 
-from .common.models import Transaction, IncomingTransaction
+from .common.models import IncomingTransaction, Transaction
 
 
 class KafkaConnectionManager:
     """Manages Kafka connections with lazy loading, retry logic, and health monitoring"""
     
     def __init__(self):
-        self.producer: Optional[KafkaProducer] = None
+        self.producer: KafkaProducer | None = None
         self.kafka_host = os.environ.get("KAFKA_HOST", "localhost")
         self.kafka_port = os.environ.get("KAFKA_PORT", "9092")
         self.connection_timeout = int(os.environ.get("KAFKA_CONNECTION_TIMEOUT", "10"))
@@ -29,7 +27,7 @@ class KafkaConnectionManager:
         self.last_connection_attempt = 0
         self.connection_cooldown = 30  # seconds
         
-    def get_producer(self) -> Optional[KafkaProducer]:
+    def get_producer(self) -> KafkaProducer | None:
         """Get Kafka producer with lazy connection and retry logic"""
         if self.producer is not None:
             return self.producer
@@ -61,14 +59,14 @@ class KafkaConnectionManager:
                     
         # All attempts failed
         self.last_connection_attempt = current_time
-        print(f"All Kafka connection attempts failed. Entering cooldown period.")
+        print("All Kafka connection attempts failed. Entering cooldown period.")
         return None
         
     def send_message(self, topic: str, message: dict) -> bool:
         """Send message to Kafka topic with error handling"""
         producer = self.get_producer()
         if producer is None:
-            print(f"Cannot send message: Kafka producer unavailable")
+            print("Cannot send message: Kafka producer unavailable")
             return False
             
         try:

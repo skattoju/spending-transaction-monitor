@@ -3,13 +3,14 @@ Integration Tests for Ingestion Service
 Tests the full FastAPI application with TestClient
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch
+import os
 
 # Import from parent directory
 import sys
-import os
+from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from main import app
@@ -37,7 +38,7 @@ class TestIngestionServiceIntegration:
                 "Merchant Name": 123456789,
                 "Merchant City": "New York",
                 "Merchant State": "NY",
-                "Zip": ""10001"",
+                "Zip": "10001",
                 "MCC": 5411,
                 "Errors?": "",
                 "Is Fraud?": "No"
@@ -58,7 +59,7 @@ class TestIngestionServiceIntegration:
                 "merchant_id": 123456789,
                 "merchant_city": "New York",
                 "merchant_state": "NY",
-                "zip": ""10001"",
+                "zip": "10001",
                 "mcc": 5411,
                 "errors": "",
                 "is_fraud": False
@@ -91,7 +92,7 @@ class TestIngestionServiceIntegration:
                 "Merchant Name": 123456789,
                 "Merchant City": "New York",
                 "Merchant State": "NY",
-                "Zip": ""10001"",
+                "Zip": "10001",
                 "MCC": 5411,
                 "Errors?": "",
                 "Is Fraud?": "No"

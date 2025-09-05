@@ -6,9 +6,6 @@ This script handles all the complexity of running tests reliably
 
 import os
 import sys
-import subprocess
-import time
-import signal
 from pathlib import Path
 
 # Add the current directory to Python path
@@ -43,8 +40,9 @@ def run_integration_tests():
     
     try:
         from fastapi.testclient import TestClient
-        from src.main import app, kafka_manager, transform_transaction
+
         from src.common.models import IncomingTransaction
+        from src.main import app, kafka_manager, transform_transaction
         
         print("✅ Service modules imported successfully")
         
@@ -136,7 +134,7 @@ def run_service_validation():
     
     try:
         # Test that we can import everything without errors
-        from src.main import app, KafkaConnectionManager
+        from src.main import KafkaConnectionManager, app
         print("✅ All imports successful")
         
         # Test that we can create the app

@@ -5,17 +5,16 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from db.database import SessionLocal
 from db.models import (
-    User,
-    CreditCard,
-    Transaction,
     AlertRule,
     AlertType,
+    CreditCard,
     NotificationMethod,
+    Transaction,
+    User,
 )
 
 

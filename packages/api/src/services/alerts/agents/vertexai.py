@@ -59,9 +59,13 @@ class VertexAIClient:
             with open(self.config_path) as f:
                 return json.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError(f'Config file not found: {self.config_path}') from None
+            raise FileNotFoundError(
+                f'Config file not found: {self.config_path}'
+            ) from None
         except json.JSONDecodeError:
-            raise ValueError(f'Invalid JSON in config file: {self.config_path}') from None
+            raise ValueError(
+                f'Invalid JSON in config file: {self.config_path}'
+            ) from None
 
     def _create_signed_jwt(self) -> str:
         """

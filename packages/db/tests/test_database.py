@@ -4,6 +4,7 @@ Database tests
 
 import pytest
 from sqlalchemy import text
+
 from db.database import engine
 
 

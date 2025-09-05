@@ -1,8 +1,10 @@
-import requests
 import json
-from kafka import KafkaConsumer
-import time
 import os
+import time
+
+import requests
+from kafka import KafkaConsumer
+
 
 def main():
     # Send a request to the ingestion service

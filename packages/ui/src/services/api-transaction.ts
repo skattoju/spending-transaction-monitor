@@ -66,7 +66,7 @@ interface ApiCreditCardResponse {
   current_balance: number;
   available_credit: number;
 }
-  
+
 // Real API-based transaction service
 export const apiTransactionService = {
   // Get recent transactions with pagination
@@ -83,25 +83,29 @@ export const apiTransactionService = {
     if (!response.ok) {
       throw new Error('Failed to fetch transactions');
     }
-    
+
     const allTransactions = await response.json();
-    
+
     // Transform API data to match UI schema
-          const transformedTransactions: Transaction[] = allTransactions.map((tx: ApiTransactionResponse) => ({
-      id: tx.id,
-      amount: tx.amount,
-      merchant: tx.merchant_name,
-      status: tx.status.toLowerCase(),
-      time: tx.transaction_date,
-      type: tx.transaction_type.toLowerCase(),
-      currency: tx.currency,
-      category: tx.merchant_category,
-      description: tx.description,
-    }));
+    const transformedTransactions: Transaction[] = allTransactions.map(
+      (tx: ApiTransactionResponse) => ({
+        id: tx.id,
+        amount: tx.amount,
+        merchant: tx.merchant_name,
+        status: tx.status.toLowerCase(),
+        time: tx.transaction_date,
+        type: tx.transaction_type.toLowerCase(),
+        currency: tx.currency,
+        category: tx.merchant_category,
+        description: tx.description,
+      }),
+    );
 
     // Sort by time descending
-    transformedTransactions.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-    
+    transformedTransactions.sort(
+      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+    );
+
     // Apply pagination
     const start = (page - 1) * limit;
     const end = start + limit;
@@ -122,9 +126,9 @@ export const apiTransactionService = {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch transaction');
     }
-    
+
     const tx = await response.json();
-    
+
     // Transform API data to match UI schema
     return {
       id: tx.id,
@@ -144,7 +148,7 @@ export const apiTransactionService = {
     // For now, calculate stats from the transactions data
     // In the future, you could create a dedicated stats endpoint
     const { transactions } = await this.getRecentTransactions(1, 1000);
-    
+
     const totalTransactions = transactions.length;
     const totalVolume = transactions.reduce((sum, t) => sum + t.amount, 0);
     const flaggedCount = transactions.filter((t) => t.status === 'flagged').length;
@@ -166,7 +170,7 @@ export const apiTransactionService = {
   // Search transactions
   async searchTransactions(query: string): Promise<Transaction[]> {
     const { transactions } = await this.getRecentTransactions(1, 1000);
-    
+
     const lowercaseQuery = query.toLowerCase();
     return transactions.filter(
       (t) =>
@@ -187,7 +191,7 @@ export const apiTransactionService = {
     }>
   > {
     const { transactions } = await this.getRecentTransactions(1, 1000);
-    
+
     const days =
       timeRange === '7d'
         ? 7
@@ -196,17 +200,17 @@ export const apiTransactionService = {
           : timeRange === '90d'
             ? 90
             : 365;
-            
+
     const data = [];
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     // Group transactions by date
     const transactionsByDate = new Map<string, { volume: number; count: number }>();
-    
+
     transactions
-      .filter(tx => new Date(tx.time) >= cutoffDate)
-      .forEach(tx => {
+      .filter((tx) => new Date(tx.time) >= cutoffDate)
+      .forEach((tx) => {
         const date = new Date(tx.time).toISOString().split('T')[0];
         const existing = transactionsByDate.get(date) || { volume: 0, count: 0 };
         transactionsByDate.set(date, {
@@ -220,9 +224,9 @@ export const apiTransactionService = {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       const dayData = transactionsByDate.get(dateStr) || { volume: 0, count: 0 };
-      
+
       data.push({
         date: dateStr,
         volume: Math.floor(dayData.volume),
@@ -265,16 +269,20 @@ export const realAlertService = {
     if (!response.ok) {
       throw new Error('Failed to fetch alerts');
     }
-    
+
     const notifications = await response.json();
-    
+
     // Transform API data to match UI schema
     return notifications.map((notification: ApiNotificationResponse) => ({
       id: notification.id,
       title: notification.title,
       description: notification.message,
-      severity: notification.status === 'ERROR' ? 'high' : 
-                notification.status === 'WARNING' ? 'medium' : 'low',
+      severity:
+        notification.status === 'ERROR'
+          ? 'high'
+          : notification.status === 'WARNING'
+            ? 'medium'
+            : 'low',
       timestamp: notification.created_at,
       transaction_id: notification.transaction_id,
       resolved: notification.read_at !== null,
@@ -287,17 +295,18 @@ export const realAlertService = {
     if (!response.ok) {
       throw new Error('Failed to fetch alert rules');
     }
-    
+
     const rules = await response.json();
-    
+
     // Transform API data to match UI schema
     return rules.map((rule: ApiAlertRuleResponse) => ({
       id: rule.id,
       rule: rule.name,
       status: rule.is_active ? 'active' : 'paused',
       triggered: rule.trigger_count || 0,
-      last_triggered: rule.last_triggered ? 
-        new Date(rule.last_triggered).toLocaleString() : 'Never',
+      last_triggered: rule.last_triggered
+        ? new Date(rule.last_triggered).toLocaleString()
+        : 'Never',
       created_at: rule.created_at,
     }));
   },
@@ -361,8 +370,14 @@ export const userService = {
   },
 
   // Get user transactions
-  async getUserTransactions(user_id: string, limit = 50, offset = 0): Promise<ApiTransactionResponse[]> {
-    const response = await fetch(`/api/users/${user_id}/transactions?limit=${limit}&offset=${offset}`);
+  async getUserTransactions(
+    user_id: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<ApiTransactionResponse[]> {
+    const response = await fetch(
+      `/api/users/${user_id}/transactions?limit=${limit}&offset=${offset}`,
+    );
     if (!response.ok) {
       throw new Error('Failed to fetch user transactions');
     }

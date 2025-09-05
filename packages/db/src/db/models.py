@@ -6,13 +6,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
-    Enum as SAEnum,
     Float,
     ForeignKey,
     Index,
@@ -21,6 +18,9 @@ from sqlalchemy import (
     String,
     func,
     text,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -77,7 +77,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     first_name: Mapped[str] = mapped_column(String, nullable=False)
     last_name: Mapped[str] = mapped_column(String, nullable=False)
-    phone_number: Mapped[Optional[str]]
+    phone_number: Mapped[str | None]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -85,42 +85,42 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
 
     # Address
-    address_street: Mapped[Optional[str]]
-    address_city: Mapped[Optional[str]]
-    address_state: Mapped[Optional[str]]
-    address_zipcode: Mapped[Optional[str]]
-    address_country: Mapped[Optional[str]] = mapped_column(String, server_default=text("'US'"))
+    address_street: Mapped[str | None]
+    address_city: Mapped[str | None]
+    address_state: Mapped[str | None]
+    address_zipcode: Mapped[str | None]
+    address_country: Mapped[str | None] = mapped_column(String, server_default=text("'US'"))
 
     # Financial
-    credit_limit: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
-    credit_balance: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), server_default=text("0.00"))
+    credit_limit: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    credit_balance: Mapped[float | None] = mapped_column(Numeric(12, 2), server_default=text("0.00"))
 
     # Location tracking
     location_consent_given: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    last_app_location_latitude: Mapped[Optional[float]] = mapped_column(Float)
-    last_app_location_longitude: Mapped[Optional[float]] = mapped_column(Float)
-    last_app_location_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    last_app_location_accuracy: Mapped[Optional[float]] = mapped_column(Float)
+    last_app_location_latitude: Mapped[float | None] = mapped_column(Float)
+    last_app_location_longitude: Mapped[float | None] = mapped_column(Float)
+    last_app_location_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_app_location_accuracy: Mapped[float | None] = mapped_column(Float)
 
     # Last transaction location
-    last_transaction_latitude: Mapped[Optional[float]] = mapped_column(Float)
-    last_transaction_longitude: Mapped[Optional[float]] = mapped_column(Float)
-    last_transaction_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    last_transaction_city: Mapped[Optional[str]]
-    last_transaction_state: Mapped[Optional[str]]
-    last_transaction_country: Mapped[Optional[str]]
+    last_transaction_latitude: Mapped[float | None] = mapped_column(Float)
+    last_transaction_longitude: Mapped[float | None] = mapped_column(Float)
+    last_transaction_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_transaction_city: Mapped[str | None]
+    last_transaction_state: Mapped[str | None]
+    last_transaction_country: Mapped[str | None]
 
     # Relationships
-    creditCards: Mapped[List["CreditCard"]] = relationship(
+    creditCards: Mapped[list[CreditCard]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    transactions: Mapped[List["Transaction"]] = relationship(
+    transactions: Mapped[list[Transaction]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    alertRules: Mapped[List["AlertRule"]] = relationship(
+    alertRules: Mapped[list[AlertRule]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    alertNotifications: Mapped[List["AlertNotification"]] = relationship(
+    alertNotifications: Mapped[list[AlertNotification]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -168,18 +168,18 @@ class Transaction(Base):
         SAEnum(TransactionType, name='transaction_type'), server_default=text("'PURCHASE'")
     )
 
-    merchant_latitude: Mapped[Optional[float]]
-    merchant_longitude: Mapped[Optional[float]]
-    merchant_zipcode: Mapped[Optional[str]]
-    merchant_city: Mapped[Optional[str]]
-    merchant_state: Mapped[Optional[str]]
-    merchant_country: Mapped[Optional[str]]
+    merchant_latitude: Mapped[float | None]
+    merchant_longitude: Mapped[float | None]
+    merchant_zipcode: Mapped[str | None]
+    merchant_city: Mapped[str | None]
+    merchant_state: Mapped[str | None]
+    merchant_country: Mapped[str | None]
 
     status: Mapped[TransactionStatus] = mapped_column(
         SAEnum(TransactionStatus, name='transactionstatus'), server_default=text("'PENDING'"), nullable=False
     )
-    authorization_code: Mapped[Optional[str]]
-    trans_num: Mapped[Optional[str]]
+    authorization_code: Mapped[str | None]
+    trans_num: Mapped[str | None]
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -188,7 +188,7 @@ class Transaction(Base):
 
     user: Mapped[User] = relationship(back_populates="transactions")
     #creditCard: Mapped[CreditCard] = relationship(back_populates="transactions")
-    alertNotifications: Mapped[List["AlertNotification"]] = relationship(back_populates="transaction")
+    alertNotifications: Mapped[list[AlertNotification]] = relationship(back_populates="transaction")
 
     __table_args__ = (
         Index("ix_transactions_user_date", "user_id", "transaction_date"),
@@ -204,20 +204,20 @@ class AlertRule(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
 
     name: Mapped[str] = mapped_column(String, nullable=False)
-    description: Mapped[Optional[str]]
+    description: Mapped[str | None]
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     alert_type: Mapped[AlertType] = mapped_column(SAEnum(AlertType, name='alert_type'), nullable=False)
 
-    amount_threshold: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
-    merchant_category: Mapped[Optional[str]]
-    merchant_name: Mapped[Optional[str]]
-    location: Mapped[Optional[str]]
-    timeframe: Mapped[Optional[str]]
+    amount_threshold: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    merchant_category: Mapped[str | None]
+    merchant_name: Mapped[str | None]
+    location: Mapped[str | None]
+    timeframe: Mapped[str | None]
 
-    natural_language_query: Mapped[Optional[str]]
-    sqlQuery: Mapped[Optional[str]]
+    natural_language_query: Mapped[str | None]
+    sqlQuery: Mapped[str | None]
 
-    notification_methods: Mapped[Optional[List[NotificationMethod]]] = mapped_column(
+    notification_methods: Mapped[list[NotificationMethod] | None] = mapped_column(
         ARRAY(SAEnum(NotificationMethod, name='notification_method')), nullable=True
     )
 
@@ -225,11 +225,11 @@ class AlertRule(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    last_triggered: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_triggered: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     trigger_count: Mapped[int] = mapped_column(Integer, server_default=text("0"))
 
     user: Mapped[User] = relationship(back_populates="alertRules")
-    alertNotifications: Mapped[List["AlertNotification"]] = relationship(
+    alertNotifications: Mapped[list[AlertNotification]] = relationship(
         back_populates="alertRule"
     )
 
@@ -242,7 +242,7 @@ class AlertNotification(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     alert_rule_id: Mapped[str] = mapped_column(ForeignKey("alert_rules.id", ondelete="CASCADE"))
-    transaction_id: Mapped[Optional[str]] = mapped_column(
+    transaction_id: Mapped[str | None] = mapped_column(
         ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True
     )
 
@@ -255,9 +255,9 @@ class AlertNotification(Base):
         SAEnum(NotificationStatus, name='notificationstatus'), server_default=text("'PENDING'"), nullable=False
     )
 
-    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -266,6 +266,6 @@ class AlertNotification(Base):
 
     user: Mapped[User] = relationship(back_populates="alertNotifications")
     alertRule: Mapped[AlertRule] = relationship(back_populates="alertNotifications")
-    transaction: Mapped[Optional[Transaction]] = relationship(back_populates="alertNotifications")
+    transaction: Mapped[Transaction | None] = relationship(back_populates="alertNotifications")
 
 

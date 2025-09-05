@@ -1,15 +1,16 @@
 import csv
-import requests
-import json
 import os
 import sys
+
+import requests
 
 # Add the `ingestion-service-py` directory to the path to allow imports from the `common` directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../ingestion-service-py')))
 from common.models import Transaction
 
+
 def bulk_ingest(file_path, url):
-    with open(file_path, 'r') as f:
+    with open(file_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
             # Clean up the amount field

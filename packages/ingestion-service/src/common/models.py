@@ -1,9 +1,7 @@
 import datetime
-from pydantic import BaseModel
-from typing import Optional
 
+from pydantic import BaseModel, Field
 
-from pydantic import Field
 
 class IncomingTransaction(BaseModel):
     User: int
@@ -16,10 +14,10 @@ class IncomingTransaction(BaseModel):
     use_chip: str = Field(..., alias='Use Chip')
     merchant_name: int = Field(..., alias='Merchant Name')
     merchant_city: str = Field(..., alias='Merchant City')
-    merchant_state: Optional[str] = Field(None, alias='Merchant State')
-    zip: Optional[str] = Field(None, alias='Zip')
+    merchant_state: str | None = Field(None, alias='Merchant State')
+    zip: str | None = Field(None, alias='Zip')
     mcc: int = Field(..., alias='MCC')
-    errors: Optional[str] = Field(None, alias='Errors?')
+    errors: str | None = Field(None, alias='Errors?')
     is_fraud: str = Field(..., alias='Is Fraud?')
 
 
@@ -34,10 +32,10 @@ class Transaction(BaseModel):
     use_chip: str
     merchant_id: int
     merchant_city: str
-    merchant_state: Optional[str] = None
-    zip: Optional[str] = None
+    merchant_state: str | None = None
+    zip: str | None = None
     mcc: int
-    errors: Optional[str] = None
+    errors: str | None = None
     is_fraud: bool
 
 
@@ -49,7 +47,7 @@ class User(BaseModel):
     birth_month: int
     gender: str
     address: str
-    apartment: Optional[int] = None
+    apartment: int | None = None
     city: str
     state: str
     zipcode: str

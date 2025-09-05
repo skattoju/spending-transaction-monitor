@@ -4,12 +4,12 @@ Tests individual components in isolation with mocking
 """
 
 import datetime
-import pytest
-from unittest.mock import patch, MagicMock
+import os
 
 # Import from parent directory
 import sys
-import os
+from unittest.mock import MagicMock, patch
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from src.main import kafka_manager
@@ -126,8 +126,8 @@ class TestTransactionTransformation:
     
     def test_transform_transaction_success(self):
         """Test successful transaction transformation"""
-        from src.main import transform_transaction
         from src.common.models import IncomingTransaction
+        from src.main import transform_transaction
         
         test_data = {
             'User': 1,
@@ -157,8 +157,8 @@ class TestTransactionTransformation:
 
     def test_transform_transaction_fraud_yes(self):
         """Test transaction transformation with fraud=Yes"""
-        from src.main import transform_transaction
         from src.common.models import IncomingTransaction
+        from src.main import transform_transaction
         
         test_data = {
             'User': 1,
