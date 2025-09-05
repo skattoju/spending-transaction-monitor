@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from main import kafka_manager
+from src.main import kafka_manager
 
 
 class TestKafkaConnectionManager:
@@ -23,7 +23,7 @@ class TestKafkaConnectionManager:
         kafka_manager.producer = None
         kafka_manager.last_connection_attempt = 0
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_get_producer_success(self, mock_kafka_producer):
         """Test successful producer creation"""
         mock_producer_instance = MagicMock()
@@ -35,7 +35,7 @@ class TestKafkaConnectionManager:
         assert kafka_manager.producer is mock_producer_instance
         mock_kafka_producer.assert_called_once()
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_get_producer_failure(self, mock_kafka_producer):
         """Test producer creation failure"""
         mock_kafka_producer.side_effect = Exception("Connection failed")
@@ -45,7 +45,7 @@ class TestKafkaConnectionManager:
         assert producer is None
         assert kafka_manager.producer is None
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_health_check_healthy(self, mock_kafka_producer):
         """Test health check when Kafka is healthy"""
         mock_producer_instance = MagicMock()
@@ -59,7 +59,7 @@ class TestKafkaConnectionManager:
         assert health["kafka_status"] == "healthy"
         assert health["connection_pool_active"] is True
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_health_check_unhealthy(self, mock_kafka_producer):
         """Test health check when Kafka is unhealthy"""
         mock_kafka_producer.side_effect = Exception("Connection failed")
@@ -72,7 +72,7 @@ class TestKafkaConnectionManager:
         assert health["kafka_status"] == "unhealthy"
         assert health["connection_pool_active"] is False
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_send_message_no_producer(self, mock_kafka_producer):
         """Test sending message when no producer is available"""
         # Mock KafkaProducer to raise exception to simulate connection failure
@@ -83,7 +83,7 @@ class TestKafkaConnectionManager:
         
         assert result is False
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_send_message_success(self, mock_kafka_producer):
         """Test successful message sending"""
         mock_producer_instance = MagicMock()
@@ -104,7 +104,7 @@ class TestKafkaConnectionManager:
         assert result is True
         mock_producer_instance.send.assert_called_once_with("test-topic", {"test": "data"})
 
-    @patch('main.KafkaProducer')
+    @patch('src.main.KafkaProducer')
     def test_send_message_failure(self, mock_kafka_producer):
         """Test message sending failure"""
         mock_producer_instance = MagicMock()
@@ -126,8 +126,8 @@ class TestTransactionTransformation:
     
     def test_transform_transaction_success(self):
         """Test successful transaction transformation"""
-        from main import transform_transaction
-        from common.models import IncomingTransaction
+        from src.main import transform_transaction
+        from src.common.models import IncomingTransaction
         
         test_data = {
             'User': 1,
@@ -157,8 +157,8 @@ class TestTransactionTransformation:
 
     def test_transform_transaction_fraud_yes(self):
         """Test transaction transformation with fraud=Yes"""
-        from main import transform_transaction
-        from common.models import IncomingTransaction
+        from src.main import transform_transaction
+        from src.common.models import IncomingTransaction
         
         test_data = {
             'User': 1,

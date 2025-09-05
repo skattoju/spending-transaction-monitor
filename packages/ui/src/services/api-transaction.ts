@@ -28,12 +28,12 @@ export const apiTransactionService = {
     const transformedTransactions: Transaction[] = allTransactions.map((tx: any) => ({
       id: tx.id,
       amount: tx.amount,
-      merchant: tx.merchantName,
+      merchant: tx.merchant_name,
       status: tx.status.toLowerCase(),
-      time: tx.transactionDate,
-      type: tx.transactionType.toLowerCase(),
+      time: tx.transaction_date,
+      type: tx.transaction_type.toLowerCase(),
       currency: tx.currency,
-      category: tx.merchantCategory,
+      category: tx.merchant_category,
       description: tx.description,
     }));
 
@@ -67,12 +67,12 @@ export const apiTransactionService = {
     return {
       id: tx.id,
       amount: tx.amount,
-      merchant: tx.merchantName,
+      merchant: tx.merchant_name,
       status: tx.status.toLowerCase(),
-      time: tx.transactionDate,
-      type: tx.transactionType.toLowerCase(),
+      time: tx.transaction_date,
+      type: tx.transaction_type.toLowerCase(),
       currency: tx.currency,
-      category: tx.merchantCategory,
+      category: tx.merchant_category,
       description: tx.description,
     };
   },
@@ -213,9 +213,9 @@ export const realAlertService = {
       description: notification.message,
       severity: notification.status === 'ERROR' ? 'high' : 
                 notification.status === 'WARNING' ? 'medium' : 'low',
-      timestamp: notification.createdAt,
-      transactionId: notification.transactionId,
-      resolved: notification.readAt !== null,
+      timestamp: notification.created_at,
+      transaction_id: notification.transaction_id,
+      resolved: notification.read_at !== null,
     }));
   },
 
@@ -232,11 +232,11 @@ export const realAlertService = {
     return rules.map((rule: any) => ({
       id: rule.id,
       rule: rule.name + (rule.description ? `: ${rule.description}` : ''),
-      status: rule.isActive ? 'active' : 'paused',
-      triggered: rule.triggerCount || 0,
-      lastTriggered: rule.lastTriggered ? 
-        new Date(rule.lastTriggered).toLocaleString() : 'Never',
-      createdAt: rule.createdAt,
+      status: rule.is_active ? 'active' : 'paused',
+      triggered: rule.trigger_count || 0,
+      last_triggered: rule.last_triggered ? 
+        new Date(rule.last_triggered).toLocaleString() : 'Never',
+      created_at: rule.created_at,
     }));
   },
 
@@ -250,8 +250,8 @@ export const realAlertService = {
       rule,
       status: 'active',
       triggered: 0,
-      lastTriggered: 'Never',
-      createdAt: new Date().toISOString(),
+      last_triggered: 'Never',
+      created_at: new Date().toISOString(),
     };
 
     return newRule;
@@ -299,8 +299,8 @@ export const userService = {
   },
 
   // Get user transactions
-  async getUserTransactions(userId: string, limit = 50, offset = 0): Promise<any[]> {
-    const response = await fetch(`/api/users/${userId}/transactions?limit=${limit}&offset=${offset}`);
+  async getUserTransactions(user_id: string, limit = 50, offset = 0): Promise<any[]> {
+    const response = await fetch(`/api/users/${user_id}/transactions?limit=${limit}&offset=${offset}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user transactions');
     }
@@ -308,8 +308,8 @@ export const userService = {
   },
 
   // Get user credit cards
-  async getUserCreditCards(userId: string): Promise<any[]> {
-    const response = await fetch(`/api/users/${userId}/credit-cards`);
+  async getUserCreditCards(user_id: string): Promise<any[]> {
+    const response = await fetch(`/api/users/${user_id}/credit-cards`);
     if (!response.ok) {
       throw new Error('Failed to fetch user credit cards');
     }
@@ -317,8 +317,8 @@ export const userService = {
   },
 
   // Get user alert rules
-  async getUserAlertRules(userId: string): Promise<any[]> {
-    const response = await fetch(`/api/users/${userId}/rules`);
+  async getUserAlertRules(user_id: string): Promise<any[]> {
+    const response = await fetch(`/api/users/${user_id}/rules`);
     if (!response.ok) {
       throw new Error('Failed to fetch user alert rules');
     }
@@ -339,7 +339,7 @@ export const alertService = {
         description: 'Transaction of $1,299.99 exceeds threshold',
         severity: 'high',
         timestamp: new Date(Date.now() - 1800000).toISOString(),
-        transactionId: 'e87b191a-4bc3-49b3-9881-d6f44066c92a',
+        transaction_id: 'e87b191a-4bc3-49b3-9881-d6f44066c92a',
         resolved: false,
       },
       {
@@ -348,7 +348,7 @@ export const alertService = {
         description: 'Real-time transaction processed: $150.00',
         severity: 'medium',
         timestamp: new Date(Date.now() - 3600000).toISOString(),
-        transactionId: '52e66c39-f9e3-4bf7-b9d7-d18280654b90',
+        transaction_id: '52e66c39-f9e3-4bf7-b9d7-d18280654b90',
         resolved: false,
       },
       {
@@ -374,24 +374,24 @@ export const alertService = {
         rule: 'Alert me when transactions exceed $1,000',
         status: 'active',
         triggered: 3,
-        lastTriggered: '2 hours ago',
-        createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+        last_triggered: '2 hours ago',
+        created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
       },
       {
         id: 'RULE-002',
         rule: 'Notify me of Kafka consumer issues',
         status: 'active',
         triggered: 0,
-        lastTriggered: 'Never',
-        createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
+        last_triggered: 'Never',
+        created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
       },
       {
         id: 'RULE-003',
         rule: 'Alert for transactions from Test City',
         status: 'active',
         triggered: 1,
-        lastTriggered: '1 hour ago',
-        createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
+        last_triggered: '1 hour ago',
+        created_at: new Date(Date.now() - 86400000 * 60).toISOString(),
       },
     ];
 
@@ -407,8 +407,8 @@ export const alertService = {
       rule,
       status: 'active',
       triggered: 0,
-      lastTriggered: 'Never',
-      createdAt: new Date().toISOString(),
+      last_triggered: 'Never',
+      created_at: new Date().toISOString(),
     };
 
     return newRule;

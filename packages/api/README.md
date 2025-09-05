@@ -85,7 +85,7 @@ Test the Kafka consumer by sending a transaction:
 ```bash
 curl -X POST http://localhost:8000/kafka/send-test-transaction \
   -H "Content-Type: application/json" \
-  -d '{"userId": "582ae68d-59ce-4185-a2e8-868b561d363e", "creditCardId": "a6e4a5de-d1a7-4c16-a37c-3d0d7f669abf"}'
+  -d '{"user_id": "582ae68d-59ce-4185-a2e8-868b561d363e", "credit_card_num": "a6e4a5de-d1a7-4c16-a37c-3d0d7f669abf"}'
 ```
 
 Or run the automated test script:
@@ -222,7 +222,7 @@ uv run pytest tests/ -k "integration" # Run integration tests
   "time": "16:24:00",
   "amount": 150.0,
   "use_chip": "Chip Transaction",
-  "merchant_id": 12345,
+  "merchant_id": '12345',
   "merchant_city": "Test City",
   "merchant_state": "CA",
   "zip": "12345",
@@ -274,7 +274,7 @@ async def get_ids():
         user = (await session.execute(select(User).limit(1))).scalar_one_or_none()
         if user:
             print(f'User ID: {user.id}')
-            card = (await session.execute(select(CreditCard).where(CreditCard.userId == user.id))).scalar_one_or_none()
+            card = (await session.execute(select(CreditCard).where(CreditCard.user_id == user.id))).scalar_one_or_none()
             if card:
                 print(f'Card ID: {card.id}')
 

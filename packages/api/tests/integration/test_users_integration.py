@@ -20,9 +20,9 @@ class TestUsers:
         """Test creating a new user"""
         payload = {
             'email': 'test.user@example.com',
-            'firstName': 'Test',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-7777',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'phone_number': '+1-555-7777',
         }
 
         response = client.post('/users', json=payload)
@@ -30,23 +30,23 @@ class TestUsers:
 
         data = response.json()
         assert data['email'] == payload['email']
-        assert data['firstName'] == payload['firstName']
-        assert data['lastName'] == payload['lastName']
-        assert data['phoneNumber'] == payload['phoneNumber']
-        assert data['isActive']
+        assert data['first_name'] == payload['first_name']
+        assert data['last_name'] == payload['last_name']
+        assert data['phone_number'] == payload['phone_number']
+        assert data['is_active']
         assert 'id' in data
-        assert 'createdAt' in data
-        assert 'updatedAt' in data
-        assert data['creditCardsCount'] == 0
-        assert data['transactionsCount'] == 0
+        assert 'created_at' in data
+        assert 'updated_at' in data
+        assert data['credit_cards_count'] == 0
+        assert data['transactions_count'] == 0
 
     def test_create_user_duplicate_email(self):
         """Test creating user with duplicate email"""
         payload = {
             'email': 'duplicate.test@example.com',
-            'firstName': 'Duplicate',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-6666',
+            'first_name': 'Duplicate',
+            'last_name': 'User',
+            'phone_number': '+1-555-6666',
         }
 
         # Create first user
@@ -63,9 +63,9 @@ class TestUsers:
         # First create a user
         create_payload = {
             'email': 'get.test@example.com',
-            'firstName': 'Get',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-5555',
+            'first_name': 'Get',
+            'last_name': 'User',
+            'phone_number': '+1-555-5555',
         }
 
         create_response = client.post('/users', json=create_payload)
@@ -78,8 +78,8 @@ class TestUsers:
         data = response.json()
         assert data['id'] == user_id
         assert data['email'] == create_payload['email']
-        assert data['firstName'] == create_payload['firstName']
-        assert data['lastName'] == create_payload['lastName']
+        assert data['first_name'] == create_payload['first_name']
+        assert data['last_name'] == create_payload['last_name']
 
     def test_get_user_not_found(self):
         """Test getting non-existent user"""
@@ -92,9 +92,9 @@ class TestUsers:
         # First create a user
         create_payload = {
             'email': 'update.test@example.com',
-            'firstName': 'Original',
-            'lastName': 'Name',
-            'phoneNumber': '+1-555-4444',
+            'first_name': 'Original',
+            'last_name': 'Name',
+            'phone_number': '+1-555-4444',
         }
 
         create_response = client.post('/users', json=create_payload)
@@ -102,33 +102,33 @@ class TestUsers:
 
         # Then update it
         update_payload = {
-            'firstName': 'Updated',
-            'lastName': 'Name',
-            'phoneNumber': '+1-555-3333',
-            'addressStreet': '123 Test Street',
-            'addressCity': 'Test City',
-            'addressState': 'TS',
-            'addressZipCode': '12345',
-            'creditLimit': 10000.0,
-            'currentBalance': 500.0,
+            'first_name': 'Updated',
+            'last_name': 'Name',
+            'phone_number': '+1-555-3333',
+            'address_street': '123 Test Street',
+            'address_city': 'Test City',
+            'address_state': 'TS',
+            'address_zipcode': '12345',
+            'credit_limit': 10000.0,
+            'credit_balance': 500.0,
         }
 
         response = client.put(f'/users/{user_id}', json=update_payload)
         assert response.status_code == 200
 
         data = response.json()
-        assert data['firstName'] == update_payload['firstName']
-        assert data['lastName'] == update_payload['lastName']
-        assert data['phoneNumber'] == update_payload['phoneNumber']
+        assert data['first_name'] == update_payload['first_name']
+        assert data['last_name'] == update_payload['last_name']
+        assert data['phone_number'] == update_payload['phone_number']
 
     def test_update_user_duplicate_email(self):
         """Test updating user with email that already exists"""
         # Create first user
         user1_payload = {
             'email': 'user1.test@example.com',
-            'firstName': 'User',
-            'lastName': 'One',
-            'phoneNumber': '+1-555-2222',
+            'first_name': 'User',
+            'last_name': 'One',
+            'phone_number': '+1-555-2222',
         }
 
         user1_response = client.post('/users', json=user1_payload)
@@ -137,9 +137,9 @@ class TestUsers:
         # Create second user
         user2_payload = {
             'email': 'user2.test@example.com',
-            'firstName': 'User',
-            'lastName': 'Two',
-            'phoneNumber': '+1-555-1111',
+            'first_name': 'User',
+            'last_name': 'Two',
+            'phone_number': '+1-555-1111',
         }
 
         user2_response = client.post('/users', json=user2_payload)
@@ -157,9 +157,9 @@ class TestUsers:
         # First create a user
         create_payload = {
             'email': 'delete.test@example.com',
-            'firstName': 'Delete',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-0000',
+            'first_name': 'Delete',
+            'last_name': 'User',
+            'phone_number': '+1-555-0000',
         }
 
         create_response = client.post('/users', json=create_payload)
@@ -186,15 +186,15 @@ class TestUsers:
         users = [
             {
                 'email': 'active.test@example.com',
-                'firstName': 'Active',
-                'lastName': 'User',
-                'phoneNumber': '+1-555-9999',
+                'first_name': 'Active',
+                'last_name': 'User',
+                'phone_number': '+1-555-9999',
             },
             {
                 'email': 'inactive.test@example.com',
-                'firstName': 'Inactive',
-                'lastName': 'User',
-                'phoneNumber': '+1-555-8888',
+                'first_name': 'Inactive',
+                'last_name': 'User',
+                'phone_number': '+1-555-8888',
             },
         ]
 
@@ -210,12 +210,12 @@ class TestUsers:
         response = client.get('/users?is_active=true')
         assert response.status_code == 200
         data = response.json()
-        assert all(user['isActive'] for user in data)
+        assert all(user['is_active'] for user in data)
 
         response = client.get('/users?is_active=false')
         assert response.status_code == 200
         data = response.json()
-        assert all(not user['isActive'] for user in data)
+        assert all(not user['is_active'] for user in data)
 
     def test_pagination(self):
         """Test user pagination"""
@@ -223,9 +223,9 @@ class TestUsers:
         for i in range(5):
             payload = {
                 'email': f'page.test{i}@example.com',
-                'firstName': f'Page{i}',
-                'lastName': 'User',
-                'phoneNumber': f'+1-555-{i:04d}',
+                'first_name': f'Page{i}',
+                'last_name': 'User',
+                'phone_number': f'+1-555-{i:04d}',
             }
             client.post('/users', json=payload)
 
@@ -250,9 +250,9 @@ class TestUserActivation:
         # Create a user
         payload = {
             'email': 'activate.test@example.com',
-            'firstName': 'Activate',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-7777',
+            'first_name': 'Activate',
+            'last_name': 'User',
+            'phone_number': '+1-555-7777',
         }
 
         create_response = client.post('/users', json=payload)
@@ -267,16 +267,16 @@ class TestUserActivation:
 
         data = response.json()
         assert data['message'] == 'User activated successfully'
-        assert data['isActive']
+        assert data['is_active']
 
     def test_deactivate_user(self):
         """Test deactivating a user"""
         # Create a user
         payload = {
             'email': 'deactivate.test@example.com',
-            'firstName': 'Deactivate',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-6666',
+            'first_name': 'Deactivate',
+            'last_name': 'User',
+            'phone_number': '+1-555-6666',
         }
 
         create_response = client.post('/users', json=payload)
@@ -288,7 +288,7 @@ class TestUserActivation:
 
         data = response.json()
         assert data['message'] == 'User deactivated successfully'
-        assert not data['isActive']
+        assert not data['is_active']
 
     def test_activate_user_not_found(self):
         """Test activating non-existent user"""
@@ -311,9 +311,9 @@ class TestUserRelatedData:
         # Create a user
         payload = {
             'email': 'rules.test@example.com',
-            'firstName': 'Rules',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-5555',
+            'first_name': 'Rules',
+            'last_name': 'User',
+            'phone_number': '+1-555-5555',
         }
 
         create_response = client.post('/users', json=payload)
@@ -329,9 +329,9 @@ class TestUserRelatedData:
         # Create a user
         payload = {
             'email': 'transactions.test@example.com',
-            'firstName': 'Transactions',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-4444',
+            'first_name': 'Transactions',
+            'last_name': 'User',
+            'phone_number': '+1-555-4444',
         }
 
         create_response = client.post('/users', json=payload)
@@ -347,9 +347,9 @@ class TestUserRelatedData:
         # Create a user
         payload = {
             'email': 'cards.test@example.com',
-            'firstName': 'Cards',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-3333',
+            'first_name': 'Cards',
+            'last_name': 'User',
+            'phone_number': '+1-555-3333',
         }
 
         create_response = client.post('/users', json=payload)
@@ -383,19 +383,19 @@ class TestUserValidation:
     def test_create_user_missing_required_fields(self):
         """Test creating user with missing required fields"""
         # Missing email
-        payload = {'firstName': 'Test', 'lastName': 'User'}
+        payload = {'first_name': 'Test', 'last_name': 'User'}
 
         response = client.post('/users', json=payload)
         assert response.status_code == 422  # Validation error
 
-        # Missing firstName
-        payload = {'email': 'test@example.com', 'lastName': 'User'}
+        # Missing first_name
+        payload = {'email': 'test@example.com', 'last_name': 'User'}
 
         response = client.post('/users', json=payload)
         assert response.status_code == 422
 
-        # Missing lastName
-        payload = {'email': 'test@example.com', 'firstName': 'Test'}
+        # Missing last_name
+        payload = {'email': 'test@example.com', 'first_name': 'Test'}
 
         response = client.post('/users', json=payload)
         assert response.status_code == 422
@@ -404,9 +404,9 @@ class TestUserValidation:
         """Test creating user with invalid email format"""
         payload = {
             'email': 'invalid-email',
-            'firstName': 'Test',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-7777',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'phone_number': '+1-555-7777',
         }
 
         client.post('/users', json=payload)
@@ -418,16 +418,16 @@ class TestUserValidation:
         # Create a user first
         payload = {
             'email': 'update.validation@example.com',
-            'firstName': 'Update',
-            'lastName': 'User',
-            'phoneNumber': '+1-555-7777',
+            'first_name': 'Update',
+            'last_name': 'User',
+            'phone_number': '+1-555-7777',
         }
 
         create_response = client.post('/users', json=payload)
         user_id = create_response.json()['id']
 
         # Try to update with invalid data (empty string for required field)
-        update_payload = {'firstName': ''}
+        update_payload = {'first_name': ''}
 
         client.put(f'/users/{user_id}', json=update_payload)
         # This might pass if we don't have validation in the schema

@@ -141,10 +141,10 @@ export function AlertsPanel({ className, onAlertClick }: AlertsPanelProps) {
 
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{formatTime(alert.timestamp)}</span>
-                        {alert.transactionId && (
+                        {alert.transaction_id && (
                           <>
                             <span>•</span>
-                            <span>Transaction {alert.transactionId}</span>
+                            <span>Transaction {alert.transaction_id}</span>
                           </>
                         )}
                       </div>

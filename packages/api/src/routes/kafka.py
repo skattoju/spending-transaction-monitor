@@ -16,8 +16,8 @@ router = APIRouter()
 
 
 class TestTransactionRequest(BaseModel):
-    userId: str
-    creditCardId: str
+    user_id: str
+    credit_card_num: str
 
 
 # Global producer instance
@@ -64,15 +64,15 @@ async def send_test_transaction_endpoint(
     try:
         # Create test transaction in ingestion service format
         test_transaction = {
-            'user': int(request.userId),
-            'card': int(request.creditCardId),
+            'user': int(request.user_id),
+            'card': int(request.credit_card_num),
             'year': datetime.now().year,
             'month': datetime.now().month,
             'day': datetime.now().day,
             'time': datetime.now().strftime('%H:%M:%S'),
             'amount': 150.00,
             'use_chip': 'Chip Transaction',
-            'merchant_id': 12345,
+            'merchant_id': '12345',
             'merchant_city': 'Test City',
             'merchant_state': 'CA',
             'zip': '12345',

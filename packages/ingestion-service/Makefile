@@ -5,17 +5,17 @@
 # Run all tests
 test:
 	@echo "🚀 Running all tests..."
-	python run_tests.py
+	uv run python run_tests.py
 
 # Run only unit tests
 test-unit:
 	@echo "🧪 Running unit tests..."
-	python -m pytest tests/unit/ -v
+	uv run pytest tests/unit/ -v
 
 # Run only integration tests (using our test runner)
 test-integration:
 	@echo "🔗 Running integration tests..."
-	python -c "from run_tests import run_integration_tests, run_service_validation; import sys; sys.exit(0 if run_service_validation() and run_integration_tests() else 1)"
+	uv run python -c "from run_tests import run_integration_tests, run_service_validation; import sys; sys.exit(0 if run_service_validation() and run_integration_tests() else 1)"
 
 # Run only E2E tests
 test-e2e:
@@ -47,7 +47,7 @@ test-e2e:
 # Start the service locally
 run-service:
 	@echo "🚀 Starting ingestion service..."
-	python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+	uv run uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
 
 # Clean up
 clean:

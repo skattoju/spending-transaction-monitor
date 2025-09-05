@@ -38,7 +38,7 @@ def test_full_ingestion_flow():
         "Merchant Name": 123456789,
         "Merchant City": "New York",
         "Merchant State": "NY",
-        "Zip": "10001",
+        "Zip": ""10001"",
         "MCC": 5411,
         "Errors?": "",
         "Is Fraud?": "No"
@@ -93,7 +93,7 @@ def test_full_ingestion_flow():
         "merchant_id": 123456789,
         "merchant_city": "New York",
         "merchant_state": "NY",
-        "zip": "10001",
+        "zip": ""10001"",
         "mcc": 5411,
         "errors": "",
         "is_fraud": False

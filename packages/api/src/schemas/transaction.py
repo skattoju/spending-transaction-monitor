@@ -25,92 +25,98 @@ class TransactionBase(BaseModel):
     amount: float = Field(..., description='Transaction amount', gt=0)
     currency: str = Field('USD', description='Transaction currency')
     description: str = Field(..., description='Transaction description')
-    merchantName: str = Field(..., description='Merchant name')
-    merchantCategory: str = Field(..., description='Merchant category')
-    transactionDate: str = Field(
+    merchant_name: str = Field(..., description='Merchant name')
+    merchant_category: str = Field(..., description='Merchant category')
+    transaction_date: str = Field(
         ..., description="Transaction date in ISO format (e.g., '2024-01-16T14:45:00Z')"
     )
-    transactionType: TransactionType = Field(
+    transaction_type: TransactionType = Field(
         TransactionType.PURCHASE, description='Type of transaction'
     )
-    merchantLocation: str | None = Field(None, description='Merchant location')
-    merchantCity: str | None = Field(None, description='Merchant city')
-    merchantState: str | None = Field(None, description='Merchant state')
-    merchantCountry: str | None = Field(None, description='Merchant country')
+    merchant_city: str | None = Field(None, description='Merchant city')
+    merchant_state: str | None = Field(None, description='Merchant state')
+    merchant_country: str | None = Field(None, description='Merchant country')
+    merchant_zipcode: str | None = Field(None, description='Merchant zipcode')
+    merchant_latitude: float | None = Field(None, description='Merchant latitude')
+    merchant_longitude: float | None = Field(None, description='Merchant longitude')
     status: TransactionStatus = Field(
         TransactionStatus.PENDING, description='Transaction status'
     )
-    authorizationCode: str | None = Field(None, description='Authorization code')
-    referenceNumber: str | None = Field(None, description='Reference number')
+    authorization_code: str | None = Field(None, description='Authorization code')
+    trans_num: str | None = Field(None, description='Reference number')
 
 
 class TransactionCreate(TransactionBase):
     id: str = Field(..., description='Transaction ID')
-    userId: str = Field(..., description='User ID')
-    creditCardId: str = Field(..., description='Credit card ID')
+    user_id: str = Field(..., description='User ID')
+    credit_card_num: str = Field(..., description='Credit card ID')
 
 
 class TransactionUpdate(BaseModel):
     amount: float | None = Field(None, description='Transaction amount', gt=0)
     currency: str | None = Field(None, description='Transaction currency')
     description: str | None = Field(None, description='Transaction description')
-    merchantName: str | None = Field(None, description='Merchant name')
-    merchantCategory: str | None = Field(None, description='Merchant category')
-    transactionDate: str | None = Field(
+    merchant_name: str | None = Field(None, description='Merchant name')
+    merchant_category: str | None = Field(None, description='Merchant category')
+    transaction_date: str | None = Field(
         None, description='Transaction date in ISO format'
     )
-    transactionType: TransactionType | None = Field(
+    transaction_type: TransactionType | None = Field(
         None, description='Type of transaction'
     )
-    merchantLocation: str | None = Field(None, description='Merchant location')
-    merchantCity: str | None = Field(None, description='Merchant city')
-    merchantState: str | None = Field(None, description='Merchant state')
-    merchantCountry: str | None = Field(None, description='Merchant country')
+    merchant_city: str | None = Field(None, description='Merchant city')
+    merchant_state: str | None = Field(None, description='Merchant state')
+    merchant_country: str | None = Field(None, description='Merchant country')
+    merchant_zipcode: str | None = Field(None, description='Merchant zipcode')
+    merchant_latitude: float | None = Field(None, description='Merchant latitude')
+    merchant_longitude: float | None = Field(None, description='Merchant longitude')
     status: TransactionStatus | None = Field(None, description='Transaction status')
-    authorizationCode: str | None = Field(None, description='Authorization code')
-    referenceNumber: str | None = Field(None, description='Reference number')
+    authorization_code: str | None = Field(None, description='Authorization code')
+    trans_num: str | None = Field(None, description='Reference number')
 
 
 class TransactionOut(TransactionBase):
     id: str
-    userId: str
-    creditCardId: str
-    createdAt: str
-    updatedAt: str
+    user_id: str
+    credit_card_num: str
+    created_at: str
+    updated_at: str
 
 
 # Credit Card Schemas
 class CreditCardBase(BaseModel):
-    cardNumber: str = Field(..., description='Card number (last 4 digits)')
-    cardType: str = Field(..., description='Card type (Visa, Mastercard, etc.)')
-    bankName: str = Field(..., description='Bank name')
-    cardHolderName: str = Field(..., description='Card holder name')
-    expiryMonth: int = Field(..., description='Expiry month (1-12)', ge=1, le=12)
-    expiryYear: int = Field(..., description='Expiry year', ge=2024)
-    isActive: bool = Field(True, description='Whether the card is active')
+    card_number: str = Field(..., description='Card number (last 4 digits)')
+    card_type: str = Field(..., description='Card type (Visa, Mastercard, etc.)')
+    bank_name: str = Field(..., description='Bank name')
+    card_holder_name: str = Field(..., description='Card holder name')
+    expiry_month: int = Field(..., description='Expiry month (1-12)', ge=1, le=12)
+    expiry_year: int = Field(..., description='Expiry year', ge=2024)
+    is_active: bool = Field(True, description='Whether the card is active')
 
 
 class CreditCardCreate(CreditCardBase):
-    userId: str = Field(..., description='User ID')
+    user_id: str = Field(..., description='User ID')
 
 
 class CreditCardUpdate(BaseModel):
-    cardNumber: str | None = Field(None, description='Card number (last 4 digits)')
-    cardType: str | None = Field(None, description='Card type (Visa, Mastercard, etc.)')
-    bankName: str | None = Field(None, description='Bank name')
-    cardHolderName: str | None = Field(None, description='Card holder name')
-    expiryMonth: int | None = Field(
+    card_number: str | None = Field(None, description='Card number (last 4 digits)')
+    card_type: str | None = Field(
+        None, description='Card type (Visa, Mastercard, etc.)'
+    )
+    bank_name: str | None = Field(None, description='Bank name')
+    card_holder_name: str | None = Field(None, description='Card holder name')
+    expiry_month: int | None = Field(
         None, description='Expiry month (1-12)', ge=1, le=12
     )
-    expiryYear: int | None = Field(None, description='Expiry year', ge=2024)
-    isActive: bool | None = Field(None, description='Whether the card is active')
+    expiry_year: int | None = Field(None, description='Expiry year', ge=2024)
+    is_active: bool | None = Field(None, description='Whether the card is active')
 
 
 class CreditCardOut(CreditCardBase):
     id: str
-    userId: str
-    createdAt: str
-    updatedAt: str
+    user_id: str
+    created_at: str
+    updated_at: str
 
 
 # Transaction Summary Schemas
@@ -134,7 +140,7 @@ class CategorySpending(BaseModel):
 
 
 class SpendingAnalysis(BaseModel):
-    userId: str = Field(..., description='User ID')
+    user_id: str = Field(..., description='User ID')
     period: str = Field(..., description="Analysis period (e.g., 'last_30_days')")
     summary: TransactionSummary = Field(..., description='Transaction summary')
     categoryBreakdown: list[CategorySpending] = Field(
@@ -148,13 +154,13 @@ class SpendingAnalysis(BaseModel):
 
 # Transaction Filter Schemas
 class TransactionFilters(BaseModel):
-    userId: str | None = Field(None, description='Filter by user ID')
-    creditCardId: str | None = Field(None, description='Filter by credit card ID')
-    merchantCategory: str | None = Field(
+    user_id: str | None = Field(None, description='Filter by user ID')
+    credit_card_num: str | None = Field(None, description='Filter by credit card ID')
+    merchant_category: str | None = Field(
         None, description='Filter by merchant category'
     )
-    merchantName: str | None = Field(None, description='Filter by merchant name')
-    transactionType: TransactionType | None = Field(
+    merchant_name: str | None = Field(None, description='Filter by merchant name')
+    transaction_type: TransactionType | None = Field(
         None, description='Filter by transaction type'
     )
     status: TransactionStatus | None = Field(
@@ -192,7 +198,7 @@ class ExportFormat(str, Enum):
 
 
 class TransactionExport(BaseModel):
-    userId: str = Field(..., description='User ID')
+    user_id: str = Field(..., description='User ID')
     format: ExportFormat = Field(ExportFormat.CSV, description='Export format')
     filters: TransactionFilters | None = Field(None, description='Export filters')
     includeSummary: bool = Field(True, description='Include summary in export')
@@ -219,7 +225,7 @@ class MonthlySpending(BaseModel):
 
 
 class SpendingTrends(BaseModel):
-    userId: str = Field(..., description='User ID')
+    user_id: str = Field(..., description='User ID')
     period: str = Field(..., description='Analysis period')
     dailySpending: list[DailySpending] = Field(..., description='Daily spending data')
     monthlySpending: list[MonthlySpending] = Field(

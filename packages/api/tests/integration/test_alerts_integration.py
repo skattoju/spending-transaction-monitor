@@ -15,9 +15,9 @@ class TestUserSetup:
         """Create a test user before each test"""
         self.user_payload = {
             'email': 'alert.test@example.com',
-            'firstName': 'Alert',
-            'lastName': 'Tester',
-            'phoneNumber': '+1-555-9999',
+            'first_name': 'Alert',
+            'last_name': 'Tester',
+            'phone_number': '+1-555-9999',
         }
 
         # Create user
@@ -46,13 +46,13 @@ class TestAlertRules(TestUserSetup):
     def test_create_alert_rule(self):
         """Test creating a new alert rule"""
         payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'High Amount Alert',
             'description': 'Alert for transactions over $1000',
-            'isActive': True,
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 1000.0,
-            'notificationMethods': ['EMAIL', 'PUSH'],
+            'is_active': True,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 1000.0,
+            'notification_methods': ['EMAIL', 'PUSH'],
         }
 
         response = client.post('/alerts/rules', json=payload)
@@ -60,20 +60,20 @@ class TestAlertRules(TestUserSetup):
 
         data = response.json()
         assert data['name'] == payload['name']
-        assert data['alertType'] == payload['alertType']
-        assert data['amountThreshold'] == payload['amountThreshold']
-        assert data['isActive'] == payload['isActive']
+        assert data['alert_type'] == payload['alert_type']
+        assert data['amount_threshold'] == payload['amount_threshold']
+        assert data['is_active'] == payload['is_active']
         assert 'id' in data
-        assert 'createdAt' in data
-        assert 'updatedAt' in data
+        assert 'created_at' in data
+        assert 'updated_at' in data
 
     def test_create_alert_rule_invalid_user(self):
         """Test creating alert rule with non-existent user"""
         payload = {
-            'userId': 'non-existent-user',
+            'user_id': 'non-existent-user',
             'name': 'Test Alert',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         response = client.post('/alerts/rules', json=payload)
@@ -84,10 +84,10 @@ class TestAlertRules(TestUserSetup):
         """Test getting a specific alert rule"""
         # First create a rule
         create_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'Test Rule',
-            'alertType': 'MERCHANT_CATEGORY',
-            'merchantCategory': 'RESTAURANTS',
+            'alert_type': 'MERCHANT_CATEGORY',
+            'merchant_category': 'RESTAURANTS',
         }
 
         create_response = client.post('/alerts/rules', json=create_payload)
@@ -100,7 +100,7 @@ class TestAlertRules(TestUserSetup):
         data = response.json()
         assert data['id'] == rule_id
         assert data['name'] == create_payload['name']
-        assert data['alertType'] == create_payload['alertType']
+        assert data['alert_type'] == create_payload['alert_type']
 
     def test_get_alert_rule_not_found(self):
         """Test getting non-existent alert rule"""
@@ -112,10 +112,10 @@ class TestAlertRules(TestUserSetup):
         """Test updating an alert rule"""
         # First create a rule
         create_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'Original Name',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 500.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 500.0,
         }
 
         create_response = client.post('/alerts/rules', json=create_payload)
@@ -124,8 +124,8 @@ class TestAlertRules(TestUserSetup):
         # Then update it
         update_payload = {
             'name': 'Updated Name',
-            'amountThreshold': 750.0,
-            'isActive': False,
+            'amount_threshold': 750.0,
+            'is_active': False,
         }
 
         response = client.put(f'/alerts/rules/{rule_id}', json=update_payload)
@@ -133,17 +133,17 @@ class TestAlertRules(TestUserSetup):
 
         data = response.json()
         assert data['name'] == update_payload['name']
-        assert data['amountThreshold'] == update_payload['amountThreshold']
-        assert data['isActive'] == update_payload['isActive']
+        assert data['amount_threshold'] == update_payload['amount_threshold']
+        assert data['is_active'] == update_payload['is_active']
 
     def test_delete_alert_rule(self):
         """Test deleting an alert rule"""
         # First create a rule
         create_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'To Delete',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         create_response = client.post('/alerts/rules', json=create_payload)
@@ -163,18 +163,18 @@ class TestAlertRules(TestUserSetup):
         # Create multiple rules
         rules = [
             {
-                'userId': 'user-1',
+                'user_id': 'user-1',
                 'name': 'Rule 1',
-                'alertType': 'AMOUNT_THRESHOLD',
-                'amountThreshold': 100.0,
-                'isActive': True,
+                'alert_type': 'AMOUNT_THRESHOLD',
+                'amount_threshold': 100.0,
+                'is_active': True,
             },
             {
-                'userId': 'user-2',
+                'user_id': 'user-2',
                 'name': 'Rule 2',
-                'alertType': 'MERCHANT_CATEGORY',
-                'merchantCategory': 'SHOPPING',
-                'isActive': False,
+                'alert_type': 'MERCHANT_CATEGORY',
+                'merchant_category': 'SHOPPING',
+                'is_active': False,
             },
         ]
 
@@ -186,13 +186,13 @@ class TestAlertRules(TestUserSetup):
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]['userId'] == 'user-1'
+        assert data[0]['user_id'] == 'user-1'
 
         # Test filtering by active status
         response = client.get('/alerts/rules?is_active=true')
         assert response.status_code == 200
         data = response.json()
-        assert all(rule['isActive'] for rule in data)
+        assert all(rule['is_active'] for rule in data)
 
 
 class TestAlertNotifications(TestUserSetup):
@@ -208,10 +208,10 @@ class TestAlertNotifications(TestUserSetup):
         """Test creating a new alert notification"""
         # First create an alert rule
         rule_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'Test Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)
@@ -219,11 +219,11 @@ class TestAlertNotifications(TestUserSetup):
 
         # Then create a notification
         notification_payload = {
-            'userId': self.user_id,
-            'alertRuleId': rule_id,
+            'user_id': self.user_id,
+            'alert_rule_id': rule_id,
             'title': 'High Transaction Alert',
             'message': 'Transaction over $100 detected',
-            'notificationMethod': 'EMAIL',
+            'notification_method': 'EMAIL',
             'status': 'PENDING',
         }
 
@@ -233,19 +233,21 @@ class TestAlertNotifications(TestUserSetup):
         data = response.json()
         assert data['title'] == notification_payload['title']
         assert data['message'] == notification_payload['message']
-        assert data['notificationMethod'] == notification_payload['notificationMethod']
+        assert (
+            data['notification_method'] == notification_payload['notification_method']
+        )
         assert data['status'] == notification_payload['status']
         assert 'id' in data
-        assert 'createdAt' in data
+        assert 'created_at' in data
 
     def test_create_notification_invalid_user(self):
         """Test creating notification with non-existent user"""
         payload = {
-            'userId': 'non-existent-user',
-            'alertRuleId': 'some-rule-id',
+            'user_id': 'non-existent-user',
+            'alert_rule_id': 'some-rule-id',
             'title': 'Test',
             'message': 'Test message',
-            'notificationMethod': 'EMAIL',
+            'notification_method': 'EMAIL',
             'status': 'PENDING',
         }
 
@@ -256,11 +258,11 @@ class TestAlertNotifications(TestUserSetup):
     def test_create_notification_invalid_rule(self):
         """Test creating notification with non-existent alert rule"""
         payload = {
-            'userId': 'test-user-123',
-            'alertRuleId': 'non-existent-rule',
+            'user_id': 'test-user-123',
+            'alert_rule_id': 'non-existent-rule',
             'title': 'Test',
             'message': 'Test message',
-            'notificationMethod': 'EMAIL',
+            'notification_method': 'EMAIL',
             'status': 'PENDING',
         }
 
@@ -272,21 +274,21 @@ class TestAlertNotifications(TestUserSetup):
         """Test getting a specific notification"""
         # Create rule and notification
         rule_payload = {
-            'userId': 'test-user-123',
+            'user_id': 'test-user-123',
             'name': 'Test Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)
         rule_id = rule_response.json()['id']
 
         notification_payload = {
-            'userId': 'test-user-123',
-            'alertRuleId': rule_id,
+            'user_id': 'test-user-123',
+            'alert_rule_id': rule_id,
             'title': 'Test Notification',
             'message': 'Test message',
-            'notificationMethod': 'SMS',
+            'notification_method': 'SMS',
             'status': 'SENT',
         }
 
@@ -302,27 +304,29 @@ class TestAlertNotifications(TestUserSetup):
         data = response.json()
         assert data['id'] == notification_id
         assert data['title'] == notification_payload['title']
-        assert data['notificationMethod'] == notification_payload['notificationMethod']
+        assert (
+            data['notification_method'] == notification_payload['notification_method']
+        )
 
     def test_update_notification(self):
         """Test updating a notification"""
         # Create rule and notification
         rule_payload = {
-            'userId': 'test-user-123',
+            'user_id': 'test-user-123',
             'name': 'Test Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)
         rule_id = rule_response.json()['id']
 
         notification_payload = {
-            'userId': 'test-user-123',
-            'alertRuleId': rule_id,
+            'user_id': 'test-user-123',
+            'alert_rule_id': rule_id,
             'title': 'Original Title',
             'message': 'Original message',
-            'notificationMethod': 'EMAIL',
+            'notification_method': 'EMAIL',
             'status': 'PENDING',
         }
 
@@ -347,21 +351,21 @@ class TestAlertNotifications(TestUserSetup):
         """Test deleting a notification"""
         # Create rule and notification
         rule_payload = {
-            'userId': 'test-user-123',
+            'user_id': 'test-user-123',
             'name': 'Test Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)
         rule_id = rule_response.json()['id']
 
         notification_payload = {
-            'userId': 'test-user-123',
-            'alertRuleId': rule_id,
+            'user_id': 'test-user-123',
+            'alert_rule_id': rule_id,
             'title': 'To Delete',
             'message': 'Delete me',
-            'notificationMethod': 'PUSH',
+            'notification_method': 'PUSH',
             'status': 'PENDING',
         }
 
@@ -387,10 +391,10 @@ class TestUtilityEndpoints(TestUserSetup):
         """Test getting notifications for a specific rule"""
         # Create a rule
         rule_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'Test Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)
@@ -399,19 +403,19 @@ class TestUtilityEndpoints(TestUserSetup):
         # Create notifications for this rule
         notifications = [
             {
-                'userId': self.user_id,
-                'alertRuleId': rule_id,
+                'user_id': self.user_id,
+                'alert_rule_id': rule_id,
                 'title': 'Notification 1',
                 'message': 'First notification',
-                'notificationMethod': 'EMAIL',
+                'notification_method': 'EMAIL',
                 'status': 'SENT',
             },
             {
-                'userId': self.user_id,
-                'alertRuleId': rule_id,
+                'user_id': self.user_id,
+                'alert_rule_id': rule_id,
                 'title': 'Notification 2',
                 'message': 'Second notification',
-                'notificationMethod': 'SMS',
+                'notification_method': 'SMS',
                 'status': 'PENDING',
             },
         ]
@@ -425,17 +429,17 @@ class TestUtilityEndpoints(TestUserSetup):
 
         data = response.json()
         assert len(data) == 2
-        assert all(notification['alertRuleId'] == rule_id for notification in data)
+        assert all(notification['alert_rule_id'] == rule_id for notification in data)
 
     def test_trigger_alert_rule(self):
         """Test manually triggering an alert rule"""
         # Create an active rule
         rule_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'Test Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
-            'isActive': True,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
+            'is_active': True,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)
@@ -447,23 +451,23 @@ class TestUtilityEndpoints(TestUserSetup):
 
         data = response.json()
         assert data['message'] == 'Alert rule triggered successfully'
-        assert data['triggerCount'] == 1
+        assert data['trigger_count'] == 1
 
         # Verify the rule was updated
         rule_response = client.get(f'/alerts/rules/{rule_id}')
         rule_data = rule_response.json()
-        assert rule_data['triggerCount'] == 1
-        assert rule_data['lastTriggered'] is not None
+        assert rule_data['trigger_count'] == 1
+        assert rule_data['last_triggered'] is not None
 
     def test_trigger_inactive_rule(self):
         """Test triggering an inactive rule"""
         # Create an inactive rule
         rule_payload = {
-            'userId': self.user_id,
+            'user_id': self.user_id,
             'name': 'Inactive Rule',
-            'alertType': 'AMOUNT_THRESHOLD',
-            'amountThreshold': 100.0,
-            'isActive': False,
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
+            'is_active': False,
         }
 
         rule_response = client.post('/alerts/rules', json=rule_payload)

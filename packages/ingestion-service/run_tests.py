@@ -43,8 +43,8 @@ def run_integration_tests():
     
     try:
         from fastapi.testclient import TestClient
-        from main import app, kafka_manager, transform_transaction
-        from common.models import IncomingTransaction
+        from src.main import app, kafka_manager, transform_transaction
+        from src.common.models import IncomingTransaction
         
         print("✅ Service modules imported successfully")
         
@@ -136,7 +136,7 @@ def run_service_validation():
     
     try:
         # Test that we can import everything without errors
-        from main import app, KafkaConnectionManager
+        from src.main import app, KafkaConnectionManager
         print("✅ All imports successful")
         
         # Test that we can create the app

@@ -191,7 +191,7 @@ export const alertService = {
         description: 'Transaction of $2,500 exceeds your daily limit',
         severity: 'high',
         timestamp: new Date(Date.now() - 1800000).toISOString(),
-        transactionId: 'TXN-0003',
+        transaction_id: 'TXN-0003',
         resolved: false,
       },
       {
@@ -225,32 +225,32 @@ export const alertService = {
         rule: 'Alert me when transactions exceed $10,000',
         status: 'active',
         triggered: 3,
-        lastTriggered: '2 hours ago',
-        createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+        last_triggered: '2 hours ago',
+        created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
       },
       {
         id: 'RULE-002',
         rule: 'Notify me of suspicious login attempts',
         status: 'active',
         triggered: 0,
-        lastTriggered: 'Never',
-        createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
+        last_triggered: 'Never',
+        created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
       },
       {
         id: 'RULE-003',
         rule: 'Alert for transactions from new countries',
         status: 'active',
         triggered: 12,
-        lastTriggered: '1 day ago',
-        createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
+        last_triggered: '1 day ago',
+        created_at: new Date(Date.now() - 86400000 * 60).toISOString(),
       },
       {
         id: 'RULE-004',
         rule: 'Notify when daily spending exceeds $5,000',
         status: 'paused',
         triggered: 8,
-        lastTriggered: '5 days ago',
-        createdAt: new Date(Date.now() - 86400000 * 45).toISOString(),
+        last_triggered: '5 days ago',
+        created_at: new Date(Date.now() - 86400000 * 45).toISOString(),
       },
     ];
 
@@ -266,8 +266,8 @@ export const alertService = {
       rule,
       status: 'active',
       triggered: 0,
-      lastTriggered: 'Never',
-      createdAt: new Date().toISOString(),
+      last_triggered: 'Never',
+      created_at: new Date().toISOString(),
     };
 
     return newRule;

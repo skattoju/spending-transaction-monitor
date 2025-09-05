@@ -4,13 +4,13 @@ Simple tests that don't require external dependencies
 
 def test_import_main():
     """Test that the main module can be imported"""
-    import main
+    from src import main
     assert hasattr(main, 'app')
 
 
 def test_import_models():
     """Test that models can be imported"""
-    from common.models import Transaction
+    from src.common.models import Transaction
     assert Transaction is not None
 
 

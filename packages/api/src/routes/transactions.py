@@ -41,13 +41,13 @@ async def get_transactions(
     query = select(Transaction)
 
     if user_id:
-        query = query.where(Transaction.userId == user_id)
+        query = query.where(Transaction.user_id == user_id)
 
     if credit_card_id:
-        query = query.where(Transaction.creditCardId == credit_card_id)
+        query = query.where(Transaction.credit_card_num == credit_card_id)
 
     if merchant_category:
-        query = query.where(Transaction.merchantCategory == merchant_category)
+        query = query.where(Transaction.merchant_category == merchant_category)
 
     if min_amount is not None:
         query = query.where(Transaction.amount >= min_amount)
@@ -60,7 +60,7 @@ async def get_transactions(
             from datetime import datetime
 
             start_datetime = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            query = query.where(Transaction.transactionDate >= start_datetime)
+            query = query.where(Transaction.transaction_date >= start_datetime)
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
@@ -72,14 +72,14 @@ async def get_transactions(
             from datetime import datetime
 
             end_datetime = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-            query = query.where(Transaction.transactionDate <= end_datetime)
+            query = query.where(Transaction.transaction_date <= end_datetime)
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid end date format. Use ISO format (e.g., '2024-01-16T14:45:00Z')",
             ) from e
 
-    query = query.order_by(Transaction.transactionDate.desc())
+    query = query.order_by(Transaction.transaction_date.desc())
     query = query.offset(offset).limit(limit)
 
     result = await session.execute(query)
@@ -88,26 +88,28 @@ async def get_transactions(
     return [
         TransactionOut(
             id=tx.id,
-            userId=tx.userId,
-            creditCardId=tx.creditCardId,
+            user_id=tx.user_id,
+            credit_card_num=tx.credit_card_num,
             amount=float(tx.amount) if tx.amount is not None else None,
             currency=tx.currency,
             description=tx.description,
-            merchantName=tx.merchantName,
-            merchantCategory=tx.merchantCategory,
-            transactionDate=tx.transactionDate.isoformat()
-            if tx.transactionDate
+            merchant_name=tx.merchant_name,
+            merchant_category=tx.merchant_category,
+            transaction_date=tx.transaction_date.isoformat()
+            if tx.transaction_date
             else None,
-            transactionType=tx.transactionType,
-            merchantLocation=tx.merchantLocation,
-            merchantCity=tx.merchantCity,
-            merchantState=tx.merchantState,
-            merchantCountry=tx.merchantCountry,
+            transaction_type=tx.transaction_type,
+            merchant_latitude=tx.merchant_latitude,
+            merchant_longitude=tx.merchant_longitude,
+            merchant_city=tx.merchant_city,
+            merchant_state=tx.merchant_state,
+            merchant_country=tx.merchant_country,
+            merchant_zipcode=tx.merchant_zipcode,
             status=tx.status,
-            authorizationCode=tx.authorizationCode,
-            referenceNumber=tx.referenceNumber,
-            createdAt=tx.createdAt.isoformat() if tx.createdAt else None,
-            updatedAt=tx.updatedAt.isoformat() if tx.updatedAt else None,
+            authorization_code=tx.authorization_code,
+            trans_num=tx.trans_num,
+            created_at=tx.created_at.isoformat() if tx.created_at else None,
+            updated_at=tx.updated_at.isoformat() if tx.updated_at else None,
         )
         for tx in transactions
     ]
@@ -125,24 +127,28 @@ async def get_transaction(transaction_id: str, session: AsyncSession = Depends(g
 
     return TransactionOut(
         id=tx.id,
-        userId=tx.userId,
-        creditCardId=tx.creditCardId,
+        user_id=tx.user_id,
+        credit_card_num=tx.credit_card_num,
         amount=float(tx.amount) if tx.amount is not None else None,
         currency=tx.currency,
         description=tx.description,
-        merchantName=tx.merchantName,
-        merchantCategory=tx.merchantCategory,
-        transactionDate=tx.transactionDate.isoformat() if tx.transactionDate else None,
-        transactionType=tx.transactionType,
-        merchantLocation=tx.merchantLocation,
-        merchantCity=tx.merchantCity,
-        merchantState=tx.merchantState,
-        merchantCountry=tx.merchantCountry,
+        merchant_name=tx.merchant_name,
+        merchant_category=tx.merchant_category,
+        transaction_date=tx.transaction_date.isoformat()
+        if tx.transaction_date
+        else None,
+        transaction_type=tx.transaction_type,
+        merchant_latitude=tx.merchant_latitude,
+        merchant_longitude=tx.merchant_longitude,
+        merchant_city=tx.merchant_city,
+        merchant_state=tx.merchant_state,
+        merchant_country=tx.merchant_country,
+        merchant_zipcode=tx.merchant_zipcode,
         status=tx.status,
-        authorizationCode=tx.authorizationCode,
-        referenceNumber=tx.referenceNumber,
-        createdAt=tx.createdAt.isoformat() if tx.createdAt else None,
-        updatedAt=tx.updatedAt.isoformat() if tx.updatedAt else None,
+        authorization_code=tx.authorization_code,
+        trans_num=tx.trans_num,
+        created_at=tx.created_at.isoformat() if tx.created_at else None,
+        updated_at=tx.updated_at.isoformat() if tx.updated_at else None,
     )
 
 
@@ -152,25 +158,25 @@ async def create_transaction(
 ):
     """Create a new transaction"""
     # Verify user exists
-    user_result = await session.execute(select(User).where(User.id == payload.userId))
+    user_result = await session.execute(select(User).where(User.id == payload.user_id))
     user = user_result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail='User not found')
 
     # Verify credit card exists
-    card_result = await session.execute(
-        select(CreditCard).where(CreditCard.id == payload.creditCardId)
-    )
-    card = card_result.scalar_one_or_none()
-    if not card:
-        raise HTTPException(status_code=404, detail='Credit card not found')
+    # card_result = await session.execute(
+    #     select(CreditCard).where(CreditCard.id == payload.credit_card_num)
+    # )
+    # card = card_result.scalar_one_or_none()
+    # if not card:
+    #     raise HTTPException(status_code=404, detail='Credit card not found')
 
     # Parse the transaction date string to datetime object
     from datetime import datetime
 
     try:
         transaction_date = datetime.fromisoformat(
-            payload.transactionDate.replace('Z', '+00:00')
+            payload.transaction_date.replace('Z', '+00:00')
         )
     except ValueError as e:
         raise HTTPException(
@@ -180,22 +186,24 @@ async def create_transaction(
 
     tx = Transaction(
         id=payload.id,
-        userId=payload.userId,
-        creditCardId=payload.creditCardId,
+        user_id=payload.user_id,
+        credit_card_num=payload.credit_card_num,
         amount=payload.amount,
         currency=payload.currency,
         description=payload.description,
-        merchantName=payload.merchantName,
-        merchantCategory=payload.merchantCategory,
-        transactionDate=transaction_date,
-        transactionType=payload.transactionType,
-        merchantLocation=payload.merchantLocation,
-        merchantCity=payload.merchantCity,
-        merchantState=payload.merchantState,
-        merchantCountry=payload.merchantCountry,
+        merchant_name=payload.merchant_name,
+        merchant_category=payload.merchant_category,
+        transaction_date=transaction_date,
+        transaction_type=payload.transaction_type,
+        merchant_longitude=payload.merchant_longitude,
+        merchant_latitude=payload.merchant_latitude,
+        merchant_city=payload.merchant_city,
+        merchant_state=payload.merchant_state,
+        merchant_country=payload.merchant_country,
+        merchant_zipcode=payload.merchant_zipcode,
         status=payload.status,
-        authorizationCode=payload.authorizationCode,
-        referenceNumber=payload.referenceNumber,
+        authorization_code=payload.authorization_code,
+        trans_num=payload.trans_num,
     )
     session.add(tx)
     await session.commit()
@@ -203,24 +211,28 @@ async def create_transaction(
 
     return TransactionOut(
         id=tx.id,
-        userId=tx.userId,
-        creditCardId=tx.creditCardId,
+        user_id=tx.user_id,
+        credit_card_num=tx.credit_card_num,
         amount=float(tx.amount) if tx.amount is not None else None,
         currency=tx.currency,
         description=tx.description,
-        merchantName=tx.merchantName,
-        merchantCategory=tx.merchantCategory,
-        transactionDate=tx.transactionDate.isoformat() if tx.transactionDate else None,
-        transactionType=tx.transactionType,
-        merchantLocation=tx.merchantLocation,
-        merchantCity=tx.merchantCity,
-        merchantState=tx.merchantState,
-        merchantCountry=tx.merchantCountry,
+        merchant_name=tx.merchant_name,
+        merchant_category=tx.merchant_category,
+        transaction_date=tx.transaction_date.isoformat()
+        if tx.transaction_date
+        else None,
+        transaction_type=tx.transaction_type,
+        merchant_longitude=tx.merchant_longitude,
+        merchant_latitude=tx.merchant_latitude,
+        merchant_city=tx.merchant_city,
+        merchant_state=tx.merchant_state,
+        merchant_country=tx.merchant_country,
+        merchant_zipcode=tx.merchant_zipcode,
         status=tx.status,
-        authorizationCode=tx.authorizationCode,
-        referenceNumber=tx.referenceNumber,
-        createdAt=tx.createdAt.isoformat() if tx.createdAt else None,
-        updatedAt=tx.updatedAt.isoformat() if tx.updatedAt else None,
+        authorization_code=tx.authorization_code,
+        trans_num=tx.trans_num,
+        created_at=tx.created_at.isoformat() if tx.created_at else None,
+        updated_at=tx.updated_at.isoformat() if tx.updated_at else None,
     )
 
 
@@ -243,8 +255,8 @@ async def update_transaction(
     update_data = {}
     for field, value in payload.dict(exclude_unset=True).items():
         if value is not None:
-            # Handle date parsing for transactionDate
-            if field == 'transactionDate':
+            # Handle date parsing for transaction_date
+            if field == 'transaction_date':
                 try:
                     from datetime import datetime
 
@@ -262,7 +274,7 @@ async def update_transaction(
     if update_data:
         from datetime import datetime
 
-        update_data['updatedAt'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.utcnow()
         await session.execute(
             update(Transaction)
             .where(Transaction.id == transaction_id)
@@ -273,24 +285,28 @@ async def update_transaction(
 
     return TransactionOut(
         id=tx.id,
-        userId=tx.userId,
-        creditCardId=tx.creditCardId,
+        user_id=tx.user_id,
+        credit_card_num=tx.credit_card_num,
         amount=float(tx.amount) if tx.amount is not None else None,
         currency=tx.currency,
         description=tx.description,
-        merchantName=tx.merchantName,
-        merchantCategory=tx.merchantCategory,
-        transactionDate=tx.transactionDate.isoformat() if tx.transactionDate else None,
-        transactionType=tx.transactionType,
-        merchantLocation=tx.merchantLocation,
-        merchantCity=tx.merchantCity,
-        merchantState=tx.merchantState,
-        merchantCountry=tx.merchantCountry,
+        merchant_name=tx.merchant_name,
+        merchant_category=tx.merchant_category,
+        transaction_date=tx.transaction_date.isoformat()
+        if tx.transaction_date
+        else None,
+        transaction_type=tx.transaction_type,
+        merchant_city=tx.merchant_city,
+        merchant_state=tx.merchant_state,
+        merchant_country=tx.merchant_country,
+        merchant_zipcode=tx.merchant_zipcode,
+        merchant_latitude=tx.merchant_latitude,
+        merchant_longitude=tx.merchant_longitude,
         status=tx.status,
-        authorizationCode=tx.authorizationCode,
-        referenceNumber=tx.referenceNumber,
-        createdAt=tx.createdAt.isoformat() if tx.createdAt else None,
-        updatedAt=tx.updatedAt.isoformat() if tx.updatedAt else None,
+        authorization_code=tx.authorization_code,
+        trans_num=tx.trans_num,
+        created_at=tx.created_at.isoformat() if tx.created_at else None,
+        updated_at=tx.updated_at.isoformat() if tx.updated_at else None,
     )
 
 
@@ -323,10 +339,10 @@ async def get_credit_cards(
     query = select(CreditCard)
 
     if user_id:
-        query = query.where(CreditCard.userId == user_id)
+        query = query.where(CreditCard.user_id == user_id)
 
     if is_active is not None:
-        query = query.where(CreditCard.isActive == is_active)
+        query = query.where(CreditCard.is_active == is_active)
 
     result = await session.execute(query)
     cards = result.scalars().all()
@@ -334,16 +350,16 @@ async def get_credit_cards(
     return [
         CreditCardOut(
             id=card.id,
-            userId=card.userId,
-            cardNumber=card.cardNumber,
-            cardType=card.cardType,
-            bankName=card.bankName,
-            cardHolderName=card.cardHolderName,
-            expiryMonth=card.expiryMonth,
-            expiryYear=card.expiryYear,
-            isActive=card.isActive,
-            createdAt=card.createdAt.isoformat() if card.createdAt else None,
-            updatedAt=card.updatedAt.isoformat() if card.updatedAt else None,
+            user_id=card.user_id,
+            card_number=card.card_number,
+            card_type=card.card_type,
+            bank_name=card.bank_name,
+            card_holder_name=card.card_holder_name,
+            expiry_month=card.expiry_month,
+            expiry_year=card.expiry_year,
+            is_active=card.is_active,
+            created_at=card.created_at.isoformat() if card.created_at else None,
+            updated_at=card.updated_at.isoformat() if card.updated_at else None,
         )
         for card in cards
     ]
@@ -359,16 +375,16 @@ async def get_credit_card(card_id: str, session: AsyncSession = Depends(get_db))
 
     return CreditCardOut(
         id=card.id,
-        userId=card.userId,
-        cardNumber=card.cardNumber,
-        cardType=card.cardType,
-        bankName=card.bankName,
-        cardHolderName=card.cardHolderName,
-        expiryMonth=card.expiryMonth,
-        expiryYear=card.expiryYear,
-        isActive=card.isActive,
-        createdAt=card.createdAt.isoformat() if card.createdAt else None,
-        updatedAt=card.updatedAt.isoformat() if card.updatedAt else None,
+        user_id=card.user_id,
+        card_number=card.card_number,
+        card_type=card.card_type,
+        bank_name=card.bank_name,
+        card_holder_name=card.card_holder_name,
+        expiry_month=card.expiry_month,
+        expiry_year=card.expiry_year,
+        is_active=card.is_active,
+        created_at=card.created_at.isoformat() if card.created_at else None,
+        updated_at=card.updated_at.isoformat() if card.updated_at else None,
     )
 
 
@@ -378,21 +394,21 @@ async def create_credit_card(
 ):
     """Create a new credit card"""
     # Verify user exists
-    user_result = await session.execute(select(User).where(User.id == payload.userId))
+    user_result = await session.execute(select(User).where(User.id == payload.user_id))
     user = user_result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail='User not found')
 
     card = CreditCard(
         id=str(uuid.uuid4()),
-        userId=payload.userId,
-        cardNumber=payload.cardNumber,
-        cardType=payload.cardType,
-        bankName=payload.bankName,
-        cardHolderName=payload.cardHolderName,
-        expiryMonth=payload.expiryMonth,
-        expiryYear=payload.expiryYear,
-        isActive=payload.isActive,
+        user_id=payload.user_id,
+        card_number=payload.card_number,
+        card_type=payload.card_type,
+        bank_name=payload.bank_name,
+        card_holder_name=payload.card_holder_name,
+        expiry_month=payload.expiry_month,
+        expiry_year=payload.expiry_year,
+        is_active=payload.is_active,
     )
 
     session.add(card)
@@ -401,16 +417,16 @@ async def create_credit_card(
 
     return CreditCardOut(
         id=card.id,
-        userId=card.userId,
-        cardNumber=card.cardNumber,
-        cardType=card.cardType,
-        bankName=card.bankName,
-        cardHolderName=card.cardHolderName,
-        expiryMonth=card.expiryMonth,
-        expiryYear=card.expiryYear,
-        isActive=card.isActive,
-        createdAt=card.createdAt.isoformat() if card.createdAt else None,
-        updatedAt=card.updatedAt.isoformat() if card.updatedAt else None,
+        user_id=card.user_id,
+        card_number=card.card_number,
+        card_type=card.card_type,
+        bank_name=card.bank_name,
+        card_holder_name=card.card_holder_name,
+        expiry_month=card.expiry_month,
+        expiry_year=card.expiry_year,
+        is_active=card.is_active,
+        created_at=card.created_at.isoformat() if card.created_at else None,
+        updated_at=card.updated_at.isoformat() if card.updated_at else None,
     )
 
 
@@ -434,7 +450,7 @@ async def update_credit_card(
     if update_data:
         from datetime import datetime
 
-        update_data['updatedAt'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.utcnow()
         await session.execute(
             update(CreditCard).where(CreditCard.id == card_id).values(**update_data)
         )
@@ -443,16 +459,16 @@ async def update_credit_card(
 
     return CreditCardOut(
         id=card.id,
-        userId=card.userId,
-        cardNumber=card.cardNumber,
-        cardType=card.cardType,
-        bankName=card.bankName,
-        cardHolderName=card.cardHolderName,
-        expiryMonth=card.expiryMonth,
-        expiryYear=card.expiryYear,
-        isActive=card.isActive,
-        createdAt=card.createdAt.isoformat() if card.createdAt else None,
-        updatedAt=card.updatedAt.isoformat() if card.updatedAt else None,
+        user_id=card.user_id,
+        card_number=card.card_number,
+        card_type=card.card_type,
+        bank_name=card.bank_name,
+        card_holder_name=card.card_holder_name,
+        expiry_month=card.expiry_month,
+        expiry_year=card.expiry_year,
+        is_active=card.is_active,
+        created_at=card.created_at.isoformat() if card.created_at else None,
+        updated_at=card.updated_at.isoformat() if card.updated_at else None,
     )
 
 
@@ -485,14 +501,14 @@ async def get_transaction_summary(
     if not user:
         raise HTTPException(status_code=404, detail='User not found')
 
-    query = select(Transaction).where(Transaction.userId == user_id)
+    query = select(Transaction).where(Transaction.user_id == user_id)
 
     if start_date:
         try:
             from datetime import datetime
 
             start_datetime = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            query = query.where(Transaction.transactionDate >= start_datetime)
+            query = query.where(Transaction.transaction_date >= start_datetime)
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
@@ -504,7 +520,7 @@ async def get_transaction_summary(
             from datetime import datetime
 
             end_datetime = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-            query = query.where(Transaction.transactionDate <= end_datetime)
+            query = query.where(Transaction.transaction_date <= end_datetime)
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
@@ -548,14 +564,14 @@ async def get_category_spending(
     if not user:
         raise HTTPException(status_code=404, detail='User not found')
 
-    query = select(Transaction).where(Transaction.userId == user_id)
+    query = select(Transaction).where(Transaction.user_id == user_id)
 
     if start_date:
         try:
             from datetime import datetime
 
             start_datetime = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            query = query.where(Transaction.transactionDate >= start_datetime)
+            query = query.where(Transaction.transaction_date >= start_datetime)
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
@@ -567,7 +583,7 @@ async def get_category_spending(
             from datetime import datetime
 
             end_datetime = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-            query = query.where(Transaction.transactionDate <= end_datetime)
+            query = query.where(Transaction.transaction_date <= end_datetime)
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
@@ -580,7 +596,7 @@ async def get_category_spending(
     # Group by category
     category_data = {}
     for tx in transactions:
-        category = tx.merchantCategory
+        category = tx.merchant_category
         amount = float(tx.amount) if tx.amount is not None else 0.0
 
         if category not in category_data:

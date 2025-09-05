@@ -219,3 +219,6 @@ venv.bak/
 # Database
 *.db
 *.sqlite
+.vscode
+transactions.db
+storybook-static/

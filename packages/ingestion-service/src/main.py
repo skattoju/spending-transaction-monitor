@@ -13,7 +13,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from kafka import KafkaProducer
 
-from common.models import Transaction, IncomingTransaction
+from .common.models import Transaction, IncomingTransaction
 
 
 class KafkaConnectionManager:
