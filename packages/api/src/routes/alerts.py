@@ -17,6 +17,7 @@ from ..schemas.alert import (
     AlertRuleOut,
     AlertRuleUpdate,
 )
+
 # TODO: Re-enable when alert service files are available
 # from ..services.alert_service.generate_alert_graph import app as generate_alert_graph
 # from ..services.alert_service.parse_alert_graph import app as parse_alert_graph
@@ -116,9 +117,11 @@ async def validate_alert_rule(rule: str, user_id: str, session: AsyncSession):
 def parse_nl_rule_with_llm(alert_text, transaction):
     try:
         # Run actual LangGraph app here (uncomment below if integrated)
-        result = parse_alert_graph.invoke(
-            {'transaction': transaction, 'alert_text': alert_text}
-        )
+        # TODO: Re-enable when alert service is fully integrated
+        # result = parse_alert_graph.invoke(
+        #     {'transaction': transaction, 'alert_text': alert_text}
+        # )
+        result = {'should_trigger': True, 'message': f'Mock alert for: {alert_text}'}
         return result
     except Exception as e:
         print('LLM parsing error:', e)
@@ -642,9 +645,11 @@ async def trigger_alert_rule(rule_id: str, session: AsyncSession = Depends(get_d
 def generate_alert_with_llm(alert_text, transaction):
     try:
         # Run actual LangGraph app here (uncomment below if integrated)
-        result = generate_alert_graph.invoke(
-            {'transaction': transaction, 'alert_text': alert_text}
-        )
+        # TODO: Re-enable when alert service is fully integrated
+        # result = generate_alert_graph.invoke(
+        #     {'transaction': transaction, 'alert_text': alert_text}
+        # )
+        result = {'should_trigger': True, 'message': f'Mock alert for: {alert_text}'}
 
         return result
     except Exception as e:

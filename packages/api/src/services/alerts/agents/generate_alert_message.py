@@ -1,21 +1,25 @@
-
 from langchain_core.tools import tool
+
 from .utils import extract_response, get_llm_client
+
+
 @tool
-def generate_alert_message(transaction: dict, query_result: str, alert_text: str, alert_type: str) -> str:
+def generate_alert_message(
+    transaction: dict, query_result: str, alert_text: str, alert_type: str
+) -> str:
     """
     Generate a user-facing alert message based on alert type.
     """
-    first = transaction.get("first", "")
-    last = transaction.get("last", "")
-    user = f"{first} {last}".strip()
-    amount = transaction.get("amt")
-    category = transaction.get("category", "")
-    merchant = transaction.get("merchant", "")
-    city = transaction.get("city", "")
-    state = transaction.get("state", "")
+    first = transaction.get('first', '')
+    last = transaction.get('last', '')
+    user = f'{first} {last}'.strip()
+    amount = transaction.get('amt')
+    category = transaction.get('category', '')
+    merchant = transaction.get('merchant', '')
+    city = transaction.get('city', '')
+    state = transaction.get('state', '')
 
-    if alert_type == "spending":
+    if alert_type == 'spending':
         prompt = f"""
 The user {user} triggered an alert for excessive spending.
 
@@ -27,7 +31,7 @@ The user {user} triggered an alert for excessive spending.
 
 Write a 1-2 sentence friendly alert message explaining why the spending alert was triggered.
 """
-    elif alert_type == "location":
+    elif alert_type == 'location':
         prompt = f"""
 The user {user} triggered an alert for a location-based transaction.
 
@@ -38,7 +42,7 @@ The user {user} triggered an alert for a location-based transaction.
 
 Write a 1-2 sentence alert message explaining why the location alert was triggered.
 """
-    elif alert_type == "merchant":
+    elif alert_type == 'merchant':
         prompt = f"""
 The user {user} triggered an alert related to a new or repeated merchant.
 

@@ -5,6 +5,68 @@ import type {
   AlertRule,
 } from '../schemas/transaction';
 
+// Type definitions for API responses
+interface ApiTransactionResponse {
+  id: string;
+  amount: number;
+  merchant_name: string;
+  status: string;
+  transaction_date: string;
+  transaction_type: string;
+  currency: string;
+  merchant_category: string;
+  description: string;
+  user_id: string;
+  trans_num: string;
+}
+
+interface ApiNotificationResponse {
+  id: string;
+  title: string;
+  message: string;
+  notification_method: string;
+  status: string;
+  created_at: string;
+  read: boolean;
+}
+
+interface ApiAlertRuleResponse {
+  id: string;
+  name: string;
+  natural_language_query: string;
+  sql_query: string;
+  alert_type: string;
+  is_active: boolean;
+  trigger_count: number;
+  created_at: string;
+  updated_at: string;
+  last_triggered?: string;
+}
+
+interface ApiUserResponse {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  created_at: string;
+}
+
+interface ApiCreditCardResponse {
+  id: string;
+  user_id: string;
+  card_number: string;
+  card_type: string;
+  expiry_date: string;
+  credit_limit: number;
+  current_balance: number;
+  available_credit: number;
+}
+  
 // Real API-based transaction service
 export const apiTransactionService = {
   // Get recent transactions with pagination
@@ -25,7 +87,7 @@ export const apiTransactionService = {
     const allTransactions = await response.json();
     
     // Transform API data to match UI schema
-    const transformedTransactions: Transaction[] = allTransactions.map((tx: any) => ({
+          const transformedTransactions: Transaction[] = allTransactions.map((tx: ApiTransactionResponse) => ({
       id: tx.id,
       amount: tx.amount,
       merchant: tx.merchant_name,
@@ -207,7 +269,7 @@ export const realAlertService = {
     const notifications = await response.json();
     
     // Transform API data to match UI schema
-    return notifications.map((notification: any) => ({
+    return notifications.map((notification: ApiNotificationResponse) => ({
       id: notification.id,
       title: notification.title,
       description: notification.message,
@@ -229,9 +291,9 @@ export const realAlertService = {
     const rules = await response.json();
     
     // Transform API data to match UI schema
-    return rules.map((rule: any) => ({
+    return rules.map((rule: ApiAlertRuleResponse) => ({
       id: rule.id,
-      rule: rule.name + (rule.description ? `: ${rule.description}` : ''),
+      rule: rule.name,
       status: rule.is_active ? 'active' : 'paused',
       triggered: rule.trigger_count || 0,
       last_triggered: rule.last_triggered ? 
@@ -280,7 +342,7 @@ export const realAlertService = {
 // User service for real API data
 export const userService = {
   // Get all users
-  async getUsers(): Promise<any[]> {
+  async getUsers(): Promise<ApiUserResponse[]> {
     const response = await fetch('/api/users/');
     if (!response.ok) {
       throw new Error('Failed to fetch users');
@@ -289,7 +351,7 @@ export const userService = {
   },
 
   // Get user by ID
-  async getUserById(id: string): Promise<any> {
+  async getUserById(id: string): Promise<ApiUserResponse | null> {
     const response = await fetch(`/api/users/${id}`);
     if (!response.ok) {
       if (response.status === 404) return null;
@@ -299,7 +361,7 @@ export const userService = {
   },
 
   // Get user transactions
-  async getUserTransactions(user_id: string, limit = 50, offset = 0): Promise<any[]> {
+  async getUserTransactions(user_id: string, limit = 50, offset = 0): Promise<ApiTransactionResponse[]> {
     const response = await fetch(`/api/users/${user_id}/transactions?limit=${limit}&offset=${offset}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user transactions');
@@ -308,7 +370,7 @@ export const userService = {
   },
 
   // Get user credit cards
-  async getUserCreditCards(user_id: string): Promise<any[]> {
+  async getUserCreditCards(user_id: string): Promise<ApiCreditCardResponse[]> {
     const response = await fetch(`/api/users/${user_id}/credit-cards`);
     if (!response.ok) {
       throw new Error('Failed to fetch user credit cards');
@@ -317,7 +379,7 @@ export const userService = {
   },
 
   // Get user alert rules
-  async getUserAlertRules(user_id: string): Promise<any[]> {
+  async getUserAlertRules(user_id: string): Promise<ApiAlertRuleResponse[]> {
     const response = await fetch(`/api/users/${user_id}/rules`);
     if (!response.ok) {
       throw new Error('Failed to fetch user alert rules');

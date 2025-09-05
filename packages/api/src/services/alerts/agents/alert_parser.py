@@ -1,16 +1,17 @@
 # agents/alert_parser.py
+
 from langchain.tools import tool
-import httpx
-from langchain_openai import ChatOpenAI
-import re
+
 from .utils import extract_sql, get_llm_client
 
+
 def build_prompt(last_transaction: dict, alert_text: str) -> str:
-    user_id = last_transaction.get("user_id", "").strip()
-    first_name = last_transaction.get("first_name", "").strip()
-    last_name = last_transaction.get("last_name", "").strip()
-    transaction_date = last_transaction.get("transaction_date", "")
-    trans_num = last_transaction.get("trans_num", "")
+    user_id = last_transaction.get('user_id', '').strip()
+    # Extract but don't assign unused variables
+    _ = last_transaction.get('first_name', '').strip()
+    _ = last_transaction.get('last_name', '').strip()
+    transaction_date = last_transaction.get('transaction_date', '')
+    _ = last_transaction.get('trans_num', '')
 
     schema = """
 Table: transactions
@@ -140,5 +141,5 @@ def parse_alert_to_sql_with_context(transaction: dict, alert_text: str) -> str:
     client = get_llm_client()
     prompt = build_prompt(transaction, alert_text)
     response = client.invoke(prompt)
-   
+
     return extract_sql(str(response))
