@@ -19,10 +19,10 @@ _oidc_config_cache: dict | None = None
 _jwks_cache: dict | None = None
 _cache_expiry: datetime | None = None
 
-# Keycloak configuration
-KEYCLOAK_URL = 'http://localhost:8080'
-REALM = 'spending-monitor'  # Use dedicated realm instead of master
-CLIENT_ID = 'spending-monitor'
+# Keycloak configuration (loaded from environment variables)
+KEYCLOAK_URL = settings.KEYCLOAK_URL
+REALM = settings.KEYCLOAK_REALM
+CLIENT_ID = settings.KEYCLOAK_CLIENT_ID
 
 security = HTTPBearer(auto_error=False)
 
