@@ -91,25 +91,25 @@ class TestAlertRuleService:
             ),
             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
         ):
-                mock_parse.return_value = {
-                    'valid_sql': True,
-                    'alert_text': rule_text,
-                    'sql_query': 'SELECT * FROM transactions WHERE amount > 100',
-                }
+            mock_parse.return_value = {
+                'valid_sql': True,
+                'alert_text': rule_text,
+                'sql_query': 'SELECT * FROM transactions WHERE amount > 100',
+            }
 
-                # Act
-                result = await alert_rule_service.validate_alert_rule(
-                    rule_text, user_id, mock_session
-                )
+            # Act
+            result = await alert_rule_service.validate_alert_rule(
+                rule_text, user_id, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'valid'
-                assert result['message'] == 'Alert rule validated successfully'
-                assert result['user_id'] == user_id
-                assert 'validation_timestamp' in result
-                assert result['alert_text'] == rule_text
-                assert 'sql_query' in result
-                assert result['transaction_used'] == sample_transaction.__dict__
+            # Assert
+            assert result['status'] == 'valid'
+            assert result['message'] == 'Alert rule validated successfully'
+            assert result['user_id'] == user_id
+            assert 'validation_timestamp' in result
+            assert result['alert_text'] == rule_text
+            assert 'sql_query' in result
+            assert result['transaction_used'] == sample_transaction.__dict__
 
     @pytest.mark.asyncio
     async def test_validate_alert_rule_success_with_dummy_transaction(
@@ -128,30 +128,28 @@ class TestAlertRuleService:
         ):
             # Mock the dummy transaction
             dummy_transaction = {'user_id': user_id, 'amount': 100.0}
-            with ( patch.object(
-                alert_rule_service.transaction_service,
-                'get_dummy_transaction',
-                return_value=dummy_transaction,
-            ),
-                 patch.object(
-                    AlertRuleService, 'parse_nl_rule_with_llm'
-                ) as mock_parse,
-
+            with (
+                patch.object(
+                    alert_rule_service.transaction_service,
+                    'get_dummy_transaction',
+                    return_value=dummy_transaction,
+                ),
+                patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
             ):
-                    mock_parse.return_value = {
-                        'valid_sql': True,
-                        'alert_text': rule_text,
-                        'sql_query': 'SELECT * FROM transactions WHERE amount > 100',
-                    }
+                mock_parse.return_value = {
+                    'valid_sql': True,
+                    'alert_text': rule_text,
+                    'sql_query': 'SELECT * FROM transactions WHERE amount > 100',
+                }
 
-                    # Act
-                    result = await alert_rule_service.validate_alert_rule(
-                        rule_text, user_id, mock_session
-                    )
+                # Act
+                result = await alert_rule_service.validate_alert_rule(
+                    rule_text, user_id, mock_session
+                )
 
-                    # Assert
-                    assert result['status'] == 'valid'
-                    assert result['transaction_used'] == dummy_transaction
+                # Assert
+                assert result['status'] == 'valid'
+                assert result['transaction_used'] == dummy_transaction
 
     @pytest.mark.asyncio
     async def test_validate_alert_rule_invalid_sql(
@@ -163,26 +161,26 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
         ):
-                mock_parse.return_value = {'valid_sql': False, 'alert_text': rule_text}
+            mock_parse.return_value = {'valid_sql': False, 'alert_text': rule_text}
 
-                # Act
-                result = await alert_rule_service.validate_alert_rule(
-                    rule_text, user_id, mock_session
-                )
+            # Act
+            result = await alert_rule_service.validate_alert_rule(
+                rule_text, user_id, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'invalid'
-                assert result['message'] == 'Rule could not be parsed or validated'
-                assert result['error'] == 'LLM could not parse rule structure'
-                assert result['user_id'] == user_id
+            # Assert
+            assert result['status'] == 'invalid'
+            assert result['message'] == 'Rule could not be parsed or validated'
+            assert result['error'] == 'LLM could not parse rule structure'
+            assert result['user_id'] == user_id
 
     @pytest.mark.asyncio
     async def test_validate_alert_rule_llm_error(
@@ -194,25 +192,25 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
         ):
-                mock_parse.side_effect = Exception('LLM service unavailable')
+            mock_parse.side_effect = Exception('LLM service unavailable')
 
-                # Act
-                result = await alert_rule_service.validate_alert_rule(
-                    rule_text, user_id, mock_session
-                )
+            # Act
+            result = await alert_rule_service.validate_alert_rule(
+                rule_text, user_id, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'error'
-                assert 'Validation failed' in result['message']
-                assert result['error'] == 'LLM service unavailable'
+            # Assert
+            assert result['status'] == 'error'
+            assert 'Validation failed' in result['message']
+            assert result['error'] == 'LLM service unavailable'
 
     @pytest.mark.asyncio
     async def test_trigger_alert_rule_success(
@@ -221,42 +219,40 @@ class TestAlertRuleService:
         """Test successful triggering of an alert rule"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(
-                AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'generate_alert_with_llm') as mock_generate,
         ):
-                mock_generate.return_value = {
-                    'should_trigger': True,
-                    'message': 'Large transaction detected: $150.00',
-                }
+            mock_generate.return_value = {
+                'should_trigger': True,
+                'message': 'Large transaction detected: $150.00',
+            }
 
-                # Mock session operations
-                mock_session.add = MagicMock()
-                mock_session.commit = AsyncMock()
+            # Mock session operations
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
 
-                # Act
-                result = await alert_rule_service.trigger_alert_rule(
-                    sample_alert_rule, mock_session
-                )
+            # Act
+            result = await alert_rule_service.trigger_alert_rule(
+                sample_alert_rule, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'triggered'
-                assert result['message'] == 'Alert rule triggered successfully'
-                assert result['trigger_count'] == sample_alert_rule.trigger_count + 1
-                assert result['transaction_id'] == sample_transaction.trans_num
-                assert 'notification_id' in result
-                assert 'rule_evaluation' in result
+            # Assert
+            assert result['status'] == 'triggered'
+            assert result['message'] == 'Alert rule triggered successfully'
+            assert result['trigger_count'] == sample_alert_rule.trigger_count + 1
+            assert result['transaction_id'] == sample_transaction.trans_num
+            assert 'notification_id' in result
+            assert 'rule_evaluation' in result
 
-                # Verify database operations
-                mock_session.add.assert_called_once()
-                mock_session.execute.assert_called_once()
-                mock_session.commit.assert_called_once()
+            # Verify database operations
+            mock_session.add.assert_called_once()
+            mock_session.execute.assert_called_once()
+            mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_trigger_alert_rule_not_triggered(
@@ -265,31 +261,29 @@ class TestAlertRuleService:
         """Test triggering alert rule when conditions are not met"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(
-                AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'generate_alert_with_llm') as mock_generate,
         ):
-                mock_generate.return_value = {
-                    'should_trigger': False,
-                    'message': 'Transaction amount is within normal range',
-                }
+            mock_generate.return_value = {
+                'should_trigger': False,
+                'message': 'Transaction amount is within normal range',
+            }
 
-                # Act
-                result = await alert_rule_service.trigger_alert_rule(
-                    sample_alert_rule, mock_session
-                )
+            # Act
+            result = await alert_rule_service.trigger_alert_rule(
+                sample_alert_rule, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'not_triggered'
-                assert result['message'] == 'Rule evaluated but alert not triggered'
-                assert result['transaction_id'] == sample_transaction.trans_num
-                assert 'rule_evaluation' in result
+            # Assert
+            assert result['status'] == 'not_triggered'
+            assert result['message'] == 'Rule evaluated but alert not triggered'
+            assert result['transaction_id'] == sample_transaction.trans_num
+            assert 'rule_evaluation' in result
 
     @pytest.mark.asyncio
     async def test_trigger_alert_rule_inactive_rule(
@@ -309,17 +303,15 @@ class TestAlertRuleService:
         """Test triggering alert rule when user has no transactions"""
         # Arrange
         # Mock the transaction service to return None
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=None,
-        ),
-             pytest.raises(ValueError, match='No transaction found for user'),
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=None,
+            ),
+            pytest.raises(ValueError, match='No transaction found for user'),
         ):
-                await alert_rule_service.trigger_alert_rule(
-                    sample_alert_rule, mock_session
-                )
+            await alert_rule_service.trigger_alert_rule(sample_alert_rule, mock_session)
 
     @pytest.mark.asyncio
     async def test_trigger_alert_rule_llm_error(
@@ -328,28 +320,26 @@ class TestAlertRuleService:
         """Test triggering alert rule when LLM generation fails"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(
-                AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'generate_alert_with_llm') as mock_generate,
         ):
-                mock_generate.side_effect = Exception('LLM generation failed')
+            mock_generate.side_effect = Exception('LLM generation failed')
 
-                # Act
-                result = await alert_rule_service.trigger_alert_rule(
-                    sample_alert_rule, mock_session
-                )
+            # Act
+            result = await alert_rule_service.trigger_alert_rule(
+                sample_alert_rule, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'error'
-                assert 'Alert generation failed' in result['message']
-                assert result['error'] == 'LLM generation failed'
-                assert result['transaction_id'] == sample_transaction.trans_num
+            # Assert
+            assert result['status'] == 'error'
+            assert 'Alert generation failed' in result['message']
+            assert result['error'] == 'LLM generation failed'
+            assert result['transaction_id'] == sample_transaction.trans_num
 
     def test_parse_nl_rule_with_llm_success(self):
         """Test successful parsing of natural language rule with LLM"""
@@ -432,24 +422,24 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
         ):
-                mock_parse.return_value = None
+            mock_parse.return_value = None
 
-                # Act
-                result = await alert_rule_service.validate_alert_rule(
-                    rule_text, user_id, mock_session
-                )
+            # Act
+            result = await alert_rule_service.validate_alert_rule(
+                rule_text, user_id, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'invalid'
-                assert result['message'] == 'Rule could not be parsed or validated'
+            # Assert
+            assert result['status'] == 'invalid'
+            assert result['message'] == 'Rule could not be parsed or validated'
 
     @pytest.mark.asyncio
     async def test_trigger_alert_rule_none_result_from_llm(
@@ -458,26 +448,24 @@ class TestAlertRuleService:
         """Test triggering when LLM returns None"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(
-                AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'generate_alert_with_llm') as mock_generate,
         ):
-                mock_generate.return_value = None
+            mock_generate.return_value = None
 
-                # Act
-                result = await alert_rule_service.trigger_alert_rule(
-                    sample_alert_rule, mock_session
-                )
+            # Act
+            result = await alert_rule_service.trigger_alert_rule(
+                sample_alert_rule, mock_session
+            )
 
-                # Assert
-                assert result['status'] == 'not_triggered'
-                assert result['message'] == 'Rule evaluated but alert not triggered'
+            # Assert
+            assert result['status'] == 'not_triggered'
+            assert result['message'] == 'Rule evaluated but alert not triggered'
 
     @pytest.mark.asyncio
     async def test_trigger_alert_rule_creates_correct_notification(
@@ -486,40 +474,34 @@ class TestAlertRuleService:
         """Test that triggering creates notification with correct data"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with ( patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
-        ),
-             patch.object(
-                AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate,
-
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'generate_alert_with_llm') as mock_generate,
         ):
-                mock_generate.return_value = {
-                    'should_trigger': True,
-                    'message': 'Custom alert message',
-                }
+            mock_generate.return_value = {
+                'should_trigger': True,
+                'message': 'Custom alert message',
+            }
 
-                # Mock session operations
-                mock_session.add = MagicMock()
-                mock_session.commit = AsyncMock()
+            # Mock session operations
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
 
-                # Act
-                await alert_rule_service.trigger_alert_rule(
-                    sample_alert_rule, mock_session
-                )
+            # Act
+            await alert_rule_service.trigger_alert_rule(sample_alert_rule, mock_session)
 
-                # Assert
-                # Verify notification was created with correct data
-                call_args = mock_session.add.call_args[0][
-                    0
-                ]  # Get the notification object
-                assert isinstance(call_args, AlertNotification)
-                assert call_args.user_id == sample_alert_rule.user_id
-                assert call_args.alert_rule_id == sample_alert_rule.id
-                assert call_args.transaction_id == sample_transaction.trans_num
-                assert call_args.title == f'Alert: {sample_alert_rule.name}'
-                assert call_args.message == 'Custom alert message'
-                assert call_args.notification_method == 'system'
-                assert call_args.status == 'sent'
+            # Assert
+            # Verify notification was created with correct data
+            call_args = mock_session.add.call_args[0][0]  # Get the notification object
+            assert isinstance(call_args, AlertNotification)
+            assert call_args.user_id == sample_alert_rule.user_id
+            assert call_args.alert_rule_id == sample_alert_rule.id
+            assert call_args.transaction_id == sample_transaction.trans_num
+            assert call_args.title == f'Alert: {sample_alert_rule.name}'
+            assert call_args.message == 'Custom alert message'
+            assert call_args.notification_method == 'system'
+            assert call_args.status == 'sent'

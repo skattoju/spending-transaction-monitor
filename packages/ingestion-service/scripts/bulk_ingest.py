@@ -4,8 +4,8 @@ import sys
 
 import requests
 
-# Add the `ingestion-service-py` directory to the path to allow imports from the `common` directory
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../ingestion-service-py')))
+# Add the parent directory to the path to allow imports from the `src/common` directory
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from common.models import Transaction
 
 

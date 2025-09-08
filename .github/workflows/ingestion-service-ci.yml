@@ -173,10 +173,10 @@ jobs:
           kubectl wait --for=condition=ready pod e2e-test-runner --timeout=300s
           echo "Installing test dependencies in the pod..."
           kubectl exec e2e-test-runner -- pip install requests kafka-python
-                      echo "Copying e2e test to the pod..."
-              kubectl cp ./ingestion-service-py/tests/e2e/test_e2e.py e2e-test-runner:/test_e2e.py
-              echo "Running e2e test for python..."
-              kubectl exec e2e-test-runner -- \
+          echo "Copying e2e test to the pod..."
+          kubectl cp ./tests/e2e/test_e2e.py e2e-test-runner:/test_e2e.py
+          echo "Running e2e test for python..."
+          kubectl exec e2e-test-runner -- \
                 env INGESTION_SERVICE_HOST=ingestion-py-ingestion-service-py \
                     INGESTION_SERVICE_PORT=80 \
                     KAFKA_HOST=kafka-kafka-kafka-bootstrap \
