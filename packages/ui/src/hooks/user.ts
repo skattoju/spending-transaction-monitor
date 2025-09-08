@@ -18,7 +18,7 @@ export function useCurrentUser(): UseCurrentUserResult {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // First check if user is already stored locally
       const storedUser = currentUserService.getCurrentUser();
       if (storedUser) {

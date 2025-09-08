@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from db import get_db
-from db.models import AlertNotification, AlertRule, AlertType, Transaction, User
+from db.models import AlertNotification, AlertRule, AlertType, User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, update
@@ -33,14 +33,12 @@ alert_rule_service = AlertRuleService()
 async def get_current_user(session: AsyncSession = Depends(get_db)) -> User:
     """Get the current logged-in user. For now, returns the first user from the database.
     This will be replaced with the actual user when we have a proper authentication system."""
-    result = await session.execute(
-        select(User).limit(1)
-    )
+    result = await session.execute(select(User).limit(1))
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail='No users found in the system')
-        
+
     return user
 
 
@@ -125,9 +123,9 @@ async def get_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
 
 @router.post('/rules', response_model=AlertRuleOut)
 async def create_alert_rule(
-    payload: AlertRuleCreateRequest, 
+    payload: AlertRuleCreateRequest,
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new alert rule"""
     print('Creating alert rule for user:', current_user.id, 'payload:', payload)
@@ -493,16 +491,14 @@ async def trigger_alert_rule(rule_id: str, session: AsyncSession = Depends(get_d
     except ValueError as e:
         # Handle business logic errors (inactive rule, no transaction)
         if 'not active' in str(e):
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=400, detail=str(e)) from e
         elif 'No transaction found' in str(e):
-            raise HTTPException(status_code=404, detail=str(e))
+            raise HTTPException(status_code=404, detail=str(e)) from e
         else:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         return {
             'status': 'error',
             'message': f'Alert trigger failed: {str(e)}',
             'error': str(e),
         }
-
-

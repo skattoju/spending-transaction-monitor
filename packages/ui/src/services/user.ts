@@ -173,7 +173,7 @@ export const currentUserService = {
   // Initialize demo user (temporary until proper auth is implemented)
   async initializeDemoUser(): Promise<CurrentUser> {
     let user = this.getCurrentUser();
-    
+
     if (!user) {
       // Try to get the current user from the API (returns first user as demo)
       try {
@@ -193,26 +193,29 @@ export const currentUserService = {
           user = {
             id: '1',
             firstName: 'John',
-            lastName: 'Doe', 
+            lastName: 'Doe',
             email: 'john.doe@example.com',
             fullName: 'John Doe',
           };
           this.setCurrentUser(user);
         }
       } catch (error) {
-        console.warn('Failed to fetch current user from API, using fallback demo user:', error);
+        console.warn(
+          'Failed to fetch current user from API, using fallback demo user:',
+          error,
+        );
         // Fallback demo user
         user = {
           id: '1',
           firstName: 'John',
           lastName: 'Doe',
-          email: 'john.doe@example.com', 
+          email: 'john.doe@example.com',
           fullName: 'John Doe',
         };
         this.setCurrentUser(user);
       }
     }
-    
+
     return user;
   },
 

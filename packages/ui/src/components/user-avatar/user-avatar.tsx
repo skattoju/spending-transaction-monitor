@@ -32,15 +32,16 @@ export function UserAvatar({
   const displayName = userName || 'Loading...';
   const displayEmail = userEmail || 'user@example.com';
   const isLoading = !userName;
-  
-  const initials = displayName && displayName !== 'Loading...'
-    ? displayName
-        .split(' ')
-        .map((name) => name.charAt(0))
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : '?';
+
+  const initials =
+    displayName && displayName !== 'Loading...'
+      ? displayName
+          .split(' ')
+          .map((name) => name.charAt(0))
+          .join('')
+          .toUpperCase()
+          .slice(0, 2)
+      : '?';
 
   return (
     <DropdownMenu>
@@ -63,7 +64,9 @@ export function UserAvatar({
               </Avatar>
             </div>
             <div className="hidden sm:block text-left">
-              <p className={`text-sm font-medium ${isLoading ? 'text-muted-foreground animate-pulse' : 'text-foreground'}`}>
+              <p
+                className={`text-sm font-medium ${isLoading ? 'text-muted-foreground animate-pulse' : 'text-foreground'}`}
+              >
                 {displayName}
               </p>
             </div>
@@ -82,7 +85,9 @@ export function UserAvatar({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${isLoading ? 'text-muted-foreground animate-pulse' : 'text-foreground'}`}>
+              <p
+                className={`text-sm font-medium truncate ${isLoading ? 'text-muted-foreground animate-pulse' : 'text-foreground'}`}
+              >
                 {displayName}
               </p>
               <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>

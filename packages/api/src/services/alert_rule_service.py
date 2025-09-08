@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any
 
-from db.models import AlertNotification, AlertRule, Transaction
-from sqlalchemy import select, update
+from db.models import AlertNotification, AlertRule
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .alerts.generate_alert_graph import app as generate_alert_graph
@@ -20,7 +20,9 @@ class AlertRuleService:
         self.transaction_service = TransactionService()
 
     @staticmethod
-    def parse_nl_rule_with_llm(alert_text: str, transaction: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_nl_rule_with_llm(
+        alert_text: str, transaction: dict[str, Any]
+    ) -> dict[str, Any]:
         """Parse natural language rule using LLM."""
         try:
             # Run actual LangGraph app here
@@ -33,7 +35,9 @@ class AlertRuleService:
             raise e
 
     @staticmethod
-    def generate_alert_with_llm(alert_text: str, transaction: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_alert_with_llm(
+        alert_text: str, transaction: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate alert message using LLM."""
         try:
             result = generate_alert_graph.invoke(
@@ -45,17 +49,16 @@ class AlertRuleService:
             raise e
 
     async def validate_alert_rule(
-        self, 
-        rule: str, 
-        user_id: str, 
-        session: AsyncSession
-    ) -> Dict[str, Any]:
+        self, rule: str, user_id: str, session: AsyncSession
+    ) -> dict[str, Any]:
         """
         Validate an alert rule using the latest transaction for a user.
         Returns the parsed rule structure and validation results.
         """
         print('Validating rule:', rule)
-        transaction = await self.transaction_service.get_latest_transaction(user_id, session)
+        transaction = await self.transaction_service.get_latest_transaction(
+            user_id, session
+        )
         transaction_dict = (
             transaction.__dict__
             if transaction is not None
@@ -93,24 +96,24 @@ class AlertRuleService:
             }
 
     async def trigger_alert_rule(
-        self, 
-        rule: AlertRule, 
-        session: AsyncSession
-    ) -> Dict[str, Any]:
+        self, rule: AlertRule, session: AsyncSession
+    ) -> dict[str, Any]:
         """
         Trigger an alert rule and create notification if conditions are met.
-        
+
         Args:
             rule: The AlertRule object to trigger
             session: Database session
-            
+
         Returns:
             Dict with trigger results
         """
         if not rule.is_active:
             raise ValueError('Alert rule is not active')
 
-        transaction = await self.transaction_service.get_latest_transaction(rule.user_id, session)
+        transaction = await self.transaction_service.get_latest_transaction(
+            rule.user_id, session
+        )
         if transaction is None:
             raise ValueError('No transaction found for user')
 

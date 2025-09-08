@@ -4,10 +4,7 @@ import type {
   Alert,
   AlertRule,
 } from '../schemas/transaction';
-import { 
-  type ApiTransactionResponse,
-  type ApiAlertRuleResponse
-} from './user';
+import { type ApiTransactionResponse, type ApiAlertRuleResponse } from './user';
 
 // Type definitions for API responses
 interface ApiNotificationResponse {
@@ -283,7 +280,9 @@ export const realAlertService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create alert rule: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to create alert rule: ${response.status} ${response.statusText}`,
+        );
       }
 
       const apiRule = await response.json();
@@ -301,7 +300,9 @@ export const realAlertService = {
       return newRule;
     } catch (error) {
       console.error('Error creating alert rule:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to create alert rule');
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to create alert rule',
+      );
     }
   },
 
@@ -324,8 +325,6 @@ export const realAlertService = {
     }
   },
 };
-
-
 
 // Keep old alert service as fallback
 export const alertService = {

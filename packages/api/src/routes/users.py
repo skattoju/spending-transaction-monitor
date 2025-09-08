@@ -146,10 +146,10 @@ async def get_current_user(session: AsyncSession = Depends(get_db)):
             .limit(1)
         )
         user: User | None = result.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(status_code=404, detail='No users found in the system')
-            
+
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
 

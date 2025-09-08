@@ -1,9 +1,9 @@
 """Transaction Service - Business logic for transaction operations"""
 
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import Any
 
-from db.models import Transaction, User
+from db.models import Transaction
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class TransactionService:
     """Service class for transaction business logic and data access"""
 
-    async def get_latest_transaction(self, user_id: str, session: AsyncSession) -> Optional[Transaction]:
+    async def get_latest_transaction(
+        self, user_id: str, session: AsyncSession
+    ) -> Transaction | None:
         """Get the latest transaction for a user."""
         result = await session.execute(
             select(Transaction)
@@ -22,33 +24,29 @@ class TransactionService:
         return result.scalar_one_or_none()
 
     async def get_user_transactions(
-        self, 
-        user_id: str, 
-        session: AsyncSession,
-        limit: int = 50, 
-        offset: int = 0
-    ) -> List[Transaction]:
+        self, user_id: str, session: AsyncSession, limit: int = 50, offset: int = 0
+    ) -> list[Transaction]:
         """Get transactions for a user with pagination."""
         query = select(Transaction).where(Transaction.user_id == user_id)
         query = query.order_by(Transaction.transaction_date.desc())
         query = query.offset(offset).limit(limit)
-        
+
         result = await session.execute(query)
         return result.scalars().all()
 
     async def get_transactions_with_filters(
         self,
         session: AsyncSession,
-        user_id: Optional[str] = None,
-        credit_card_id: Optional[str] = None,
-        merchant_category: Optional[str] = None,
-        min_amount: Optional[float] = None,
-        max_amount: Optional[float] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        user_id: str | None = None,
+        credit_card_id: str | None = None,
+        merchant_category: str | None = None,
+        min_amount: float | None = None,
+        max_amount: float | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
-        offset: int = 0
-    ) -> List[Transaction]:
+        offset: int = 0,
+    ) -> list[Transaction]:
         """Get transactions with various filters."""
         query = select(Transaction)
 
@@ -79,7 +77,9 @@ class TransactionService:
         result = await session.execute(query)
         return result.scalars().all()
 
-    async def get_transaction_by_id(self, transaction_id: str, session: AsyncSession) -> Optional[Transaction]:
+    async def get_transaction_by_id(
+        self, transaction_id: str, session: AsyncSession
+    ) -> Transaction | None:
         """Get a specific transaction by ID."""
         result = await session.execute(
             select(Transaction).where(Transaction.id == transaction_id)
@@ -89,13 +89,11 @@ class TransactionService:
     async def user_has_transactions(self, user_id: str, session: AsyncSession) -> bool:
         """Check if a user has any transactions."""
         result = await session.execute(
-            select(Transaction)
-            .where(Transaction.user_id == user_id)
-            .limit(1)
+            select(Transaction).where(Transaction.user_id == user_id).limit(1)
         )
         return result.scalar_one_or_none() is not None
 
-    def get_dummy_transaction(self, user_id: str) -> Dict[str, Any]:
+    def get_dummy_transaction(self, user_id: str) -> dict[str, Any]:
         """Get a dummy transaction for a user (for testing/fallback purposes)."""
         return {
             'user_id': user_id,

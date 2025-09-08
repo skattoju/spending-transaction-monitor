@@ -1,15 +1,15 @@
 """Shared test fixtures and configuration"""
 
-import pytest
 import asyncio
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
-from db.models import Transaction, AlertRule, AlertType
+import pytest
+from db.models import AlertRule, AlertType, Transaction
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def event_loop():
     """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -32,7 +32,7 @@ def mock_db_session():
 @pytest.fixture
 def sample_user_id():
     """Standard user ID for testing"""
-    return "user-456"
+    return 'user-456'
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def sample_transaction_data():
         'transaction_date': datetime(2024, 1, 15, 14, 30, 0),
         'trans_num': 'trans-789',
         'description': 'Test transaction',
-        'status': 'completed'
+        'status': 'completed',
     }
 
 
@@ -76,7 +76,7 @@ def sample_alert_rule_data():
         'trigger_count': 5,
         'alert_type': AlertType.AMOUNT_THRESHOLD,
         'created_at': datetime(2024, 1, 1, 10, 0, 0),
-        'updated_at': datetime(2024, 1, 1, 10, 0, 0)
+        'updated_at': datetime(2024, 1, 1, 10, 0, 0),
     }
 
 
@@ -95,7 +95,7 @@ def mock_llm_valid_response():
     return {
         'valid_sql': True,
         'alert_text': 'Alert me when transactions exceed $100',
-        'sql_query': 'SELECT * FROM transactions WHERE amount > 100'
+        'sql_query': 'SELECT * FROM transactions WHERE amount > 100',
     }
 
 
@@ -105,7 +105,7 @@ def mock_llm_invalid_response():
     return {
         'valid_sql': False,
         'alert_text': 'Invalid rule text',
-        'error': 'Could not parse rule'
+        'error': 'Could not parse rule',
     }
 
 
@@ -115,7 +115,7 @@ def mock_llm_trigger_response():
     return {
         'should_trigger': True,
         'message': 'Large transaction detected: $150.00',
-        'confidence': 0.95
+        'confidence': 0.95,
     }
 
 
@@ -125,5 +125,5 @@ def mock_llm_no_trigger_response():
     return {
         'should_trigger': False,
         'message': 'Transaction amount is within normal range',
-        'confidence': 0.85
+        'confidence': 0.85,
     }
