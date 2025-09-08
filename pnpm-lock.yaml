@@ -27,8 +27,6 @@ importers:
         specifier: ^2.5.6
         version: 2.5.6
 
-  packages/alerts: {}
-
   packages/api: {}
 
   packages/configs/eslint:

@@ -1,0 +1,173 @@
+"""Alert Rule Service - Business logic for alert rule operations"""
+
+import uuid
+from datetime import datetime
+from typing import Dict, Any, Optional
+
+from db.models import AlertNotification, AlertRule, Transaction
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .alerts.generate_alert_graph import app as generate_alert_graph
+from .alerts.parse_alert_graph import app as parse_alert_graph
+from .transaction_service import TransactionService
+
+
+class AlertRuleService:
+    """Service class for alert rule business logic"""
+
+    def __init__(self):
+        self.transaction_service = TransactionService()
+
+    @staticmethod
+    def parse_nl_rule_with_llm(alert_text: str, transaction: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse natural language rule using LLM."""
+        try:
+            # Run actual LangGraph app here
+            result = parse_alert_graph.invoke(
+                {'transaction': transaction, 'alert_text': alert_text}
+            )
+            return result
+        except Exception as e:
+            print('LLM parsing error:', e)
+            raise e
+
+    @staticmethod
+    def generate_alert_with_llm(alert_text: str, transaction: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate alert message using LLM."""
+        try:
+            result = generate_alert_graph.invoke(
+                {'transaction': transaction, 'alert_text': alert_text}
+            )
+            return result
+        except Exception as e:
+            print('LLM parsing error:', e)
+            raise e
+
+    async def validate_alert_rule(
+        self, 
+        rule: str, 
+        user_id: str, 
+        session: AsyncSession
+    ) -> Dict[str, Any]:
+        """
+        Validate an alert rule using the latest transaction for a user.
+        Returns the parsed rule structure and validation results.
+        """
+        print('Validating rule:', rule)
+        transaction = await self.transaction_service.get_latest_transaction(user_id, session)
+        transaction_dict = (
+            transaction.__dict__
+            if transaction is not None
+            else self.transaction_service.get_dummy_transaction(user_id)
+        )
+
+        try:
+            parsed_rule = self.parse_nl_rule_with_llm(rule, transaction_dict)
+
+            if parsed_rule and parsed_rule.get('valid_sql'):
+                return {
+                    'status': 'valid',
+                    'message': 'Alert rule validated successfully',
+                    'transaction_used': transaction_dict,
+                    'user_id': user_id,
+                    'validation_timestamp': datetime.now().isoformat(),
+                    'alert_text': parsed_rule.get('alert_text'),
+                    'sql_query': parsed_rule.get('sql_query'),
+                }
+            else:
+                return {
+                    'status': 'invalid',
+                    'transaction_used': transaction_dict,
+                    'user_id': user_id,
+                    'message': 'Rule could not be parsed or validated',
+                    'error': 'LLM could not parse rule structure',
+                    'alert_text': parsed_rule.get('alert_text'),
+                    'validation_timestamp': datetime.now().isoformat(),
+                }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Validation failed: {str(e)}',
+                'error': str(e),
+            }
+
+    async def trigger_alert_rule(
+        self, 
+        rule: AlertRule, 
+        session: AsyncSession
+    ) -> Dict[str, Any]:
+        """
+        Trigger an alert rule and create notification if conditions are met.
+        
+        Args:
+            rule: The AlertRule object to trigger
+            session: Database session
+            
+        Returns:
+            Dict with trigger results
+        """
+        if not rule.is_active:
+            raise ValueError('Alert rule is not active')
+
+        transaction = await self.transaction_service.get_latest_transaction(rule.user_id, session)
+        if transaction is None:
+            raise ValueError('No transaction found for user')
+
+        try:
+            alert_result = self.generate_alert_with_llm(
+                rule.natural_language_query, transaction.__dict__
+            )
+
+            if alert_result and alert_result.get('should_trigger', False):
+                # Create AlertNotification object
+                notification = AlertNotification(
+                    id=str(uuid.uuid4()),
+                    user_id=rule.user_id,
+                    alert_rule_id=rule.id,
+                    transaction_id=transaction.trans_num,
+                    title=f'Alert: {rule.name}',
+                    message=alert_result.get('message', 'Alert triggered'),
+                    notification_method='system',
+                    status='sent',
+                )
+
+                # Add notification to session
+                session.add(notification)
+
+                # Update trigger count and last triggered time
+                await session.execute(
+                    update(AlertRule)
+                    .where(AlertRule.id == rule.id)
+                    .values(
+                        trigger_count=rule.trigger_count + 1,
+                        last_triggered=datetime.utcnow(),
+                        updated_at=datetime.utcnow(),
+                    )
+                )
+                await session.commit()
+
+                return {
+                    'status': 'triggered',
+                    'message': 'Alert rule triggered successfully',
+                    'trigger_count': rule.trigger_count + 1,
+                    'rule_evaluation': alert_result,
+                    'transaction_id': transaction.trans_num,
+                    'notification_id': notification.id,
+                }
+            else:
+                return {
+                    'status': 'not_triggered',
+                    'message': 'Rule evaluated but alert not triggered',
+                    'rule_evaluation': alert_result,
+                    'transaction_id': transaction.trans_num,
+                }
+
+        except Exception as e:
+            transaction_id = transaction.trans_num if transaction else 'unknown'
+            return {
+                'status': 'error',
+                'message': f'Alert generation failed: {str(e)}',
+                'error': str(e),
+                'transaction_id': transaction_id,
+            }

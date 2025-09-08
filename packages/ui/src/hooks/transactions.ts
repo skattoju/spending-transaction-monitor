@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   apiTransactionService as transactionService,
   realAlertService as alertService,
-  userService,
 } from '../services/api-transaction';
+import { userService } from '../services/user';
 import type { TransactionStats } from '../schemas/transaction';
 
 // Transaction hooks

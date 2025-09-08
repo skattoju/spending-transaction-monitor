@@ -133,6 +133,44 @@ async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
     }
 
 
+@router.get('/me', response_model=UserOut)
+async def get_current_user(session: AsyncSession = Depends(get_db)):
+    """Get the current logged-in user. For now, returns the first user from the database."""
+    try:
+        result = await session.execute(
+            select(User)
+            .options(
+                selectinload(User.creditCards),
+                selectinload(User.transactions),
+            )
+            .limit(1)
+        )
+        user: User | None = result.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail='No users found in the system')
+            
+    except SQLAlchemyError as err:
+        raise HTTPException(status_code=500, detail=str(err)) from err
+
+    # Simple aggregation: counts
+    credit_cards_count = len(user.creditCards)
+    transactions_count = len(user.transactions)
+
+    return {
+        'id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'phone_number': user.phone_number,
+        'is_active': user.is_active,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+        'credit_cards_count': credit_cards_count,
+        'transactions_count': transactions_count,
+    }
+
+
 @router.post('', response_model=UserOut)
 async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_db)):
     """Create a new user"""

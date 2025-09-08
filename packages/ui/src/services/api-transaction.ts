@@ -4,22 +4,12 @@ import type {
   Alert,
   AlertRule,
 } from '../schemas/transaction';
+import { 
+  type ApiTransactionResponse,
+  type ApiAlertRuleResponse
+} from './user';
 
 // Type definitions for API responses
-interface ApiTransactionResponse {
-  id: string;
-  amount: number;
-  merchant_name: string;
-  status: string;
-  transaction_date: string;
-  transaction_type: string;
-  currency: string;
-  merchant_category: string;
-  description: string;
-  user_id: string;
-  trans_num: string;
-}
-
 interface ApiNotificationResponse {
   id: string;
   title: string;
@@ -28,43 +18,8 @@ interface ApiNotificationResponse {
   status: string;
   created_at: string;
   read: boolean;
-}
-
-interface ApiAlertRuleResponse {
-  id: string;
-  name: string;
-  natural_language_query: string;
-  sql_query: string;
-  alert_type: string;
-  is_active: boolean;
-  trigger_count: number;
-  created_at: string;
-  updated_at: string;
-  last_triggered?: string;
-}
-
-interface ApiUserResponse {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  created_at: string;
-}
-
-interface ApiCreditCardResponse {
-  id: string;
-  user_id: string;
-  card_number: string;
-  card_type: string;
-  expiry_date: string;
-  credit_limit: number;
-  current_balance: number;
-  available_credit: number;
+  transaction_id?: string;
+  read_at?: string | null;
 }
 
 // Real API-based transaction service
@@ -312,20 +267,42 @@ export const realAlertService = {
   },
 
   // Create new alert rule
-  async createAlertRule(rule: string): Promise<AlertRule> {
-    // For now, we'll simulate this since the real endpoint needs more complex data
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  async createAlertRule(rule: string, userId?: string): Promise<AlertRule> {
+    try {
+      // Note: userId parameter is now unused as the API automatically determines the current user
+      void userId; // Suppress unused parameter warning
 
-    const newRule: AlertRule = {
-      id: `RULE-${Date.now()}`,
-      rule,
-      status: 'active',
-      triggered: 0,
-      last_triggered: 'Never',
-      created_at: new Date().toISOString(),
-    };
+      const response = await fetch('/api/alerts/rules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          natural_language_query: rule,
+        }),
+      });
 
-    return newRule;
+      if (!response.ok) {
+        throw new Error(`Failed to create alert rule: ${response.status} ${response.statusText}`);
+      }
+
+      const apiRule = await response.json();
+
+      // Transform API response to match UI schema
+      const newRule: AlertRule = {
+        id: apiRule.id,
+        rule: apiRule.natural_language_query || apiRule.name || rule,
+        status: apiRule.is_active ? 'active' : 'inactive',
+        triggered: apiRule.trigger_count || 0,
+        last_triggered: apiRule.last_triggered || 'Never',
+        created_at: apiRule.created_at,
+      };
+
+      return newRule;
+    } catch (error) {
+      console.error('Error creating alert rule:', error);
+      throw new Error(error instanceof Error ? error.message : 'Failed to create alert rule');
+    }
   },
 
   // Toggle alert rule status
@@ -348,60 +325,7 @@ export const realAlertService = {
   },
 };
 
-// User service for real API data
-export const userService = {
-  // Get all users
-  async getUsers(): Promise<ApiUserResponse[]> {
-    const response = await fetch('/api/users/');
-    if (!response.ok) {
-      throw new Error('Failed to fetch users');
-    }
-    return response.json();
-  },
 
-  // Get user by ID
-  async getUserById(id: string): Promise<ApiUserResponse | null> {
-    const response = await fetch(`/api/users/${id}`);
-    if (!response.ok) {
-      if (response.status === 404) return null;
-      throw new Error('Failed to fetch user');
-    }
-    return response.json();
-  },
-
-  // Get user transactions
-  async getUserTransactions(
-    user_id: string,
-    limit = 50,
-    offset = 0,
-  ): Promise<ApiTransactionResponse[]> {
-    const response = await fetch(
-      `/api/users/${user_id}/transactions?limit=${limit}&offset=${offset}`,
-    );
-    if (!response.ok) {
-      throw new Error('Failed to fetch user transactions');
-    }
-    return response.json();
-  },
-
-  // Get user credit cards
-  async getUserCreditCards(user_id: string): Promise<ApiCreditCardResponse[]> {
-    const response = await fetch(`/api/users/${user_id}/credit-cards`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user credit cards');
-    }
-    return response.json();
-  },
-
-  // Get user alert rules
-  async getUserAlertRules(user_id: string): Promise<ApiAlertRuleResponse[]> {
-    const response = await fetch(`/api/users/${user_id}/rules`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user alert rules');
-    }
-    return response.json();
-  },
-};
 
 // Keep old alert service as fallback
 export const alertService = {
@@ -476,7 +400,9 @@ export const alertService = {
   },
 
   // Create new alert rule
-  async createAlertRule(rule: string): Promise<AlertRule> {
+  async createAlertRule(rule: string, userId?: string): Promise<AlertRule> {
+    // Note: userId parameter is intentionally unused in fallback service but kept for API consistency
+    void userId;
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     const newRule: AlertRule = {
