@@ -11,10 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .routes import alerts as alerts_routes
 <<<<<<< HEAD
+<<<<<<< HEAD
 from .routes import health
 =======
 from .routes import auth_test
 from .routes import cleanup_kafka_producer, health
+=======
+from .routes import auth_test, cleanup_kafka_producer, health
+>>>>>>> aea8d0e (fix: sort imports in main.py)
 from .routes import kafka as kafka_routes
 >>>>>>> 613107c (fix: move Keycloak config to environment variables and register auth_test route)
 from .routes import transactions as transactions_routes
