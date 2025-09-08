@@ -138,9 +138,8 @@ Examples:
     os.chdir(Path(__file__).parent)
 
     # Install dependencies if requested
-    if args.install_deps:
-        if not install_dependencies():
-            sys.exit(1)
+    if args.install_deps and not install_dependencies():
+        sys.exit(1)
 
     # Determine which test file to run
     test_file = None
