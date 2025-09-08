@@ -23,6 +23,8 @@ except ImportError:
     get_db = None
     User = None
 
+from ..core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Global cache for OIDC configuration and keys
