@@ -3,6 +3,7 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.graph import StateGraph
 
 from .agents.alert_parser import parse_alert_to_sql_with_context
+from .agents.create_alert_rule import create_alert_rule
 from .agents.sql_executor import execute_sql
 
 
@@ -10,9 +11,11 @@ from .agents.sql_executor import execute_sql
 class AppState(dict):
     transaction: dict
     alert_text: str
+    user_id: str
     sql_query: str
     query_result: str
     valid_sql: bool
+    alert_rule: dict  # Will store the AlertRule object
 
 
 graph = StateGraph(AppState)
@@ -26,6 +29,16 @@ graph.add_node(
             'sql_query': parse_alert_to_sql_with_context(
                 {'transaction': state['transaction'], 'alert_text': state['alert_text']}
             ),
+        }
+    ),
+)
+
+graph.add_node(
+    'create_alert_rule',
+    RunnableLambda(
+        lambda state: {
+            **state,
+            'alert_rule': create_alert_rule(state['alert_text'], state['user_id']),
         }
     ),
 )
@@ -55,7 +68,8 @@ def validate_sql(state):
 graph.add_node('validate_sql', RunnableLambda(validate_sql))
 
 # Edges
-graph.set_entry_point('parse_alert')
+graph.set_entry_point('create_alert_rule')
+graph.add_edge('create_alert_rule', 'parse_alert')
 graph.add_edge('parse_alert', 'execute_sql')
 graph.add_edge('execute_sql', 'validate_sql')
 

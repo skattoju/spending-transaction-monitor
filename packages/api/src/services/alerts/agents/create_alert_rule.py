@@ -1,7 +1,8 @@
-# Import AlertType and AlertRule from db.models
 import uuid
 
 from db.models import AlertRule, AlertType
+
+# Now import everything
 from langchain_core.tools import tool
 
 from .utils import extract_response, get_llm_client

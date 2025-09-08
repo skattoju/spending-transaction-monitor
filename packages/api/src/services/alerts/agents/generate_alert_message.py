@@ -5,11 +5,32 @@ from .utils import extract_response, get_llm_client
 
 @tool
 def generate_alert_message(
-    transaction: dict, query_result: str, alert_text: str, alert_type: str
+    transaction: dict, query_result: str, alert_text: str, alert_rule: dict
 ) -> str:
     """
-    Generate a user-facing alert message based on alert type.
+    Generate a user-facing alert message based on AlertRule.
+
+    Args:
+        transaction: Transaction data
+        query_result: SQL query result
+        alert_text: Natural language alert description
+        alert_rule: AlertRule object containing alert_type and other metadata
     """
+    # Extract alert_type from the AlertRule object
+    alert_type_enum = alert_rule.get('alert_type')
+
+    # Map AlertType enum to string for backward compatibility with existing prompts
+    alert_type_map = {
+        'AMOUNT_THRESHOLD': 'spending',
+        'LOCATION_BASED': 'location',
+        'MERCHANT_CATEGORY': 'merchant',
+        'MERCHANT_NAME': 'merchant',
+        'PATTERN_BASED': 'pattern',
+        'FREQUENCY_BASED': 'frequency',
+        'CUSTOM_QUERY': 'custom',
+    }
+
+    alert_type = alert_type_map.get(str(alert_type_enum), 'general')
     first = transaction.get('first', '')
     last = transaction.get('last', '')
     user = f'{first} {last}'.strip()
@@ -51,6 +72,28 @@ The user {user} triggered an alert related to a new or repeated merchant.
 - SQL result: {query_result}
 
 Write a 1-2 sentence friendly alert message explaining why this merchant alert was triggered.
+"""
+    elif alert_type == 'pattern':
+        prompt = f"""
+The user {user} triggered a pattern-based alert for unusual spending behavior.
+
+- Alert: "{alert_text}"
+- Transaction amount: ${amount}
+- Merchant: {merchant}
+- SQL result: {query_result}
+
+Write a 1-2 sentence friendly alert message explaining the unusual pattern detected.
+"""
+    elif alert_type == 'frequency':
+        prompt = f"""
+The user {user} triggered a frequency-based alert for repeated transactions.
+
+- Alert: "{alert_text}"
+- Transaction amount: ${amount}
+- Merchant: {merchant}
+- SQL result: {query_result}
+
+Write a 1-2 sentence friendly alert message about the frequency pattern.
 """
     else:
         prompt = f"""
