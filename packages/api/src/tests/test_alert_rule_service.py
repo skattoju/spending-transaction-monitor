@@ -83,13 +83,14 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with patch.object(
-            alert_rule_service.transaction_service,
-            'get_latest_transaction',
-            return_value=sample_transaction,
+        with (
+            patch.object(
+                alert_rule_service.transaction_service,
+                'get_latest_transaction',
+                return_value=sample_transaction,
+            ),
+            patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
         ):
-            # Mock the LLM parsing to return valid result
-            with patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse:
                 mock_parse.return_value = {
                     'valid_sql': True,
                     'alert_text': rule_text,
@@ -127,15 +128,16 @@ class TestAlertRuleService:
         ):
             # Mock the dummy transaction
             dummy_transaction = {'user_id': user_id, 'amount': 100.0}
-            with patch.object(
+            with ( patch.object(
                 alert_rule_service.transaction_service,
                 'get_dummy_transaction',
                 return_value=dummy_transaction,
-            ):
-                # Mock the LLM parsing to return valid result
-                with patch.object(
+            ),
+                 patch.object(
                     AlertRuleService, 'parse_nl_rule_with_llm'
-                ) as mock_parse:
+                ) as mock_parse,
+
+            ):
                     mock_parse.return_value = {
                         'valid_sql': True,
                         'alert_text': rule_text,
@@ -161,13 +163,14 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
+        ),
+             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
+
         ):
-            # Mock the LLM parsing to return invalid result
-            with patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse:
                 mock_parse.return_value = {'valid_sql': False, 'alert_text': rule_text}
 
                 # Act
@@ -191,13 +194,14 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
+        ),
+             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
+
         ):
-            # Mock the LLM parsing to raise an exception
-            with patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse:
                 mock_parse.side_effect = Exception('LLM service unavailable')
 
                 # Act
@@ -217,15 +221,16 @@ class TestAlertRuleService:
         """Test successful triggering of an alert rule"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
-        ):
-            # Mock the LLM generation to return trigger result
-            with patch.object(
+        ),
+             patch.object(
                 AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate:
+            ) as mock_generate,
+
+        ):
                 mock_generate.return_value = {
                     'should_trigger': True,
                     'message': 'Large transaction detected: $150.00',
@@ -260,15 +265,16 @@ class TestAlertRuleService:
         """Test triggering alert rule when conditions are not met"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
-        ):
-            # Mock the LLM generation to return no trigger result
-            with patch.object(
+        ),
+             patch.object(
                 AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate:
+            ) as mock_generate,
+
+        ):
                 mock_generate.return_value = {
                     'should_trigger': False,
                     'message': 'Transaction amount is within normal range',
@@ -303,13 +309,14 @@ class TestAlertRuleService:
         """Test triggering alert rule when user has no transactions"""
         # Arrange
         # Mock the transaction service to return None
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=None,
+        ),
+             pytest.raises(ValueError, match='No transaction found for user'),
+
         ):
-            # Act & Assert
-            with pytest.raises(ValueError, match='No transaction found for user'):
                 await alert_rule_service.trigger_alert_rule(
                     sample_alert_rule, mock_session
                 )
@@ -321,15 +328,16 @@ class TestAlertRuleService:
         """Test triggering alert rule when LLM generation fails"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
-        ):
-            # Mock the LLM generation to raise an exception
-            with patch.object(
+        ),
+             patch.object(
                 AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate:
+            ) as mock_generate,
+
+        ):
                 mock_generate.side_effect = Exception('LLM generation failed')
 
                 # Act
@@ -424,13 +432,14 @@ class TestAlertRuleService:
         user_id = 'user-456'
 
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
+        ),
+             patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse,
+
         ):
-            # Mock the LLM parsing to return None
-            with patch.object(AlertRuleService, 'parse_nl_rule_with_llm') as mock_parse:
                 mock_parse.return_value = None
 
                 # Act
@@ -449,15 +458,16 @@ class TestAlertRuleService:
         """Test triggering when LLM returns None"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
-        ):
-            # Mock the LLM generation to return None
-            with patch.object(
+        ),
+             patch.object(
                 AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate:
+            ) as mock_generate,
+
+        ):
                 mock_generate.return_value = None
 
                 # Act
@@ -476,15 +486,16 @@ class TestAlertRuleService:
         """Test that triggering creates notification with correct data"""
         # Arrange
         # Mock the transaction service to return a transaction
-        with patch.object(
+        with ( patch.object(
             alert_rule_service.transaction_service,
             'get_latest_transaction',
             return_value=sample_transaction,
-        ):
-            # Mock the LLM generation to return trigger result
-            with patch.object(
+        ),
+             patch.object(
                 AlertRuleService, 'generate_alert_with_llm'
-            ) as mock_generate:
+            ) as mock_generate,
+
+        ):
                 mock_generate.return_value = {
                     'should_trigger': True,
                     'message': 'Custom alert message',
@@ -495,7 +506,7 @@ class TestAlertRuleService:
                 mock_session.commit = AsyncMock()
 
                 # Act
-                result = await alert_rule_service.trigger_alert_rule(
+                await alert_rule_service.trigger_alert_rule(
                     sample_alert_rule, mock_session
                 )
 
