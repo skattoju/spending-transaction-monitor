@@ -3,6 +3,7 @@ import { Button } from '../atoms/button/button';
 import { UserAvatar } from '../user-avatar/user-avatar';
 import { cn } from '../../lib/utils';
 import { Link } from '@tanstack/react-router';
+import { useCurrentUser } from '../../hooks/user';
 
 export interface DashboardHeaderProps {
   className?: string;
@@ -10,6 +11,8 @@ export interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ className, onMenuClick }: DashboardHeaderProps) {
+  const { user, logout } = useCurrentUser();
+
   return (
     <header className={cn('border-b border-border bg-card', className)}>
       <div className="container mx-auto px-4 py-4">
@@ -69,13 +72,15 @@ export function DashboardHeader({ className, onMenuClick }: DashboardHeaderProps
             </Button>
 
             <UserAvatar
+              userName={user?.fullName}
+              userEmail={user?.email}
               onSettingsClick={() => {
                 // TODO: Navigate to settings page
                 console.log('Settings clicked');
               }}
               onLogoutClick={() => {
-                // TODO: Handle logout when auth is implemented
-                console.log('Logout clicked');
+                logout();
+                console.log('User logged out');
               }}
             />
           </div>

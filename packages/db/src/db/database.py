@@ -2,13 +2,14 @@
 Database configuration and utilities
 """
 
+import logging
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
-from typing import Dict, Any
-import logging
-from datetime import datetime, timezone
 
 DATABASE_URL = "postgresql+asyncpg://user:password@localhost:5432/spending-monitor"
 
@@ -20,7 +21,7 @@ Base = declarative_base()
 logger = logging.getLogger(__name__)
 
 # Capture service startup time
-SERVICE_START_TIME = datetime.now(timezone.utc)
+SERVICE_START_TIME = datetime.now(UTC)
 
 
 class DatabaseService:
@@ -30,7 +31,7 @@ class DatabaseService:
         self.engine = engine or globals()['engine']
         self.start_time = SERVICE_START_TIME
     
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """
         Perform database health check
         

@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiTransactionService as transactionService, realAlertService as alertService, userService } from '../services/api-transaction';
+import {
+  apiTransactionService as transactionService,
+  realAlertService as alertService,
+} from '../services/api-transaction';
+import { userService } from '../services/user';
 import type { TransactionStats } from '../schemas/transaction';
 
 // Transaction hooks
@@ -101,26 +105,26 @@ export const useUser = (id: string) => {
   });
 };
 
-export const useUserTransactions = (userId: string, limit = 50, offset = 0) => {
+export const useUserTransactions = (user_id: string, limit = 50, offset = 0) => {
   return useQuery({
-    queryKey: ['users', userId, 'transactions', limit, offset],
-    queryFn: () => userService.getUserTransactions(userId, limit, offset),
-    enabled: !!userId,
+    queryKey: ['users', user_id, 'transactions', limit, offset],
+    queryFn: () => userService.getUserTransactions(user_id, limit, offset),
+    enabled: !!user_id,
   });
 };
 
-export const useUserCreditCards = (userId: string) => {
+export const useUserCreditCards = (user_id: string) => {
   return useQuery({
-    queryKey: ['users', userId, 'credit-cards'],
-    queryFn: () => userService.getUserCreditCards(userId),
-    enabled: !!userId,
+    queryKey: ['users', user_id, 'credit-cards'],
+    queryFn: () => userService.getUserCreditCards(user_id),
+    enabled: !!user_id,
   });
 };
 
-export const useUserAlertRules = (userId: string) => {
+export const useUserAlertRules = (user_id: string) => {
   return useQuery({
-    queryKey: ['users', userId, 'alert-rules'],
-    queryFn: () => userService.getUserAlertRules(userId),
-    enabled: !!userId,
+    queryKey: ['users', user_id, 'alert-rules'],
+    queryFn: () => userService.getUserAlertRules(user_id),
+    enabled: !!user_id,
   });
 };

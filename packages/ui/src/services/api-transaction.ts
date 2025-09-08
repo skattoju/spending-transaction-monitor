@@ -4,6 +4,20 @@ import type {
   Alert,
   AlertRule,
 } from '../schemas/transaction';
+import { type ApiTransactionResponse, type ApiAlertRuleResponse } from './user';
+
+// Type definitions for API responses
+interface ApiNotificationResponse {
+  id: string;
+  title: string;
+  message: string;
+  notification_method: string;
+  status: string;
+  created_at: string;
+  read: boolean;
+  transaction_id?: string;
+  read_at?: string | null;
+}
 
 // Real API-based transaction service
 export const apiTransactionService = {
@@ -21,25 +35,29 @@ export const apiTransactionService = {
     if (!response.ok) {
       throw new Error('Failed to fetch transactions');
     }
-    
+
     const allTransactions = await response.json();
-    
+
     // Transform API data to match UI schema
-    const transformedTransactions: Transaction[] = allTransactions.map((tx: any) => ({
-      id: tx.id,
-      amount: tx.amount,
-      merchant: tx.merchantName,
-      status: tx.status.toLowerCase(),
-      time: tx.transactionDate,
-      type: tx.transactionType.toLowerCase(),
-      currency: tx.currency,
-      category: tx.merchantCategory,
-      description: tx.description,
-    }));
+    const transformedTransactions: Transaction[] = allTransactions.map(
+      (tx: ApiTransactionResponse) => ({
+        id: tx.id,
+        amount: tx.amount,
+        merchant: tx.merchant_name,
+        status: tx.status.toLowerCase(),
+        time: tx.transaction_date,
+        type: tx.transaction_type.toLowerCase(),
+        currency: tx.currency,
+        category: tx.merchant_category,
+        description: tx.description,
+      }),
+    );
 
     // Sort by time descending
-    transformedTransactions.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-    
+    transformedTransactions.sort(
+      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+    );
+
     // Apply pagination
     const start = (page - 1) * limit;
     const end = start + limit;
@@ -60,19 +78,19 @@ export const apiTransactionService = {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch transaction');
     }
-    
+
     const tx = await response.json();
-    
+
     // Transform API data to match UI schema
     return {
       id: tx.id,
       amount: tx.amount,
-      merchant: tx.merchantName,
+      merchant: tx.merchant_name,
       status: tx.status.toLowerCase(),
-      time: tx.transactionDate,
-      type: tx.transactionType.toLowerCase(),
+      time: tx.transaction_date,
+      type: tx.transaction_type.toLowerCase(),
       currency: tx.currency,
-      category: tx.merchantCategory,
+      category: tx.merchant_category,
       description: tx.description,
     };
   },
@@ -82,7 +100,7 @@ export const apiTransactionService = {
     // For now, calculate stats from the transactions data
     // In the future, you could create a dedicated stats endpoint
     const { transactions } = await this.getRecentTransactions(1, 1000);
-    
+
     const totalTransactions = transactions.length;
     const totalVolume = transactions.reduce((sum, t) => sum + t.amount, 0);
     const flaggedCount = transactions.filter((t) => t.status === 'flagged').length;
@@ -104,7 +122,7 @@ export const apiTransactionService = {
   // Search transactions
   async searchTransactions(query: string): Promise<Transaction[]> {
     const { transactions } = await this.getRecentTransactions(1, 1000);
-    
+
     const lowercaseQuery = query.toLowerCase();
     return transactions.filter(
       (t) =>
@@ -125,7 +143,7 @@ export const apiTransactionService = {
     }>
   > {
     const { transactions } = await this.getRecentTransactions(1, 1000);
-    
+
     const days =
       timeRange === '7d'
         ? 7
@@ -134,17 +152,17 @@ export const apiTransactionService = {
           : timeRange === '90d'
             ? 90
             : 365;
-            
+
     const data = [];
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     // Group transactions by date
     const transactionsByDate = new Map<string, { volume: number; count: number }>();
-    
+
     transactions
-      .filter(tx => new Date(tx.time) >= cutoffDate)
-      .forEach(tx => {
+      .filter((tx) => new Date(tx.time) >= cutoffDate)
+      .forEach((tx) => {
         const date = new Date(tx.time).toISOString().split('T')[0];
         const existing = transactionsByDate.get(date) || { volume: 0, count: 0 };
         transactionsByDate.set(date, {
@@ -158,9 +176,9 @@ export const apiTransactionService = {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       const dayData = transactionsByDate.get(dateStr) || { volume: 0, count: 0 };
-      
+
       data.push({
         date: dateStr,
         volume: Math.floor(dayData.volume),
@@ -203,19 +221,23 @@ export const realAlertService = {
     if (!response.ok) {
       throw new Error('Failed to fetch alerts');
     }
-    
+
     const notifications = await response.json();
-    
+
     // Transform API data to match UI schema
-    return notifications.map((notification: any) => ({
+    return notifications.map((notification: ApiNotificationResponse) => ({
       id: notification.id,
       title: notification.title,
       description: notification.message,
-      severity: notification.status === 'ERROR' ? 'high' : 
-                notification.status === 'WARNING' ? 'medium' : 'low',
-      timestamp: notification.createdAt,
-      transactionId: notification.transactionId,
-      resolved: notification.readAt !== null,
+      severity:
+        notification.status === 'ERROR'
+          ? 'high'
+          : notification.status === 'WARNING'
+            ? 'medium'
+            : 'low',
+      timestamp: notification.created_at,
+      transaction_id: notification.transaction_id,
+      resolved: notification.read_at !== null,
     }));
   },
 
@@ -225,36 +247,63 @@ export const realAlertService = {
     if (!response.ok) {
       throw new Error('Failed to fetch alert rules');
     }
-    
+
     const rules = await response.json();
-    
+
     // Transform API data to match UI schema
-    return rules.map((rule: any) => ({
+    return rules.map((rule: ApiAlertRuleResponse) => ({
       id: rule.id,
-      rule: rule.name + (rule.description ? `: ${rule.description}` : ''),
-      status: rule.isActive ? 'active' : 'paused',
-      triggered: rule.triggerCount || 0,
-      lastTriggered: rule.lastTriggered ? 
-        new Date(rule.lastTriggered).toLocaleString() : 'Never',
-      createdAt: rule.createdAt,
+      rule: rule.name,
+      status: rule.is_active ? 'active' : 'paused',
+      triggered: rule.trigger_count || 0,
+      last_triggered: rule.last_triggered
+        ? new Date(rule.last_triggered).toLocaleString()
+        : 'Never',
+      created_at: rule.created_at,
     }));
   },
 
   // Create new alert rule
-  async createAlertRule(rule: string): Promise<AlertRule> {
-    // For now, we'll simulate this since the real endpoint needs more complex data
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  async createAlertRule(rule: string, userId?: string): Promise<AlertRule> {
+    try {
+      // Note: userId parameter is now unused as the API automatically determines the current user
+      void userId; // Suppress unused parameter warning
 
-    const newRule: AlertRule = {
-      id: `RULE-${Date.now()}`,
-      rule,
-      status: 'active',
-      triggered: 0,
-      lastTriggered: 'Never',
-      createdAt: new Date().toISOString(),
-    };
+      const response = await fetch('/api/alerts/rules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          natural_language_query: rule,
+        }),
+      });
 
-    return newRule;
+      if (!response.ok) {
+        throw new Error(
+          `Failed to create alert rule: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const apiRule = await response.json();
+
+      // Transform API response to match UI schema
+      const newRule: AlertRule = {
+        id: apiRule.id,
+        rule: apiRule.natural_language_query || apiRule.name || rule,
+        status: apiRule.is_active ? 'active' : 'inactive',
+        triggered: apiRule.trigger_count || 0,
+        last_triggered: apiRule.last_triggered || 'Never',
+        created_at: apiRule.created_at,
+      };
+
+      return newRule;
+    } catch (error) {
+      console.error('Error creating alert rule:', error);
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to create alert rule',
+      );
+    }
   },
 
   // Toggle alert rule status
@@ -277,55 +326,6 @@ export const realAlertService = {
   },
 };
 
-// User service for real API data
-export const userService = {
-  // Get all users
-  async getUsers(): Promise<any[]> {
-    const response = await fetch('/api/users/');
-    if (!response.ok) {
-      throw new Error('Failed to fetch users');
-    }
-    return response.json();
-  },
-
-  // Get user by ID
-  async getUserById(id: string): Promise<any> {
-    const response = await fetch(`/api/users/${id}`);
-    if (!response.ok) {
-      if (response.status === 404) return null;
-      throw new Error('Failed to fetch user');
-    }
-    return response.json();
-  },
-
-  // Get user transactions
-  async getUserTransactions(userId: string, limit = 50, offset = 0): Promise<any[]> {
-    const response = await fetch(`/api/users/${userId}/transactions?limit=${limit}&offset=${offset}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user transactions');
-    }
-    return response.json();
-  },
-
-  // Get user credit cards
-  async getUserCreditCards(userId: string): Promise<any[]> {
-    const response = await fetch(`/api/users/${userId}/credit-cards`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user credit cards');
-    }
-    return response.json();
-  },
-
-  // Get user alert rules
-  async getUserAlertRules(userId: string): Promise<any[]> {
-    const response = await fetch(`/api/users/${userId}/rules`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user alert rules');
-    }
-    return response.json();
-  },
-};
-
 // Keep old alert service as fallback
 export const alertService = {
   // Get active alerts
@@ -339,7 +339,7 @@ export const alertService = {
         description: 'Transaction of $1,299.99 exceeds threshold',
         severity: 'high',
         timestamp: new Date(Date.now() - 1800000).toISOString(),
-        transactionId: 'e87b191a-4bc3-49b3-9881-d6f44066c92a',
+        transaction_id: 'e87b191a-4bc3-49b3-9881-d6f44066c92a',
         resolved: false,
       },
       {
@@ -348,7 +348,7 @@ export const alertService = {
         description: 'Real-time transaction processed: $150.00',
         severity: 'medium',
         timestamp: new Date(Date.now() - 3600000).toISOString(),
-        transactionId: '52e66c39-f9e3-4bf7-b9d7-d18280654b90',
+        transaction_id: '52e66c39-f9e3-4bf7-b9d7-d18280654b90',
         resolved: false,
       },
       {
@@ -374,24 +374,24 @@ export const alertService = {
         rule: 'Alert me when transactions exceed $1,000',
         status: 'active',
         triggered: 3,
-        lastTriggered: '2 hours ago',
-        createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+        last_triggered: '2 hours ago',
+        created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
       },
       {
         id: 'RULE-002',
         rule: 'Notify me of Kafka consumer issues',
         status: 'active',
         triggered: 0,
-        lastTriggered: 'Never',
-        createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
+        last_triggered: 'Never',
+        created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
       },
       {
         id: 'RULE-003',
         rule: 'Alert for transactions from Test City',
         status: 'active',
         triggered: 1,
-        lastTriggered: '1 hour ago',
-        createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
+        last_triggered: '1 hour ago',
+        created_at: new Date(Date.now() - 86400000 * 60).toISOString(),
       },
     ];
 
@@ -399,7 +399,9 @@ export const alertService = {
   },
 
   // Create new alert rule
-  async createAlertRule(rule: string): Promise<AlertRule> {
+  async createAlertRule(rule: string, userId?: string): Promise<AlertRule> {
+    // Note: userId parameter is intentionally unused in fallback service but kept for API consistency
+    void userId;
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     const newRule: AlertRule = {
@@ -407,8 +409,8 @@ export const alertService = {
       rule,
       status: 'active',
       triggered: 0,
-      lastTriggered: 'Never',
-      createdAt: new Date().toISOString(),
+      last_triggered: 'Never',
+      created_at: new Date().toISOString(),
     };
 
     return newRule;

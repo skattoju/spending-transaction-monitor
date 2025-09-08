@@ -1,6 +1,7 @@
 """Verify user data by printing joined info"""
 
 import asyncio
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -25,19 +26,19 @@ async def verify() -> None:
             return
 
         print("USER PROFILE:")
-        print(f"   Name: {user.firstName} {user.lastName}")
+        print(f"   Name: {user.first_name} {user.last_name}")
         print(f"   Email: {user.email}")
-        print(f"   Phone: {user.phoneNumber}")
-        print(f"   Active: {user.isActive}\n")
+        print(f"   Phone: {user.phone_number}")
+        print(f"   Active: {user.is_active}\n")
 
         print("ADDRESS:")
-        print(f"   Street: {user.addressStreet}")
-        print(f"   City: {user.addressCity}, {user.addressState} {user.addressZipCode}")
-        print(f"   Country: {user.addressCountry}\n")
+        print(f"   Street: {user.address_street}")
+        print(f"   City: {user.address_city}, {user.address_state} {user.address_zipcode}")
+        print(f"   Country: {user.address_country}\n")
 
         print("FINANCIAL INFO:")
-        print(f"   Credit Limit: {user.creditLimit}")
-        print(f"   Current Balance: {user.currentBalance}\n")
+        print(f"   Credit Limit: {user.credit_limit}")
+        print(f"   Current Balance: {user.credit_balance}\n")
 
         print("RELATED DATA:")
         print(f"   Credit Cards: {len(user.creditCards)}")

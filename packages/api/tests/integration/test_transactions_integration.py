@@ -17,9 +17,9 @@ class TestUserSetup:
         """Create a test user and credit card before each test"""
         self.user_payload = {
             'email': 'transaction.test@example.com',
-            'firstName': 'Transaction',
-            'lastName': 'Tester',
-            'phoneNumber': '+1-555-8888',
+            'first_name': 'Transaction',
+            'last_name': 'Tester',
+            'phone_number': '+1-555-8888',
         }
 
         # Create user
@@ -37,14 +37,14 @@ class TestUserSetup:
 
         # Create credit card for the user
         self.card_payload = {
-            'userId': self.user_id,
-            'cardNumber': '1234',
-            'cardType': 'Visa',
-            'bankName': 'Test Bank',
-            'cardHolderName': 'Transaction Tester',
-            'expiryMonth': 12,
-            'expiryYear': 2027,
-            'isActive': True,
+            'user_id': self.user_id,
+            'card_number': '1234',
+            'card_type': 'Visa',
+            'bank_name': 'Test Bank',
+            'card_holder_name': 'Transaction Tester',
+            'expiry_month': 12,
+            'expiry_year': 2027,
+            'is_active': True,
         }
 
         response = client.post('/transactions/cards', json=self.card_payload)
@@ -67,18 +67,18 @@ class TestTransactions(TestUserSetup):
         """Test creating a new transaction"""
         payload = {
             'id': str(uuid.uuid4()),
-            'userId': self.user_id,
-            'creditCardId': self.card_id,
+            'user_id': self.user_id,
+            'credit_card_num': self.card_id,
             'amount': 99.99,
             'currency': 'USD',
             'description': 'Test purchase',
-            'merchantName': 'Test Store',
-            'merchantCategory': 'Retail',
-            'transactionDate': '2024-01-15T10:30:00Z',
-            'transactionType': 'PURCHASE',
-            'merchantCity': 'San Francisco',
-            'merchantState': 'CA',
-            'merchantCountry': 'US',
+            'merchant_name': 'Test Store',
+            'merchant_category': 'Retail',
+            'transaction_date': '2024-01-15T10:30:00Z',
+            'transaction_type': 'PURCHASE',
+            'merchant_city': 'San Francisco',
+            'merchant_state': 'CA',
+            'merchant_country': 'US',
             'status': 'APPROVED',
         }
 
@@ -88,25 +88,25 @@ class TestTransactions(TestUserSetup):
         data = response.json()
         assert data['amount'] == payload['amount']
         assert data['description'] == payload['description']
-        assert data['merchantName'] == payload['merchantName']
-        assert data['transactionType'] == payload['transactionType']
+        assert data['merchant_name'] == payload['merchant_name']
+        assert data['transaction_type'] == payload['transaction_type']
         assert 'id' in data
-        assert 'createdAt' in data
-        assert 'updatedAt' in data
+        assert 'created_at' in data
+        assert 'updated_at' in data
 
     def test_create_transaction_invalid_user(self):
         """Test creating transaction with non-existent user"""
         payload = {
             'id': str(uuid.uuid4()),
-            'userId': 'non-existent-user',
-            'creditCardId': self.card_id,
+            'user_id': 'non-existent-user',
+            'credit_card_num': self.card_id,
             'amount': 99.99,
             'currency': 'USD',
             'description': 'Test purchase',
-            'merchantName': 'Test Store',
-            'merchantCategory': 'Retail',
-            'transactionDate': '2024-01-15T10:30:00Z',
-            'transactionType': 'PURCHASE',
+            'merchant_name': 'Test Store',
+            'merchant_category': 'Retail',
+            'transaction_date': '2024-01-15T10:30:00Z',
+            'transaction_type': 'PURCHASE',
             'status': 'APPROVED',
         }
 
@@ -118,15 +118,15 @@ class TestTransactions(TestUserSetup):
         """Test creating transaction with non-existent credit card"""
         payload = {
             'id': str(uuid.uuid4()),
-            'userId': self.user_id,
-            'creditCardId': 'non-existent-card',
+            'user_id': self.user_id,
+            'credit_card_num': 'non-existent-card',
             'amount': 99.99,
             'currency': 'USD',
             'description': 'Test purchase',
-            'merchantName': 'Test Store',
-            'merchantCategory': 'Retail',
-            'transactionDate': '2024-01-15T10:30:00Z',
-            'transactionType': 'PURCHASE',
+            'merchant_name': 'Test Store',
+            'merchant_category': 'Retail',
+            'transaction_date': '2024-01-15T10:30:00Z',
+            'transaction_type': 'PURCHASE',
             'status': 'APPROVED',
         }
 
@@ -139,15 +139,15 @@ class TestTransactions(TestUserSetup):
         # First create a transaction
         create_payload = {
             'id': str(uuid.uuid4()),
-            'userId': self.user_id,
-            'creditCardId': self.card_id,
+            'user_id': self.user_id,
+            'credit_card_num': self.card_id,
             'amount': 150.00,
             'currency': 'USD',
             'description': 'Test transaction',
-            'merchantName': 'Test Merchant',
-            'merchantCategory': 'Food',
-            'transactionDate': '2024-01-16T12:00:00Z',
-            'transactionType': 'PURCHASE',
+            'merchant_name': 'Test Merchant',
+            'merchant_category': 'Food',
+            'transaction_date': '2024-01-16T12:00:00Z',
+            'transaction_type': 'PURCHASE',
             'status': 'APPROVED',
         }
 
@@ -174,15 +174,15 @@ class TestTransactions(TestUserSetup):
         # First create a transaction
         create_payload = {
             'id': str(uuid.uuid4()),
-            'userId': self.user_id,
-            'creditCardId': self.card_id,
+            'user_id': self.user_id,
+            'credit_card_num': self.card_id,
             'amount': 200.00,
             'currency': 'USD',
             'description': 'Original description',
-            'merchantName': 'Original Merchant',
-            'merchantCategory': 'Electronics',
-            'transactionDate': '2024-01-17T14:00:00Z',
-            'transactionType': 'PURCHASE',
+            'merchant_name': 'Original Merchant',
+            'merchant_category': 'Electronics',
+            'transaction_date': '2024-01-17T14:00:00Z',
+            'transaction_type': 'PURCHASE',
             'status': 'PENDING',
         }
 
@@ -209,15 +209,15 @@ class TestTransactions(TestUserSetup):
         # First create a transaction
         create_payload = {
             'id': str(uuid.uuid4()),
-            'userId': self.user_id,
-            'creditCardId': self.card_id,
+            'user_id': self.user_id,
+            'credit_card_num': self.card_id,
             'amount': 75.00,
             'currency': 'USD',
             'description': 'To delete',
-            'merchantName': 'Delete Store',
-            'merchantCategory': 'Retail',
-            'transactionDate': '2024-01-18T16:00:00Z',
-            'transactionType': 'PURCHASE',
+            'merchant_name': 'Delete Store',
+            'merchant_category': 'Retail',
+            'transaction_date': '2024-01-18T16:00:00Z',
+            'transaction_type': 'PURCHASE',
             'status': 'APPROVED',
         }
 
@@ -239,28 +239,28 @@ class TestTransactions(TestUserSetup):
         transactions = [
             {
                 'id': str(uuid.uuid4()),
-                'userId': self.user_id,
-                'creditCardId': self.card_id,
+                'user_id': self.user_id,
+                'credit_card_num': self.card_id,
                 'amount': 50.00,
                 'currency': 'USD',
                 'description': 'Small purchase',
-                'merchantName': 'Small Store',
-                'merchantCategory': 'Retail',
-                'transactionDate': '2024-01-19T10:00:00Z',
-                'transactionType': 'PURCHASE',
+                'merchant_name': 'Small Store',
+                'merchant_category': 'Retail',
+                'transaction_date': '2024-01-19T10:00:00Z',
+                'transaction_type': 'PURCHASE',
                 'status': 'APPROVED',
             },
             {
                 'id': str(uuid.uuid4()),
-                'userId': self.user_id,
-                'creditCardId': self.card_id,
+                'user_id': self.user_id,
+                'credit_card_num': self.card_id,
                 'amount': 500.00,
                 'currency': 'USD',
                 'description': 'Large purchase',
-                'merchantName': 'Large Store',
-                'merchantCategory': 'Electronics',
-                'transactionDate': '2024-01-20T11:00:00Z',
-                'transactionType': 'PURCHASE',
+                'merchant_name': 'Large Store',
+                'merchant_category': 'Electronics',
+                'transaction_date': '2024-01-20T11:00:00Z',
+                'transaction_type': 'PURCHASE',
                 'status': 'APPROVED',
             },
         ]
@@ -273,7 +273,7 @@ class TestTransactions(TestUserSetup):
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 2
-        assert all(tx['userId'] == self.user_id for tx in data)
+        assert all(tx['user_id'] == self.user_id for tx in data)
 
         # Test filtering by amount
         response = client.get(f'/transactions?user_id={self.user_id}&min_amount=100')
@@ -287,7 +287,7 @@ class TestTransactions(TestUserSetup):
         )
         assert response.status_code == 200
         data = response.json()
-        assert all(tx['merchantCategory'] == 'Electronics' for tx in data)
+        assert all(tx['merchant_category'] == 'Electronics' for tx in data)
 
 
 class TestCreditCards(TestUserSetup):
@@ -299,7 +299,7 @@ class TestCreditCards(TestUserSetup):
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 1
-        assert any(card['userId'] == self.user_id for card in data)
+        assert any(card['user_id'] == self.user_id for card in data)
 
     def test_get_credit_card_by_id(self):
         """Test getting a specific credit card"""
@@ -308,8 +308,8 @@ class TestCreditCards(TestUserSetup):
 
         data = response.json()
         assert data['id'] == self.card_id
-        assert data['userId'] == self.user_id
-        assert data['cardNumber'] == self.card_payload['cardNumber']
+        assert data['user_id'] == self.user_id
+        assert data['card_number'] == self.card_payload['card_number']
 
     def test_get_credit_card_not_found(self):
         """Test getting non-existent credit card"""
@@ -320,37 +320,37 @@ class TestCreditCards(TestUserSetup):
     def test_create_credit_card(self):
         """Test creating a new credit card"""
         payload = {
-            'userId': self.user_id,
-            'cardNumber': '5678',
-            'cardType': 'Mastercard',
-            'bankName': 'Another Bank',
-            'cardHolderName': 'Test User',
-            'expiryMonth': 6,
-            'expiryYear': 2028,
-            'isActive': True,
+            'user_id': self.user_id,
+            'card_number': '5678',
+            'card_type': 'Mastercard',
+            'bank_name': 'Another Bank',
+            'card_holder_name': 'Test User',
+            'expiry_month': 6,
+            'expiry_year': 2028,
+            'is_active': True,
         }
 
         response = client.post('/transactions/cards', json=payload)
         assert response.status_code == 200
 
         data = response.json()
-        assert data['cardNumber'] == payload['cardNumber']
-        assert data['cardType'] == payload['cardType']
-        assert data['userId'] == self.user_id
+        assert data['card_number'] == payload['card_number']
+        assert data['card_type'] == payload['card_type']
+        assert data['user_id'] == self.user_id
         assert 'id' in data
-        assert 'createdAt' in data
+        assert 'created_at' in data
 
     def test_create_credit_card_invalid_user(self):
         """Test creating credit card with non-existent user"""
         payload = {
-            'userId': 'non-existent-user',
-            'cardNumber': '9999',
-            'cardType': 'Visa',
-            'bankName': 'Test Bank',
-            'cardHolderName': 'Test User',
-            'expiryMonth': 12,
-            'expiryYear': 2027,
-            'isActive': True,
+            'user_id': 'non-existent-user',
+            'card_number': '9999',
+            'card_type': 'Visa',
+            'bank_name': 'Test Bank',
+            'card_holder_name': 'Test User',
+            'expiry_month': 12,
+            'expiry_year': 2027,
+            'is_active': True,
         }
 
         response = client.post('/transactions/cards', json=payload)
@@ -359,7 +359,7 @@ class TestCreditCards(TestUserSetup):
 
     def test_update_credit_card(self):
         """Test updating a credit card"""
-        update_payload = {'cardHolderName': 'Updated Name', 'isActive': False}
+        update_payload = {'card_holder_name': 'Updated Name', 'is_active': False}
 
         response = client.put(
             f'/transactions/cards/{self.card_id}', json=update_payload
@@ -367,21 +367,21 @@ class TestCreditCards(TestUserSetup):
         assert response.status_code == 200
 
         data = response.json()
-        assert data['cardHolderName'] == update_payload['cardHolderName']
-        assert data['isActive'] == update_payload['isActive']
+        assert data['card_holder_name'] == update_payload['card_holder_name']
+        assert data['is_active'] == update_payload['is_active']
 
     def test_delete_credit_card(self):
         """Test deleting a credit card"""
         # Create a card to delete
         payload = {
-            'userId': self.user_id,
-            'cardNumber': '9999',
-            'cardType': 'Visa',
-            'bankName': 'Test Bank',
-            'cardHolderName': 'To Delete',
-            'expiryMonth': 12,
-            'expiryYear': 2027,
-            'isActive': True,
+            'user_id': self.user_id,
+            'card_number': '9999',
+            'card_type': 'Visa',
+            'bank_name': 'Test Bank',
+            'card_holder_name': 'To Delete',
+            'expiry_month': 12,
+            'expiry_year': 2027,
+            'is_active': True,
         }
 
         create_response = client.post('/transactions/cards', json=payload)
@@ -406,28 +406,28 @@ class TestTransactionAnalysis(TestUserSetup):
         transactions = [
             {
                 'id': str(uuid.uuid4()),
-                'userId': self.user_id,
-                'creditCardId': self.card_id,
+                'user_id': self.user_id,
+                'credit_card_num': self.card_id,
                 'amount': 100.00,
                 'currency': 'USD',
                 'description': 'Transaction 1',
-                'merchantName': 'Store 1',
-                'merchantCategory': 'Retail',
-                'transactionDate': '2024-01-21T10:00:00Z',
-                'transactionType': 'PURCHASE',
+                'merchant_name': 'Store 1',
+                'merchant_category': 'Retail',
+                'transaction_date': '2024-01-21T10:00:00Z',
+                'transaction_type': 'PURCHASE',
                 'status': 'APPROVED',
             },
             {
                 'id': str(uuid.uuid4()),
-                'userId': self.user_id,
-                'creditCardId': self.card_id,
+                'user_id': self.user_id,
+                'credit_card_num': self.card_id,
                 'amount': 200.00,
                 'currency': 'USD',
                 'description': 'Transaction 2',
-                'merchantName': 'Store 2',
-                'merchantCategory': 'Electronics',
-                'transactionDate': '2024-01-22T11:00:00Z',
-                'transactionType': 'PURCHASE',
+                'merchant_name': 'Store 2',
+                'merchant_category': 'Electronics',
+                'transaction_date': '2024-01-22T11:00:00Z',
+                'transaction_type': 'PURCHASE',
                 'status': 'APPROVED',
             },
         ]
@@ -452,28 +452,28 @@ class TestTransactionAnalysis(TestUserSetup):
         transactions = [
             {
                 'id': str(uuid.uuid4()),
-                'userId': self.user_id,
-                'creditCardId': self.card_id,
+                'user_id': self.user_id,
+                'credit_card_num': self.card_id,
                 'amount': 50.00,
                 'currency': 'USD',
                 'description': 'Food purchase',
-                'merchantName': 'Restaurant',
-                'merchantCategory': 'Food',
-                'transactionDate': '2024-01-23T12:00:00Z',
-                'transactionType': 'PURCHASE',
+                'merchant_name': 'Restaurant',
+                'merchant_category': 'Food',
+                'transaction_date': '2024-01-23T12:00:00Z',
+                'transaction_type': 'PURCHASE',
                 'status': 'APPROVED',
             },
             {
                 'id': str(uuid.uuid4()),
-                'userId': self.user_id,
-                'creditCardId': self.card_id,
+                'user_id': self.user_id,
+                'credit_card_num': self.card_id,
                 'amount': 75.00,
                 'currency': 'USD',
                 'description': 'More food',
-                'merchantName': 'Cafe',
-                'merchantCategory': 'Food',
-                'transactionDate': '2024-01-24T13:00:00Z',
-                'transactionType': 'PURCHASE',
+                'merchant_name': 'Cafe',
+                'merchant_category': 'Food',
+                'transaction_date': '2024-01-24T13:00:00Z',
+                'transaction_type': 'PURCHASE',
                 'status': 'APPROVED',
             },
         ]
@@ -516,15 +516,15 @@ class TestUserTransactions(TestUserSetup):
         # Create a transaction for the user
         tx_payload = {
             'id': str(uuid.uuid4()),
-            'userId': self.user_id,
-            'creditCardId': self.card_id,
+            'user_id': self.user_id,
+            'credit_card_num': self.card_id,
             'amount': 150.00,
             'currency': 'USD',
             'description': 'User transaction',
-            'merchantName': 'User Store',
-            'merchantCategory': 'Retail',
-            'transactionDate': '2024-01-25T14:00:00Z',
-            'transactionType': 'PURCHASE',
+            'merchant_name': 'User Store',
+            'merchant_category': 'Retail',
+            'transaction_date': '2024-01-25T14:00:00Z',
+            'transaction_type': 'PURCHASE',
             'status': 'APPROVED',
         }
 
@@ -536,7 +536,7 @@ class TestUserTransactions(TestUserSetup):
 
         data = response.json()
         assert len(data) >= 1
-        assert all(tx['userId'] == self.user_id for tx in data)
+        assert all(tx['user_id'] == self.user_id for tx in data)
 
     def test_get_user_credit_cards(self):
         """Test getting credit cards for a specific user"""
@@ -545,7 +545,7 @@ class TestUserTransactions(TestUserSetup):
 
         data = response.json()
         assert len(data) >= 1
-        assert all(card['userId'] == self.user_id for card in data)
+        assert all(card['user_id'] == self.user_id for card in data)
 
     def test_get_user_credit_cards_active_only(self):
         """Test getting only active credit cards for a user"""
@@ -553,7 +553,7 @@ class TestUserTransactions(TestUserSetup):
         assert response.status_code == 200
 
         data = response.json()
-        assert all(card['isActive'] for card in data)
+        assert all(card['is_active'] for card in data)
 
     def test_get_user_transactions_invalid_user(self):
         """Test getting transactions for non-existent user"""

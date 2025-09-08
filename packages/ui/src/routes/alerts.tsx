@@ -88,7 +88,7 @@ function AlertsPage() {
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>Triggered {rule.triggered} times</span>
                       <span>•</span>
-                      <span>Last: {rule.lastTriggered}</span>
+                      <span>Last: {rule.last_triggered}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

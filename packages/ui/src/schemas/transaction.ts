@@ -30,8 +30,8 @@ export const AlertRuleSchema = z.object({
   rule: z.string(),
   status: z.enum(['active', 'inactive', 'paused']),
   triggered: z.number(),
-  lastTriggered: z.string(),
-  createdAt: z.string(),
+  last_triggered: z.string(),
+  created_at: z.string(),
 });
 
 export const AlertSchema = z.object({
@@ -40,7 +40,7 @@ export const AlertSchema = z.object({
   description: z.string(),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
   timestamp: z.string(),
-  transactionId: z.string().optional(),
+  transaction_id: z.string().optional(),
   resolved: z.boolean().default(false),
 });
 

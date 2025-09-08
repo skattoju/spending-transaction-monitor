@@ -11,7 +11,7 @@ from datetime import datetime, time
 from typing import Any
 
 from db import get_db
-from db.models import CreditCard, Transaction, TransactionStatus, TransactionType, User
+from db.models import Transaction, TransactionStatus, TransactionType, User
 from kafka import KafkaConsumer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -193,22 +193,24 @@ class TransactionKafkaConsumer:
         # Transform to our database format
         transformed_data = {
             'id': transaction_id,
-            'userId': str(message_data.get('user')),  # Convert to string
-            'creditCardId': str(message_data.get('card')),  # Convert to string
+            'user_id': str(message_data.get('user')),  # Convert to string
+            'credit_card_num': str(message_data.get('card')),  # Convert to string
             'amount': float(message_data.get('amount', 0)),
             'currency': 'USD',  # Default currency
             'description': f'Transaction at {message_data.get("merchant_id", "Unknown Merchant")}',
-            'merchantName': str(message_data.get('merchant_id', 'Unknown Merchant')),
-            'merchantCategory': str(message_data.get('mcc', 'UNKNOWN')),
-            'transactionDate': transaction_date.isoformat(),
-            'transactionType': TransactionType.PURCHASE.value,
+            'merchant_name': str(message_data.get('merchant_id', 'Unknown Merchant')),
+            'merchant_category': str(message_data.get('mcc', 'UNKNOWN')),
+            'transaction_date': transaction_date.isoformat(),
+            'transaction_type': TransactionType.PURCHASE.value,
             'status': TransactionStatus.PENDING.value,
-            'merchantLocation': None,
-            'merchantCity': message_data.get('merchant_city'),
-            'merchantState': message_data.get('merchant_state'),
-            'merchantCountry': 'US',  # Default country
-            'authorizationCode': None,
-            'referenceNumber': None,
+            'merchant_latitude': message_data.get('merchant_latitude'),
+            'merchant_longitude': message_data.get('merchant_longitude'),
+            'merchant_zipcode': message_data.get('merchant_zipcode'),
+            'merchant_city': message_data.get('merchant_city'),
+            'merchant_state': message_data.get('merchant_state'),
+            'merchant_country': message_data.get('merchant_country'),  # Default country
+            'authorization_code': None,
+            'trans_num': message_data.get('trans_num'),
             # Additional fields from ingestion service
             'useChip': message_data.get('use_chip'),
             'zipCode': message_data.get('zip'),
@@ -225,11 +227,11 @@ class TransactionKafkaConsumer:
         # Create a composite key check
         result = await session.execute(
             select(Transaction).where(
-                Transaction.userId == transaction_data['userId'],
-                Transaction.creditCardId == transaction_data['creditCardId'],
+                Transaction.user_id == transaction_data['user_id'],
+                Transaction.credit_card_num == transaction_data['credit_card_num'],
                 Transaction.amount == transaction_data['amount'],
-                Transaction.transactionDate
-                == datetime.fromisoformat(transaction_data['transactionDate']),
+                Transaction.transaction_date
+                == datetime.fromisoformat(transaction_data['transaction_date']),
             )
         )
         return result.scalar_one_or_none()
@@ -240,58 +242,60 @@ class TransactionKafkaConsumer:
         """Validate that user and credit card exist"""
         # Check user exists
         user_result = await session.execute(
-            select(User).where(User.id == transaction_data['userId'])
+            select(User).where(User.id == transaction_data['user_id'])
         )
         user = user_result.scalar_one_or_none()
         if not user:
-            raise ValueError(f'User not found: {transaction_data["userId"]}')
+            raise ValueError(f'User not found: {transaction_data["user_id"]}')
 
         # Check credit card exists
-        card_result = await session.execute(
-            select(CreditCard).where(CreditCard.id == transaction_data['creditCardId'])
-        )
-        card = card_result.scalar_one_or_none()
-        if not card:
-            raise ValueError(
-                f'Credit card not found: {transaction_data["creditCardId"]}'
-            )
+        # card_result = await session.execute(
+        #     select(CreditCard).where(CreditCard.id == transaction_data['credit_card_num'])
+        # )
+        # card = card_result.scalar_one_or_none()
+        # if not card:
+        #     raise ValueError(
+        #         f'Credit card not found: {transaction_data["credit_card_num"]}'
+        #     )
 
         # Verify credit card belongs to user
-        if card.userId != transaction_data['userId']:
-            raise ValueError(
-                f'Credit card {transaction_data["creditCardId"]} does not belong to user {transaction_data["userId"]}'
-            )
+        # if card.user_id != transaction_data['user_id']:
+        #     raise ValueError(
+        #         f'Credit card {transaction_data["credit_card_num"]} does not belong to user {transaction_data["user_id"]}'
+        #     )
 
     async def _create_transaction(
         self, session: AsyncSession, transaction_data: dict[str, Any]
     ) -> Transaction:
         """Create a new transaction in the database"""
         # Parse transaction date
-        if isinstance(transaction_data['transactionDate'], str):
+        if isinstance(transaction_data['transaction_date'], str):
             transaction_date = datetime.fromisoformat(
-                transaction_data['transactionDate']
+                transaction_data['transaction_date']
             )
         else:
-            transaction_date = transaction_data['transactionDate']
+            transaction_date = transaction_data['transaction_date']
 
         transaction = Transaction(
             id=transaction_data['id'],
-            userId=transaction_data['userId'],
-            creditCardId=transaction_data['creditCardId'],
+            user_id=transaction_data['user_id'],
+            credit_card_num=transaction_data['credit_card_num'],
             amount=transaction_data['amount'],
             currency=transaction_data['currency'],
             description=transaction_data['description'],
-            merchantName=transaction_data['merchantName'],
-            merchantCategory=transaction_data['merchantCategory'],
-            transactionDate=transaction_date,
-            transactionType=TransactionType(transaction_data['transactionType']),
-            merchantLocation=transaction_data.get('merchantLocation'),
-            merchantCity=transaction_data.get('merchantCity'),
-            merchantState=transaction_data.get('merchantState'),
-            merchantCountry=transaction_data.get('merchantCountry'),
+            merchant_name=transaction_data['merchant_name'],
+            merchant_category=transaction_data['merchant_category'],
+            transaction_date=transaction_date,
+            transaction_type=TransactionType(transaction_data['transaction_type']),
+            merchant_latitude=transaction_data.get('merchant_latitude'),
+            merchant_longitude=transaction_data.get('merchant_longitude'),
+            merchant_zipcode=transaction_data.get('merchant_zipcode'),
+            merchant_city=transaction_data.get('merchant_city'),
+            merchant_state=transaction_data.get('merchant_state'),
+            merchant_country=transaction_data.get('merchant_country'),
             status=TransactionStatus(transaction_data['status']),
-            authorizationCode=transaction_data.get('authorizationCode'),
-            referenceNumber=transaction_data.get('referenceNumber'),
+            authorization_code=transaction_data.get('authorization_code'),
+            trans_num=transaction_data.get('trans_num'),
         )
 
         session.add(transaction)

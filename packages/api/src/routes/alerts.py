@@ -6,6 +6,7 @@ from datetime import datetime
 from db import get_db
 from db.models import AlertNotification, AlertRule, User
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,12 +14,32 @@ from ..schemas.alert import (
     AlertNotificationCreate,
     AlertNotificationOut,
     AlertNotificationUpdate,
-    AlertRuleCreate,
     AlertRuleOut,
     AlertRuleUpdate,
 )
+from ..services.alert_rule_service import AlertRuleService
 
 router = APIRouter()
+
+
+class AlertRuleCreateRequest(BaseModel):
+    natural_language_query: str
+
+
+# Initialize alert rule service instance
+alert_rule_service = AlertRuleService()
+
+
+async def get_current_user(session: AsyncSession = Depends(get_db)) -> User:
+    """Get the current logged-in user. For now, returns the first user from the database.
+    This will be replaced with the actual user when we have a proper authentication system."""
+    result = await session.execute(select(User).limit(1))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail='No users found in the system')
+
+    return user
 
 
 # Alert Rules endpoints
@@ -32,10 +53,10 @@ async def get_alert_rules(
     query = select(AlertRule)
 
     if user_id:
-        query = query.where(AlertRule.userId == user_id)
+        query = query.where(AlertRule.user_id == user_id)
 
     if is_active is not None:
-        query = query.where(AlertRule.isActive == is_active)
+        query = query.where(AlertRule.is_active == is_active)
 
     result = await session.execute(query)
     rules = result.scalars().all()
@@ -43,26 +64,26 @@ async def get_alert_rules(
     return [
         AlertRuleOut(
             id=rule.id,
-            userId=rule.userId,
+            user_id=rule.user_id,
             name=rule.name,
             description=rule.description,
-            isActive=rule.isActive,
-            alertType=rule.alertType,
-            amountThreshold=float(rule.amountThreshold)
-            if rule.amountThreshold
+            is_active=rule.is_active,
+            alert_type=rule.alert_type,
+            amount_threshold=float(rule.amount_threshold)
+            if rule.amount_threshold
             else None,
-            merchantCategory=rule.merchantCategory,
-            merchantName=rule.merchantName,
+            merchant_category=rule.merchant_category,
+            merchant_name=rule.merchant_name,
             location=rule.location,
             timeframe=rule.timeframe,
-            naturalLanguageQuery=rule.naturalLanguageQuery,
-            notificationMethods=rule.notificationMethods,
-            createdAt=rule.createdAt.isoformat(),
-            updatedAt=rule.updatedAt.isoformat(),
-            lastTriggered=rule.lastTriggered.isoformat()
-            if rule.lastTriggered
+            natural_language_query=rule.natural_language_query,
+            notification_methods=rule.notification_methods,
+            created_at=rule.created_at.isoformat(),
+            updated_at=rule.updated_at.isoformat(),
+            last_triggered=rule.last_triggered.isoformat()
+            if rule.last_triggered
             else None,
-            triggerCount=rule.triggerCount,
+            trigger_count=rule.trigger_count,
         )
         for rule in rules
     ]
@@ -79,50 +100,57 @@ async def get_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
 
     return AlertRuleOut(
         id=rule.id,
-        userId=rule.userId,
+        user_id=rule.user_id,
         name=rule.name,
         description=rule.description,
-        isActive=rule.isActive,
-        alertType=rule.alertType,
-        amountThreshold=float(rule.amountThreshold) if rule.amountThreshold else None,
-        merchantCategory=rule.merchantCategory,
-        merchantName=rule.merchantName,
+        is_active=rule.is_active,
+        alert_type=rule.alert_type,
+        amount_threshold=float(rule.amount_threshold)
+        if rule.amount_threshold
+        else None,
+        merchant_category=rule.merchant_category,
+        merchant_name=rule.merchant_name,
         location=rule.location,
         timeframe=rule.timeframe,
-        naturalLanguageQuery=rule.naturalLanguageQuery,
-        notificationMethods=rule.notificationMethods,
-        createdAt=rule.createdAt.isoformat(),
-        updatedAt=rule.updatedAt.isoformat(),
-        lastTriggered=rule.lastTriggered.isoformat() if rule.lastTriggered else None,
-        triggerCount=rule.triggerCount,
+        natural_language_query=rule.natural_language_query,
+        notification_methods=rule.notification_methods,
+        created_at=rule.created_at.isoformat(),
+        updated_at=rule.updated_at.isoformat(),
+        last_triggered=rule.last_triggered.isoformat() if rule.last_triggered else None,
+        trigger_count=rule.trigger_count,
     )
 
 
 @router.post('/rules', response_model=AlertRuleOut)
 async def create_alert_rule(
-    payload: AlertRuleCreate, session: AsyncSession = Depends(get_db)
+    payload: AlertRuleCreateRequest,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new alert rule"""
-    # Verify user exists
-    user_result = await session.execute(select(User).where(User.id == payload.userId))
-    user = user_result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail='User not found')
+    print('Creating alert rule for user:', current_user.id, 'payload:', payload)
+
+    # Validate alert rule
+    validate_result = await alert_rule_service.validate_alert_rule(
+        payload.natural_language_query, current_user.id, session
+    )
+    if validate_result.get('status') != 'valid':
+        raise HTTPException(status_code=400, detail='Invalid alert rule')
 
     rule = AlertRule(
         id=str(uuid.uuid4()),
-        userId=payload.userId,
-        name=payload.name,
-        description=payload.description,
-        isActive=payload.isActive,
-        alertType=payload.alertType,
-        amountThreshold=payload.amountThreshold,
-        merchantCategory=payload.merchantCategory,
-        merchantName=payload.merchantName,
-        location=payload.location,
-        timeframe=payload.timeframe,
-        naturalLanguageQuery=payload.naturalLanguageQuery,
-        notificationMethods=payload.notificationMethods,
+        user_id=current_user.id,
+        name=validate_result.get('alert_rule').get('name'),
+        description=validate_result.get('alert_rule').get('description'),
+        is_active=True,
+        alert_type=validate_result.get('alert_rule').get('alert_type'),
+        amount_threshold=validate_result.get('alert_rule').get('amount_threshold'),
+        merchant_category=validate_result.get('alert_rule').get('merchant_category'),
+        merchant_name=validate_result.get('alert_rule').get('merchant_name'),
+        location=validate_result.get('alert_rule').get('location'),
+        timeframe=validate_result.get('alert_rule').get('timeframe'),
+        natural_language_query=payload.natural_language_query,
+        notification_methods=None,
     )
 
     session.add(rule)
@@ -131,22 +159,24 @@ async def create_alert_rule(
 
     return AlertRuleOut(
         id=rule.id,
-        userId=rule.userId,
+        user_id=rule.user_id,
         name=rule.name,
         description=rule.description,
-        isActive=rule.isActive,
-        alertType=rule.alertType,
-        amountThreshold=float(rule.amountThreshold) if rule.amountThreshold else None,
-        merchantCategory=rule.merchantCategory,
-        merchantName=rule.merchantName,
+        is_active=rule.is_active,
+        alert_type=rule.alert_type,
+        amount_threshold=float(rule.amount_threshold)
+        if rule.amount_threshold
+        else None,
+        merchant_category=rule.merchant_category,
+        merchant_name=rule.merchant_name,
         location=rule.location,
         timeframe=rule.timeframe,
-        naturalLanguageQuery=rule.naturalLanguageQuery,
-        notificationMethods=rule.notificationMethods,
-        createdAt=rule.createdAt.isoformat(),
-        updatedAt=rule.updatedAt.isoformat(),
-        lastTriggered=rule.lastTriggered.isoformat() if rule.lastTriggered else None,
-        triggerCount=rule.triggerCount,
+        natural_language_query=rule.natural_language_query,
+        notification_methods=rule.notification_methods,
+        created_at=rule.created_at.isoformat(),
+        updated_at=rule.updated_at.isoformat(),
+        last_triggered=rule.last_triggered.isoformat() if rule.last_triggered else None,
+        trigger_count=rule.trigger_count,
     )
 
 
@@ -168,7 +198,7 @@ async def update_alert_rule(
             update_data[field] = value
 
     if update_data:
-        update_data['updatedAt'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.utcnow()
         await session.execute(
             update(AlertRule).where(AlertRule.id == rule_id).values(**update_data)
         )
@@ -177,22 +207,24 @@ async def update_alert_rule(
 
     return AlertRuleOut(
         id=rule.id,
-        userId=rule.userId,
+        user_id=rule.user_id,
         name=rule.name,
         description=rule.description,
-        isActive=rule.isActive,
-        alertType=rule.alertType,
-        amountThreshold=float(rule.amountThreshold) if rule.amountThreshold else None,
-        merchantCategory=rule.merchantCategory,
-        merchantName=rule.merchantName,
+        is_active=rule.is_active,
+        alert_type=rule.alert_type,
+        amount_threshold=float(rule.amount_threshold)
+        if rule.amount_threshold
+        else None,
+        merchant_category=rule.merchant_category,
+        merchant_name=rule.merchant_name,
         location=rule.location,
         timeframe=rule.timeframe,
-        naturalLanguageQuery=rule.naturalLanguageQuery,
-        notificationMethods=rule.notificationMethods,
-        createdAt=rule.createdAt.isoformat(),
-        updatedAt=rule.updatedAt.isoformat(),
-        lastTriggered=rule.lastTriggered.isoformat() if rule.lastTriggered else None,
-        triggerCount=rule.triggerCount,
+        natural_language_query=rule.natural_language_query,
+        notification_methods=rule.notification_methods,
+        created_at=rule.created_at.isoformat(),
+        updated_at=rule.updated_at.isoformat(),
+        last_triggered=rule.last_triggered.isoformat() if rule.last_triggered else None,
+        trigger_count=rule.trigger_count,
     )
 
 
@@ -222,10 +254,10 @@ async def get_alert_notifications(
     query = select(AlertNotification)
 
     if user_id:
-        query = query.where(AlertNotification.userId == user_id)
+        query = query.where(AlertNotification.user_id == user_id)
 
     if alert_rule_id:
-        query = query.where(AlertNotification.alertRuleId == alert_rule_id)
+        query = query.where(AlertNotification.alert_rule_id == alert_rule_id)
 
     if status:
         query = query.where(AlertNotification.status == status)
@@ -236,20 +268,20 @@ async def get_alert_notifications(
     return [
         AlertNotificationOut(
             id=notification.id,
-            userId=notification.userId,
-            alertRuleId=notification.alertRuleId,
-            transactionId=notification.transactionId,
+            user_id=notification.user_id,
+            alert_rule_id=notification.alert_rule_id,
+            transaction_id=notification.transaction_id,
             title=notification.title,
             message=notification.message,
-            notificationMethod=notification.notificationMethod,
+            notification_method=notification.notification_method,
             status=notification.status,
-            sentAt=notification.sentAt.isoformat() if notification.sentAt else None,
-            deliveredAt=notification.deliveredAt.isoformat()
-            if notification.deliveredAt
+            sent_at=notification.sent_at.isoformat() if notification.sent_at else None,
+            delivered_at=notification.delivered_at.isoformat()
+            if notification.delivered_at
             else None,
-            readAt=notification.readAt.isoformat() if notification.readAt else None,
-            createdAt=notification.createdAt.isoformat(),
-            updatedAt=notification.updatedAt.isoformat(),
+            read_at=notification.read_at.isoformat() if notification.read_at else None,
+            created_at=notification.created_at.isoformat(),
+            updated_at=notification.updated_at.isoformat(),
         )
         for notification in notifications
     ]
@@ -270,20 +302,20 @@ async def get_alert_notification(
 
     return AlertNotificationOut(
         id=notification.id,
-        userId=notification.userId,
-        alertRuleId=notification.alertRuleId,
-        transactionId=notification.transactionId,
+        user_id=notification.user_id,
+        alert_rule_id=notification.alert_rule_id,
+        transaction_id=notification.transaction_id,
         title=notification.title,
         message=notification.message,
-        notificationMethod=notification.notificationMethod,
+        notification_method=notification.notification_method,
         status=notification.status,
-        sentAt=notification.sentAt.isoformat() if notification.sentAt else None,
-        deliveredAt=notification.deliveredAt.isoformat()
-        if notification.deliveredAt
+        sent_at=notification.sent_at.isoformat() if notification.sent_at else None,
+        delivered_at=notification.delivered_at.isoformat()
+        if notification.delivered_at
         else None,
-        readAt=notification.readAt.isoformat() if notification.readAt else None,
-        createdAt=notification.createdAt.isoformat(),
-        updatedAt=notification.updatedAt.isoformat(),
+        read_at=notification.read_at.isoformat() if notification.read_at else None,
+        created_at=notification.created_at.isoformat(),
+        updated_at=notification.updated_at.isoformat(),
     )
 
 
@@ -293,14 +325,14 @@ async def create_alert_notification(
 ):
     """Create a new alert notification"""
     # Verify user exists
-    user_result = await session.execute(select(User).where(User.id == payload.userId))
+    user_result = await session.execute(select(User).where(User.id == payload.user_id))
     user = user_result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail='User not found')
 
     # Verify alert rule exists
     rule_result = await session.execute(
-        select(AlertRule).where(AlertRule.id == payload.alertRuleId)
+        select(AlertRule).where(AlertRule.id == payload.alert_rule_id)
     )
     rule = rule_result.scalar_one_or_none()
     if not rule:
@@ -308,12 +340,12 @@ async def create_alert_notification(
 
     notification = AlertNotification(
         id=str(uuid.uuid4()),
-        userId=payload.userId,
-        alertRuleId=payload.alertRuleId,
-        transactionId=payload.transactionId,
+        user_id=payload.user_id,
+        alert_rule_id=payload.alert_rule_id,
+        transaction_id=payload.transaction_id,
         title=payload.title,
         message=payload.message,
-        notificationMethod=payload.notificationMethod,
+        notification_method=payload.notification_method,
         status=payload.status,
     )
 
@@ -323,20 +355,20 @@ async def create_alert_notification(
 
     return AlertNotificationOut(
         id=notification.id,
-        userId=notification.userId,
-        alertRuleId=notification.alertRuleId,
-        transactionId=notification.transactionId,
+        user_id=notification.user_id,
+        alert_rule_id=notification.alert_rule_id,
+        transaction_id=notification.transaction_id,
         title=notification.title,
         message=notification.message,
-        notificationMethod=notification.notificationMethod,
+        notification_method=notification.notification_method,
         status=notification.status,
-        sentAt=notification.sentAt.isoformat() if notification.sentAt else None,
-        deliveredAt=notification.deliveredAt.isoformat()
-        if notification.deliveredAt
+        sent_at=notification.sent_at.isoformat() if notification.sent_at else None,
+        delivered_at=notification.delivered_at.isoformat()
+        if notification.delivered_at
         else None,
-        readAt=notification.readAt.isoformat() if notification.readAt else None,
-        createdAt=notification.createdAt.isoformat(),
-        updatedAt=notification.updatedAt.isoformat(),
+        read_at=notification.read_at.isoformat() if notification.read_at else None,
+        created_at=notification.created_at.isoformat(),
+        updated_at=notification.updated_at.isoformat(),
     )
 
 
@@ -359,13 +391,13 @@ async def update_alert_notification(
     update_data = {}
     for field, value in payload.dict(exclude_unset=True).items():
         if value is not None:
-            if field in ['sentAt', 'deliveredAt', 'readAt'] and value:
+            if field in ['sent_at', 'delivered_at', 'read_at'] and value:
                 update_data[field] = datetime.fromisoformat(value)
             else:
                 update_data[field] = value
 
     if update_data:
-        update_data['updatedAt'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.utcnow()
         await session.execute(
             update(AlertNotification)
             .where(AlertNotification.id == notification_id)
@@ -376,20 +408,20 @@ async def update_alert_notification(
 
     return AlertNotificationOut(
         id=notification.id,
-        userId=notification.userId,
-        alertRuleId=notification.alertRuleId,
-        transactionId=notification.transactionId,
+        user_id=notification.user_id,
+        alert_rule_id=notification.alert_rule_id,
+        transaction_id=notification.transaction_id,
         title=notification.title,
         message=notification.message,
-        notificationMethod=notification.notificationMethod,
+        notification_method=notification.notification_method,
         status=notification.status,
-        sentAt=notification.sentAt.isoformat() if notification.sentAt else None,
-        deliveredAt=notification.deliveredAt.isoformat()
-        if notification.deliveredAt
+        sent_at=notification.sent_at.isoformat() if notification.sent_at else None,
+        delivered_at=notification.delivered_at.isoformat()
+        if notification.delivered_at
         else None,
-        readAt=notification.readAt.isoformat() if notification.readAt else None,
-        createdAt=notification.createdAt.isoformat(),
-        updatedAt=notification.updatedAt.isoformat(),
+        read_at=notification.read_at.isoformat() if notification.read_at else None,
+        created_at=notification.created_at.isoformat(),
+        updated_at=notification.updated_at.isoformat(),
     )
 
 
@@ -418,27 +450,27 @@ async def get_notifications_for_rule(
 ):
     """Get all notifications for a specific alert rule"""
     result = await session.execute(
-        select(AlertNotification).where(AlertNotification.alertRuleId == rule_id)
+        select(AlertNotification).where(AlertNotification.alert_rule_id == rule_id)
     )
     notifications = result.scalars().all()
 
     return [
         AlertNotificationOut(
             id=notification.id,
-            userId=notification.userId,
-            alertRuleId=notification.alertRuleId,
-            transactionId=notification.transactionId,
+            user_id=notification.user_id,
+            alert_rule_id=notification.alert_rule_id,
+            transaction_id=notification.transaction_id,
             title=notification.title,
             message=notification.message,
-            notificationMethod=notification.notificationMethod,
+            notification_method=notification.notification_method,
             status=notification.status,
-            sentAt=notification.sentAt.isoformat() if notification.sentAt else None,
-            deliveredAt=notification.deliveredAt.isoformat()
-            if notification.deliveredAt
+            sent_at=notification.sent_at.isoformat() if notification.sent_at else None,
+            delivered_at=notification.delivered_at.isoformat()
+            if notification.delivered_at
             else None,
-            readAt=notification.readAt.isoformat() if notification.readAt else None,
-            createdAt=notification.createdAt.isoformat(),
-            updatedAt=notification.updatedAt.isoformat(),
+            read_at=notification.read_at.isoformat() if notification.read_at else None,
+            created_at=notification.created_at.isoformat(),
+            updated_at=notification.updated_at.isoformat(),
         )
         for notification in notifications
     ]
@@ -452,22 +484,20 @@ async def trigger_alert_rule(rule_id: str, session: AsyncSession = Depends(get_d
     if not rule:
         raise HTTPException(status_code=404, detail='Alert rule not found')
 
-    if not rule.isActive:
-        raise HTTPException(status_code=400, detail='Alert rule is not active')
-
-    # Update trigger count and last triggered time
-    await session.execute(
-        update(AlertRule)
-        .where(AlertRule.id == rule_id)
-        .values(
-            triggerCount=rule.triggerCount + 1,
-            lastTriggered=datetime.utcnow(),
-            updatedAt=datetime.utcnow(),
-        )
-    )
-    await session.commit()
-
-    return {
-        'message': 'Alert rule triggered successfully',
-        'triggerCount': rule.triggerCount + 1,
-    }
+    try:
+        trigger_result = await alert_rule_service.trigger_alert_rule(rule, session)
+        return trigger_result
+    except ValueError as e:
+        # Handle business logic errors (inactive rule, no transaction)
+        if 'not active' in str(e):
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        elif 'No transaction found' in str(e):
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        else:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Alert trigger failed: {str(e)}',
+            'error': str(e),
+        }

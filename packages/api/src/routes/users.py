@@ -1,9 +1,12 @@
-"""User endpoints"""
-
+# Standard library
 import uuid
+from datetime import datetime
 
+# Local
 from db import get_db
 from db.models import AlertRule, User
+
+# Third-party
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -18,32 +21,35 @@ router = APIRouter()
 
 class UserCreate(BaseModel):
     email: str = Field(..., description='User email')
-    firstName: str = Field(..., description='User first name')
-    lastName: str = Field(..., description='User last name')
-    phoneNumber: str | None = Field(None, description='User phone number')
+    first_name: str = Field(..., description='User first name')
+    last_name: str = Field(..., description='User last name')
+    phone_number: str | None = Field(None, description='User phone number')
 
 
 class UserUpdate(BaseModel):
     email: str | None = Field(None, description='User email')
-    firstName: str | None = Field(None, description='User first name')
-    lastName: str | None = Field(None, description='User last name')
-    phoneNumber: str | None = Field(None, description='User phone number')
-    isActive: bool | None = Field(None, description='Whether the user is active')
-    addressStreet: str | None = Field(None, description='Street address')
-    addressCity: str | None = Field(None, description='City')
-    addressState: str | None = Field(None, description='State')
-    addressZipCode: str | None = Field(None, description='ZIP code')
-    addressCountry: str | None = Field(None, description='Country')
-    creditLimit: float | None = Field(None, description='Credit limit')
-    currentBalance: float | None = Field(None, description='Current balance')
-    locationConsentGiven: bool | None = Field(
+    first_name: str | None = Field(None, description='User first name')
+    last_name: str | None = Field(None, description='User last name')
+    phone_number: str | None = Field(None, description='User phone number')
+    is_active: bool | None = Field(None, description='Whether the user is active')
+    address_street: str | None = Field(None, description='Street address')
+    address_city: str | None = Field(None, description='City')
+    address_state: str | None = Field(None, description='State')
+    address_zipcode: str | None = Field(None, description='ZIP code')
+    address_country: str | None = Field(None, description='Country')
+    credit_limit: float | None = Field(None, description='Credit limit')
+    credit_balance: float | None = Field(None, description='Current balance')
+    location_consent_given: bool | None = Field(
         None, description='Whether location consent is given'
     )
-    lastAppLocationLatitude: float | None = Field(
+    last_app_location_latitude: float | None = Field(
         None, description='Last app location latitude'
     )
-    lastAppLocationLongitude: float | None = Field(
+    last_app_location_longitude: float | None = Field(
         None, description='Last app location longitude'
+    )
+    last_app_location_timestamp: datetime | None = Field(
+        None, description='Last app location timestamp'
     )
     lastAppLocationAccuracy: float | None = Field(
         None, description='Last app location accuracy'
@@ -65,7 +71,7 @@ async def get_users(
         )
 
         if is_active is not None:
-            query = query.where(User.isActive == is_active)
+            query = query.where(User.is_active == is_active)
 
         query = query.offset(offset).limit(limit)
 
@@ -76,14 +82,14 @@ async def get_users(
             {
                 'id': user.id,
                 'email': user.email,
-                'firstName': user.firstName,
-                'lastName': user.lastName,
-                'phoneNumber': user.phoneNumber,
-                'isActive': user.isActive,
-                'createdAt': user.createdAt.isoformat() if user.createdAt else None,
-                'updatedAt': user.updatedAt.isoformat() if user.updatedAt else None,
-                'creditCardsCount': len(user.creditCards),
-                'transactionsCount': len(user.transactions),
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'phone_number': user.phone_number,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+                'credit_cards_count': len(user.creditCards),
+                'transactions_count': len(user.transactions),
             }
             for user in users
         ]
@@ -116,14 +122,52 @@ async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
     return {
         'id': user.id,
         'email': user.email,
-        'firstName': user.firstName,
-        'lastName': user.lastName,
-        'phoneNumber': user.phoneNumber,
-        'isActive': user.isActive,
-        'createdAt': user.createdAt.isoformat() if user.createdAt else None,
-        'updatedAt': user.updatedAt.isoformat() if user.updatedAt else None,
-        'creditCardsCount': credit_cards_count,
-        'transactionsCount': transactions_count,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'phone_number': user.phone_number,
+        'is_active': user.is_active,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+        'credit_cards_count': credit_cards_count,
+        'transactions_count': transactions_count,
+    }
+
+
+@router.get('/me', response_model=UserOut)
+async def get_current_user(session: AsyncSession = Depends(get_db)):
+    """Get the current logged-in user. For now, returns the first user from the database."""
+    try:
+        result = await session.execute(
+            select(User)
+            .options(
+                selectinload(User.creditCards),
+                selectinload(User.transactions),
+            )
+            .limit(1)
+        )
+        user: User | None = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=404, detail='No users found in the system')
+
+    except SQLAlchemyError as err:
+        raise HTTPException(status_code=500, detail=str(err)) from err
+
+    # Simple aggregation: counts
+    credit_cards_count = len(user.creditCards)
+    transactions_count = len(user.transactions)
+
+    return {
+        'id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'phone_number': user.phone_number,
+        'is_active': user.is_active,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+        'credit_cards_count': credit_cards_count,
+        'transactions_count': transactions_count,
     }
 
 
@@ -143,9 +187,9 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_d
         user = User(
             id=str(uuid.uuid4()),
             email=payload.email,
-            firstName=payload.firstName,
-            lastName=payload.lastName,
-            phoneNumber=payload.phoneNumber,
+            first_name=payload.first_name,
+            last_name=payload.last_name,
+            phone_number=payload.phone_number,
         )
         session.add(user)
         await session.commit()
@@ -154,14 +198,14 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_d
         return {
             'id': user.id,
             'email': user.email,
-            'firstName': user.firstName,
-            'lastName': user.lastName,
-            'phoneNumber': user.phoneNumber,
-            'isActive': user.isActive,
-            'createdAt': user.createdAt.isoformat() if user.createdAt else None,
-            'updatedAt': user.updatedAt.isoformat() if user.updatedAt else None,
-            'creditCardsCount': 0,
-            'transactionsCount': 0,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone_number': user.phone_number,
+            'is_active': user.is_active,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+            'credit_cards_count': 0,
+            'transactions_count': 0,
         }
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
@@ -205,7 +249,7 @@ async def update_user(
         if update_data:
             from datetime import datetime
 
-            update_data['updatedAt'] = datetime.utcnow()
+            update_data['updated_at'] = datetime.utcnow()
 
             # Update the user object
             for field, value in update_data.items():
@@ -220,14 +264,14 @@ async def update_user(
         return {
             'id': user.id,
             'email': user.email,
-            'firstName': user.firstName,
-            'lastName': user.lastName,
-            'phoneNumber': user.phoneNumber,
-            'isActive': user.isActive,
-            'createdAt': user.createdAt.isoformat() if user.createdAt else None,
-            'updatedAt': user.updatedAt.isoformat() if user.updatedAt else None,
-            'creditCardsCount': credit_cards_count,
-            'transactionsCount': transactions_count,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone_number': user.phone_number,
+            'is_active': user.is_active,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+            'credit_cards_count': credit_cards_count,
+            'transactions_count': transactions_count,
         }
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
@@ -254,17 +298,19 @@ async def delete_user(user_id: str, session: AsyncSession = Depends(get_db)):
 
 @router.get('/{user_id}/rules')
 async def get_user_rules(user_id: str, session: AsyncSession = Depends(get_db)):
-    result = await session.execute(select(AlertRule).where(AlertRule.userId == user_id))
+    result = await session.execute(
+        select(AlertRule).where(AlertRule.user_id == user_id)
+    )
     rules = result.scalars().all()
     return [
         {
             'id': r.id,
-            'userId': r.userId,
+            'user_id': r.user_id,
             'name': r.name,
             'description': r.description,
-            'isActive': r.isActive,
-            'alertType': r.alertType.value,
-            'notificationMethods': [m.value for m in (r.notificationMethods or [])],
+            'is_active': r.is_active,
+            'alert_type': r.alert_type.value,
+            'notification_methods': [m.value for m in (r.notification_methods or [])],
         }
         for r in rules
     ]
@@ -287,8 +333,8 @@ async def get_user_transactions(
 
         from db.models import Transaction
 
-        query = select(Transaction).where(Transaction.userId == user_id)
-        query = query.order_by(Transaction.transactionDate.desc())
+        query = select(Transaction).where(Transaction.user_id == user_id)
+        query = query.order_by(Transaction.transaction_date.desc())
         query = query.offset(offset).limit(limit)
 
         result = await session.execute(query)
@@ -300,12 +346,12 @@ async def get_user_transactions(
                 'amount': float(tx.amount) if tx.amount is not None else None,
                 'currency': tx.currency,
                 'description': tx.description,
-                'merchantName': tx.merchantName,
-                'merchantCategory': tx.merchantCategory,
-                'transactionDate': tx.transactionDate.isoformat()
-                if tx.transactionDate
+                'merchant_name': tx.merchant_name,
+                'merchant_category': tx.merchant_category,
+                'transaction_date': tx.transaction_date.isoformat()
+                if tx.transaction_date
                 else None,
-                'transactionType': tx.transactionType.value,
+                'transaction_type': tx.transaction_type.value,
                 'status': tx.status.value,
             }
             for tx in transactions
@@ -328,10 +374,10 @@ async def get_user_credit_cards(
 
         from db.models import CreditCard
 
-        query = select(CreditCard).where(CreditCard.userId == user_id)
+        query = select(CreditCard).where(CreditCard.user_id == user_id)
 
         if is_active is not None:
-            query = query.where(CreditCard.isActive == is_active)
+            query = query.where(CreditCard.is_active == is_active)
 
         result = await session.execute(query)
         cards = result.scalars().all()
@@ -339,15 +385,15 @@ async def get_user_credit_cards(
         return [
             {
                 'id': card.id,
-                'cardNumber': card.cardNumber,
-                'cardType': card.cardType,
-                'bankName': card.bankName,
-                'cardHolderName': card.cardHolderName,
-                'expiryMonth': card.expiryMonth,
-                'expiryYear': card.expiryYear,
-                'isActive': card.isActive,
-                'createdAt': card.createdAt.isoformat() if card.createdAt else None,
-                'updatedAt': card.updatedAt.isoformat() if card.updatedAt else None,
+                'card_number': card.card_number,
+                'card_type': card.card_type,
+                'bank_name': card.bank_name,
+                'card_holder_name': card.card_holder_name,
+                'expiry_month': card.expiry_month,
+                'expiry_year': card.expiry_year,
+                'is_active': card.is_active,
+                'created_at': card.created_at.isoformat() if card.created_at else None,
+                'updated_at': card.updated_at.isoformat() if card.updated_at else None,
             }
             for card in cards
         ]
@@ -365,15 +411,15 @@ async def deactivate_user(user_id: str, session: AsyncSession = Depends(get_db))
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
 
-        user.isActive = False
+        user.is_active = False
         from datetime import datetime
 
-        user.updatedAt = datetime.utcnow()
+        user.updated_at = datetime.utcnow()
 
         await session.commit()
         await session.refresh(user)
 
-        return {'message': 'User deactivated successfully', 'isActive': user.isActive}
+        return {'message': 'User deactivated successfully', 'is_active': user.is_active}
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
 
@@ -388,14 +434,14 @@ async def activate_user(user_id: str, session: AsyncSession = Depends(get_db)):
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
 
-        user.isActive = True
+        user.is_active = True
         from datetime import datetime
 
-        user.updatedAt = datetime.utcnow()
+        user.updated_at = datetime.utcnow()
 
         await session.commit()
         await session.refresh(user)
 
-        return {'message': 'User activated successfully', 'isActive': user.isActive}
+        return {'message': 'User activated successfully', 'is_active': user.is_active}
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err

@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the entire application code first
+# This is needed because the package is installed in editable mode
+COPY . .
+
+# Install dependencies using uv
+# --all-extras installs optional dependencies defined in pyproject.toml
+RUN uv sync --all-extras
+
+
+ENV KAFKA_HOST="localhost"
+ENV KAFKA_PORT="9092"
+
+CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
