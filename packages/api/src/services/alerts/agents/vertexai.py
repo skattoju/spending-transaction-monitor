@@ -27,10 +27,10 @@ class VertexAIClient:
     ):
         """
         Initialize the VertexAI client.
-        Loads sa.json and config.json from ~/Desktop/
+        Loads sa.json and config.json from ~/.vertexai/
         """
-        self.service_account_path = os.path.expanduser('~/Desktop/sa.json')
-        self.config_path = os.path.expanduser('~/Desktop/config.json')
+        self.service_account_path = os.path.expanduser('~/.vertexai/sa.json')
+        self.config_path = os.path.expanduser('~/.vertexai/config.json')
         self.service_account_key = self._load_service_account()
         self.llm_config = self._load_config()
         self.cached_token = None
