@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .routes import alerts as alerts_routes
 from .routes import health
+from .routes import auth_test, cleanup_kafka_producer, health
+from .routes import kafka as kafka_routes
 from .routes import transactions as transactions_routes
 from .routes import users as users_routes
 
@@ -47,6 +49,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, prefix='/health', tags=['health'])
+app.include_router(auth_test.router, prefix='/auth-test', tags=['auth-test'])
 app.include_router(users_routes.router, prefix='/users', tags=['users'])
 app.include_router(
     transactions_routes.router, prefix='/transactions', tags=['transactions']
