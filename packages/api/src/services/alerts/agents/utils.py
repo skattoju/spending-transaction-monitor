@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -32,6 +33,20 @@ def extract_sql(sql: str) -> str:
         sql = f'WITH subquery AS ({sql}) SELECT * FROM subquery'
 
     return sql.strip()
+
+
+def clean_and_parse_json_response(json_response: str):
+    # Remove triple backticks and optional language hints (like ```json)
+    cleaned = re.sub(
+        r'^```[a-zA-Z]*\n?|```$', '', json_response.strip(), flags=re.MULTILINE
+    )
+
+    # Try parsing as JSON
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print(f'Invalid JSON: {cleaned}')
+        raise e
 
 
 def get_llm_client():

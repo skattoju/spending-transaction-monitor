@@ -77,6 +77,7 @@ class AlertRuleService:
                     'validation_timestamp': datetime.now().isoformat(),
                     'alert_text': parsed_rule.get('alert_text'),
                     'sql_query': parsed_rule.get('sql_query'),
+                    'alert_rule': parsed_rule.get('alert_rule'),
                 }
             else:
                 return {

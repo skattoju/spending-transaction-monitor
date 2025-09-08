@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from db import get_db
-from db.models import AlertNotification, AlertRule, AlertType, User
+from db.models import AlertNotification, AlertRule, User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, update
@@ -140,16 +140,15 @@ async def create_alert_rule(
     rule = AlertRule(
         id=str(uuid.uuid4()),
         user_id=current_user.id,
-        name=payload.natural_language_query,
-        description=payload.natural_language_query,
+        name=validate_result.get('alert_rule').get('name'),
+        description=validate_result.get('alert_rule').get('description'),
         is_active=True,
-        alert_type=AlertType.CUSTOM_QUERY,
-        # alert_type=payload.alert_type,
-        # amount_threshold=payload.amount_threshold,
-        # merchant_category=payload.merchant_category,
-        # merchant_name=payload.merchant_name,
-        # location=payload.location,
-        # timeframe=payload.timeframe,
+        alert_type=validate_result.get('alert_rule').get('alert_type'),
+        amount_threshold=validate_result.get('alert_rule').get('amount_threshold'),
+        merchant_category=validate_result.get('alert_rule').get('merchant_category'),
+        merchant_name=validate_result.get('alert_rule').get('merchant_name'),
+        location=validate_result.get('alert_rule').get('location'),
+        timeframe=validate_result.get('alert_rule').get('timeframe'),
         natural_language_query=payload.natural_language_query,
         notification_methods=None,
     )

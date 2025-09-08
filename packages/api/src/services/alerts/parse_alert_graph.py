@@ -11,7 +11,6 @@ from .agents.sql_executor import execute_sql
 class AppState(dict):
     transaction: dict
     alert_text: str
-    user_id: str
     sql_query: str
     query_result: str
     valid_sql: bool
@@ -38,7 +37,9 @@ graph.add_node(
     RunnableLambda(
         lambda state: {
             **state,
-            'alert_rule': create_alert_rule(state['alert_text'], state['user_id']),
+            'alert_rule': create_alert_rule(
+                state['alert_text'], state['transaction']['user_id']
+            ),
         }
     ),
 )
