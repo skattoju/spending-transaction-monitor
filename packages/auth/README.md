@@ -57,8 +57,8 @@ make auth-setup
 # 2. Test the integration  
 cd packages/api
 uv run uvicorn src.main:app --reload
-curl http://localhost:8000/auth-test/public     # ✅ Works
-curl http://localhost:8000/auth-test/protected  # ❌ 401 (needs token)
+curl http://localhost:8000/health           # ✅ Public endpoint
+curl http://localhost:8000/users/me          # ❌ 401 (needs token when auth is integrated)
 ```
 
 **For detailed setup and integration:** See [`AUTH_INTEGRATION_GUIDE.md`](./AUTH_INTEGRATION_GUIDE.md)

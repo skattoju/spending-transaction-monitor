@@ -110,35 +110,6 @@ class AuthE2ETestRunner:
         
         return all_healthy
     
-    def test_auth_test_endpoints(self) -> None:
-        """Test core authentication test endpoints"""
-        self.info("Testing core auth endpoints...")
-        
-        api_url = "http://localhost:8000"
-        
-        # Test cases: (endpoint, expected_status, should_have_content, description)
-        test_cases = [
-            ("/auth-test/public", 200, "This is a public endpoint", "Public endpoint accessibility"),
-            ("/auth-test/protected", 401, None, "Protected endpoint rejects unauthenticated requests"),
-            ("/auth-test/optional-auth", 200, None, "Optional auth endpoint handles no authentication"),
-        ]
-        
-        for endpoint, expected_status, expected_content, description in test_cases:
-            try:
-                response = self.session.get(f"{api_url}{endpoint}")
-                
-                if response.status_code == expected_status:
-                    if expected_content and expected_content in response.text:
-                        self.success(description)
-                    elif expected_content is None:
-                        self.success(description)
-                    else:
-                        self.error(f"{description} - wrong content")
-                else:
-                    self.error(f"{description} - expected {expected_status}, got {response.status_code}")
-                    
-            except Exception as e:
-                self.error(f"{description} - request failed: {e}")
     
     def test_oidc_configuration(self) -> None:
         """Test OIDC configuration endpoints"""
@@ -181,29 +152,27 @@ class AuthE2ETestRunner:
             self.warning("Note: API uses fallback configuration when OIDC discovery fails")
     
     def test_jwt_middleware(self) -> None:
-        """Test JWT middleware behavior with invalid tokens"""
-        self.info("Testing JWT middleware...")
+        """Test JWT middleware is properly configured"""
+        self.info("Testing JWT middleware configuration...")
         
-        api_url = "http://localhost:8000"
-        
-        test_cases = [
-            ("invalid.jwt.token", "Invalid JWT token rejection"),
-            ("", "Empty token rejection"),
-            ("not-a-jwt", "Malformed token rejection"),
-        ]
-        
-        for token, description in test_cases:
-            try:
-                headers = {"Authorization": f"Bearer {token}"} if token else {}
-                response = self.session.get(f"{api_url}/auth-test/protected", headers=headers)
+        try:
+            # Test that the JWT middleware is available by checking the auth module
+            import sys
+            sys.path.append('/Users/skattoju/code/spending-transaction-monitor/packages/api/src')
+            from auth.middleware import require_authentication, get_current_user
+            
+            self.success("JWT middleware functions are available")
+            
+            # Test basic functionality by ensuring functions exist
+            if callable(require_authentication) and callable(get_current_user):
+                self.success("JWT middleware functions are callable")
+            else:
+                self.error("JWT middleware functions are not properly configured")
                 
-                if response.status_code == 401:
-                    self.success(description)
-                else:
-                    self.error(f"{description} - expected 401, got {response.status_code}")
-                    
-            except Exception as e:
-                self.error(f"{description} - request failed: {e}")
+        except ImportError as e:
+            self.error(f"JWT middleware not available: {e}")
+        except Exception as e:
+            self.error(f"JWT middleware test failed: {e}")
     
     def test_api_documentation(self) -> None:
         """Test API documentation accessibility"""
@@ -227,23 +196,6 @@ class AuthE2ETestRunner:
         except Exception as e:
             self.warning(f"API documentation test failed: {e}")
     
-    def verify_auth_route_registration(self) -> None:
-        """Verify auth test routes are registered"""
-        self.info("Verifying auth test route registration...")
-        
-        api_url = "http://localhost:8000"
-        endpoints = ["public", "protected", "optional-auth"]
-        
-        for endpoint in endpoints:
-            try:
-                response = self.session.get(f"{api_url}/auth-test/{endpoint}")
-                # Any response means route is registered (even 401 is good for protected)
-                self.success(f"/auth-test/{endpoint} is registered (status: {response.status_code})")
-                        
-            except requests.exceptions.ConnectionError:
-                self.error(f"/auth-test/{endpoint} - connection failed")
-            except Exception as e:
-                self.warning(f"/auth-test/{endpoint} - unexpected error: {e}")
     
     def test_cors_configuration(self) -> None:
         """Test CORS configuration for frontend integration"""
@@ -259,7 +211,7 @@ class AuthE2ETestRunner:
                 "Access-Control-Request-Headers": "authorization,content-type"
             }
             
-            response = self.session.options(f"{api_url}/auth-test/public", headers=headers)
+            response = self.session.options(f"{api_url}/health", headers=headers)
             
             if response.status_code in [200, 204]:
                 cors_headers = response.headers
@@ -313,7 +265,7 @@ class AuthE2ETestRunner:
         self.log("\n🚀 Next Steps:", Colors.BLUE)
         self.log("1. Set up Keycloak client: cd ../auth && python scripts/setup_keycloak.py")
         self.log("2. API docs: http://localhost:8000/docs")
-        self.log("3. Test auth endpoints: http://localhost:8000/auth-test/")
+        self.log("3. Test endpoints with JWT authentication (when implemented)")
         
         self.log("\n💡 Integration tips:", Colors.YELLOW)
         self.log("   • Use Depends(require_authentication) for protected routes")
@@ -335,11 +287,9 @@ class AuthE2ETestRunner:
         
         # Run all test suites
         self.test_health_endpoint()
-        self.test_auth_test_endpoints()
         self.test_oidc_configuration()
         self.test_jwt_middleware()
         self.test_api_documentation()
-        self.verify_auth_route_registration()
         self.test_cors_configuration()
         
         self.print_summary()

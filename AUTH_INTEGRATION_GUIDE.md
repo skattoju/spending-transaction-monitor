@@ -9,13 +9,7 @@ The authentication infrastructure has been set up with the following components:
 ### Backend Components
 - **JWT Middleware** (`packages/api/src/auth/middleware.py`)
 - **Keycloak Setup** (`packages/auth/`)
-- **Test Endpoints** (`packages/api/src/routes/auth_test.py`)
 - **Dependencies** (`python-jose`, `requests`)
-
-### Test Endpoints
-- `GET /auth-test/public` - No authentication required
-- `GET /auth-test/protected` - Requires valid JWT token  
-- `GET /auth-test/optional-auth` - Optional authentication
 
 ## Integration Steps
 
@@ -203,9 +197,9 @@ python3 setup_keycloak.py
 cd packages/api
 uv run uvicorn src.main:app --reload
 
-# Test endpoints
-curl http://localhost:8000/auth-test/public
-curl -H "Authorization: Bearer <token>" http://localhost:8000/auth-test/protected
+# Test endpoints (example usage)
+curl http://localhost:8000/health
+curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me
 ```
 
 ## Environment Variables
