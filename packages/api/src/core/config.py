@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     BASE_URL: str = ''
     API_KEY: str = ''
     MODEL: str = 'gpt-3.5-turbo'
-    
+
     # Keycloak settings
     KEYCLOAK_URL: str = 'http://localhost:8080'
     KEYCLOAK_REALM: str = 'spending-monitor'
