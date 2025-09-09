@@ -204,19 +204,23 @@ async def get_current_user(
     # Development bypass - fetch first user from database
     if settings.BYPASS_AUTH:
         logger.info('🔓 Authentication bypassed - development mode enabled')
-        
+
         # Try to get first user from database
         if session and User:
             try:
                 result = await session.execute(select(User).limit(1))
                 db_user = result.scalar_one_or_none()
-                
+
                 if db_user:
-                    logger.info(f'🔓 Using database user: {db_user.email} (ID: {db_user.id})')
+                    logger.info(
+                        f'🔓 Using database user: {db_user.email} (ID: {db_user.id})'
+                    )
                     return {
                         'id': db_user.id,
                         'email': db_user.email,
-                        'username': db_user.email.split('@')[0],  # Use email prefix as username
+                        'username': db_user.email.split('@')[
+                            0
+                        ],  # Use email prefix as username
                         'roles': ['user', 'admin'],  # Default roles for dev mode
                         'is_dev_mode': True,
                         'token_claims': {
@@ -229,8 +233,10 @@ async def get_current_user(
                 else:
                     logger.warning('🔓 No users found in database, using mock user')
             except Exception as e:
-                logger.warning(f'🔓 Failed to fetch user from database: {e}, using mock user')
-        
+                logger.warning(
+                    f'🔓 Failed to fetch user from database: {e}, using mock user'
+                )
+
         # Fallback to mock user if database unavailable or no users found
         return {
             'id': 'dev-user-123',
@@ -270,19 +276,23 @@ async def require_authentication(
     # Development bypass - fetch first user from database
     if settings.BYPASS_AUTH:
         logger.info('🔓 Authentication bypassed - development mode enabled')
-        
+
         # Try to get first user from database
         if session and User:
             try:
                 result = await session.execute(select(User).limit(1))
                 db_user = result.scalar_one_or_none()
-                
+
                 if db_user:
-                    logger.info(f'🔓 Using database user: {db_user.email} (ID: {db_user.id})')
+                    logger.info(
+                        f'🔓 Using database user: {db_user.email} (ID: {db_user.id})'
+                    )
                     return {
                         'id': db_user.id,
                         'email': db_user.email,
-                        'username': db_user.email.split('@')[0],  # Use email prefix as username
+                        'username': db_user.email.split('@')[
+                            0
+                        ],  # Use email prefix as username
                         'roles': ['user', 'admin'],  # Default roles for dev mode
                         'is_dev_mode': True,
                         'token_claims': {
@@ -295,8 +305,10 @@ async def require_authentication(
                 else:
                     logger.warning('🔓 No users found in database, using mock user')
             except Exception as e:
-                logger.warning(f'🔓 Failed to fetch user from database: {e}, using mock user')
-        
+                logger.warning(
+                    f'🔓 Failed to fetch user from database: {e}, using mock user'
+                )
+
         # Fallback to mock user if database unavailable or no users found
         return {
             'id': 'dev-user-123',
