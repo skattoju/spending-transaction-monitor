@@ -9,8 +9,19 @@ import requests
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.config import settings
+
+# Optional database imports (for development mode user fetching)
+try:
+    from db import get_db
+    from db.models import User
+except ImportError:
+    # DB package not available during some local dev flows
+    get_db = None
+    User = None
 
 logger = logging.getLogger(__name__)
 
@@ -186,12 +197,41 @@ keycloak_jwt = KeycloakJWTBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    session: AsyncSession = Depends(get_db) if get_db else None,
 ) -> dict | None:
     """Extract user info from JWT token (optional auth) with development bypass"""
 
-    # Development bypass - return mock user
+    # Development bypass - fetch first user from database
     if settings.BYPASS_AUTH:
         logger.info('🔓 Authentication bypassed - development mode enabled')
+        
+        # Try to get first user from database
+        if session and User:
+            try:
+                result = await session.execute(select(User).limit(1))
+                db_user = result.scalar_one_or_none()
+                
+                if db_user:
+                    logger.info(f'🔓 Using database user: {db_user.email} (ID: {db_user.id})')
+                    return {
+                        'id': db_user.id,
+                        'email': db_user.email,
+                        'username': db_user.email.split('@')[0],  # Use email prefix as username
+                        'roles': ['user', 'admin'],  # Default roles for dev mode
+                        'is_dev_mode': True,
+                        'token_claims': {
+                            'sub': db_user.id,
+                            'preferred_username': db_user.email.split('@')[0],
+                            'email': db_user.email,
+                            'realm_access': {'roles': ['user', 'admin']},
+                        },
+                    }
+                else:
+                    logger.warning('🔓 No users found in database, using mock user')
+            except Exception as e:
+                logger.warning(f'🔓 Failed to fetch user from database: {e}, using mock user')
+        
+        # Fallback to mock user if database unavailable or no users found
         return {
             'id': 'dev-user-123',
             'email': 'developer@example.com',
@@ -223,12 +263,41 @@ async def get_current_user(
 
 async def require_authentication(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    session: AsyncSession = Depends(get_db) if get_db else None,
 ) -> dict:
     """Require valid JWT token with development bypass"""
 
-    # Development bypass - return mock user immediately
+    # Development bypass - fetch first user from database
     if settings.BYPASS_AUTH:
         logger.info('🔓 Authentication bypassed - development mode enabled')
+        
+        # Try to get first user from database
+        if session and User:
+            try:
+                result = await session.execute(select(User).limit(1))
+                db_user = result.scalar_one_or_none()
+                
+                if db_user:
+                    logger.info(f'🔓 Using database user: {db_user.email} (ID: {db_user.id})')
+                    return {
+                        'id': db_user.id,
+                        'email': db_user.email,
+                        'username': db_user.email.split('@')[0],  # Use email prefix as username
+                        'roles': ['user', 'admin'],  # Default roles for dev mode
+                        'is_dev_mode': True,
+                        'token_claims': {
+                            'sub': db_user.id,
+                            'preferred_username': db_user.email.split('@')[0],
+                            'email': db_user.email,
+                            'realm_access': {'roles': ['user', 'admin']},
+                        },
+                    }
+                else:
+                    logger.warning('🔓 No users found in database, using mock user')
+            except Exception as e:
+                logger.warning(f'🔓 Failed to fetch user from database: {e}, using mock user')
+        
+        # Fallback to mock user if database unavailable or no users found
         return {
             'id': 'dev-user-123',
             'email': 'developer@example.com',
@@ -250,7 +319,7 @@ async def require_authentication(
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
-    user = await get_current_user(credentials)
+    user = await get_current_user(credentials, session)
     if not user:
         raise HTTPException(status_code=401, detail='Invalid authentication')
 
