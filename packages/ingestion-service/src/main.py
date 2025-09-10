@@ -8,7 +8,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 
 from .common.models import IncomingTransaction, Transaction
 

@@ -10,8 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .routes import alerts as alerts_routes
-from .routes import cleanup_kafka_producer, health
-from .routes import kafka as kafka_routes
+from .routes import health
 from .routes import transactions as transactions_routes
 from .routes import users as users_routes
 
