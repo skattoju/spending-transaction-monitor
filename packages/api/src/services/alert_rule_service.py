@@ -4,7 +4,12 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from db.models import AlertNotification, AlertRule
+from db.models import (
+    AlertNotification,
+    AlertRule,
+    NotificationMethod,
+    NotificationStatus,
+)
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -123,17 +128,20 @@ class AlertRuleService:
                 rule.natural_language_query, transaction.__dict__
             )
 
-            if alert_result and alert_result.get('should_trigger', False):
+            if alert_result and alert_result.get('alert_triggered', False):
+                # Store trigger count before commit (to avoid detached instance issues)
+                new_trigger_count = rule.trigger_count + 1
+
                 # Create AlertNotification object
                 notification = AlertNotification(
                     id=str(uuid.uuid4()),
                     user_id=rule.user_id,
                     alert_rule_id=rule.id,
-                    transaction_id=transaction.trans_num,
+                    transaction_id=transaction.id,
                     title=f'Alert: {rule.name}',
-                    message=alert_result.get('message', 'Alert triggered'),
-                    notification_method='system',
-                    status='sent',
+                    message=alert_result.get('alert_message', 'Alert triggered'),
+                    notification_method=NotificationMethod.EMAIL,
+                    status=NotificationStatus.SENT,
                 )
 
                 # Add notification to session
@@ -144,19 +152,21 @@ class AlertRuleService:
                     update(AlertRule)
                     .where(AlertRule.id == rule.id)
                     .values(
-                        trigger_count=rule.trigger_count + 1,
+                        trigger_count=new_trigger_count,
                         last_triggered=datetime.utcnow(),
                         updated_at=datetime.utcnow(),
                     )
                 )
                 await session.commit()
-
+                await session.refresh(rule)
+                await session.refresh(notification)
+                await session.refresh(transaction)
                 return {
                     'status': 'triggered',
                     'message': 'Alert rule triggered successfully',
-                    'trigger_count': rule.trigger_count + 1,
+                    'trigger_count': rule.trigger_count,
                     'rule_evaluation': alert_result,
-                    'transaction_id': transaction.trans_num,
+                    'transaction_id': transaction.id,
                     'notification_id': notification.id,
                 }
             else:
@@ -168,6 +178,7 @@ class AlertRuleService:
                 }
 
         except Exception as e:
+            print('Alert generation failed:', e)
             transaction_id = transaction.trans_num if transaction else 'unknown'
             return {
                 'status': 'error',

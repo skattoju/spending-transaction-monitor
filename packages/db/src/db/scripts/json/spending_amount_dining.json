@@ -1,0 +1,82 @@
+{
+    "user": {
+      "id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
+      "email": "michael.johnson@example.com",
+      "first_name": "Michael",
+      "last_name": "Johnson",
+      "phone_number": "555-123-4567",
+      "address_street": "123 Main St",
+      "address_city": "New York",
+      "address_state": "NY",
+      "address_zipcode": "10001",
+      "address_country": "US"
+    },
+    "credit_card": {
+      "id": "cc-001",
+      "user_id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
+      "card_number": "4111111111111111",
+      "card_type": "VISA",
+      "bank_name": "Chase",
+      "card_holder_name": "Michael Johnson",
+      "expiry_month": 12,
+      "expiry_year": 2028,
+      "is_active": true
+    },
+    "transactions": [
+      {
+        "id": "txn-001",
+        "user_id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
+        "credit_card_num": "4111111111111111",
+        "amount": 120.50,
+        "currency": "USD",
+        "description": "Dinner at The Cheesecake Factory",
+        "merchant_name": "The Cheesecake Factory",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-25T18:30:00Z",
+        "transaction_type": "PURCHASE",
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "merchant_country": "US",
+        "status": "COMPLETED",
+        "authorization_code": "AUTH001",
+        "trans_num": "TXN001"
+      },
+      {
+        "id": "txn-002",
+        "user_id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
+        "credit_card_num": "4111111111111111",
+        "amount": 95.20,
+        "currency": "USD",
+        "description": "Lunch at Shake Shack",
+        "merchant_name": "Shake Shack",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T12:15:00Z",
+        "transaction_type": "PURCHASE",
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "merchant_country": "US",
+        "status": "COMPLETED",
+        "authorization_code": "AUTH002",
+        "trans_num": "TXN002"
+      },
+      {
+        "id": "txn-003",
+        "user_id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
+        "credit_card_num": "4111111111111111",
+        "amount": 110.75,
+        "currency": "USD",
+        "description": "Dinner at Nobu",
+        "merchant_name": "Nobu",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T20:45:00Z",
+        "transaction_type": "PURCHASE",
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "merchant_country": "US",
+        "status": "COMPLETED",
+        "authorization_code": "AUTH003",
+        "trans_num": "TXN003"
+      }
+    ]
+  }
+  

@@ -1,24 +1,17 @@
 # agents/sql_executor.py
-import os
-import sqlite3
-
-import psycopg2
 from langchain.tools import tool
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-# Lazy connection - only connect when needed
-conn = None
+from ....core.config import settings
 
-
-def get_connection():
-    global conn
-    if conn is None:
-        connection_string = os.getenv('DATABASE_URL')
-        if connection_string:
-            conn = psycopg2.connect(connection_string)
-        else:
-            # Fallback to SQLite for testing
-            conn = sqlite3.connect('transactions.db')
-    return conn
+# Create a synchronous engine and session for SQL execution
+# Convert async URL to sync URL for synchronous operations
+sync_database_url = settings.DATABASE_URL.replace(
+    'postgresql+asyncpg://', 'postgresql+psycopg2://'
+)
+sync_engine = create_engine(sync_database_url, echo=False)
+SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
 
 
 @tool
@@ -27,21 +20,24 @@ def execute_sql(sql: str) -> str:
     if not sql or sql.strip() == '':
         return 'SQL Error: Empty query'
 
-    cursor = None
-    connection = None
-    try:
-        connection = get_connection()
-        cursor = connection.cursor()
-        cursor.execute(sql)
-        # Otherwise fetch results
-        rows = cursor.fetchall()
-        return str(rows)
+    with SyncSessionLocal() as session:
+        try:
+            result = session.execute(text(sql))
 
-    except Exception as e:
-        if connection:
-            connection.rollback()
-        return f'SQL Error: {e}'
+            # Check if query returns rows
+            if result.returns_rows:
+                rows = result.fetchall()
+                if rows:
+                    # Convert each row to a tuple and then to string
+                    formatted_rows = [tuple(row) for row in rows]
+                    return str(formatted_rows)
+                else:
+                    return '[]'
+            else:
+                # For non-SELECT queries (INSERT, UPDATE, DELETE)
+                session.commit()
+                return 'SQL executed successfully'
 
-    finally:
-        if cursor:
-            cursor.close()
+        except Exception as e:
+            session.rollback()
+            return f'SQL Error: {e}'

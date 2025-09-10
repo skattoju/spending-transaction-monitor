@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info('Starting up application...')
-    
+
     yield
-    
+
     logger.info('Shutting down application...')
 
 

@@ -20,7 +20,6 @@ class Settings(BaseSettings):
         'postgresql+asyncpg://user:password@localhost:5432/spending-monitor'
     )
 
-
     # LLM settings
     LLM_PROVIDER: str = 'openai'
     NODE_ENV: str = 'development'

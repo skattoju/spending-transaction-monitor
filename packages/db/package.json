@@ -16,7 +16,10 @@
     "current": "uv run alembic current",
     "install:deps": "uv sync --extra dev",
     "seed": "uv run python -m db.scripts.seed",
+    "seed:transactions_last_hour": "uv run python -m db.scripts.transactions_last_hour",
     "verify": "uv run python -m db.scripts.verify_user",
+    "reset": "uv run python -m db.scripts.reset_database",
+    "reset:confirm": "echo 'WARNING: This will delete ALL data from the database!' && read -p 'Type YES to confirm: ' confirm && [ \"$confirm\" = \"YES\" ] && pnpm reset || echo 'Reset cancelled'",
     "test": "uv run pytest"
   }
 }
