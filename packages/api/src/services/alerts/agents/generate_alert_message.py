@@ -107,4 +107,8 @@ Write a friendly alert message for a general transaction alert.
 
     client = get_llm_client()
     response = client.invoke(prompt)
-    return extract_response(response.content)
+    if hasattr(response, 'content') and response.content:
+        content = response.content
+    else:
+        content = response
+    return extract_response(content)

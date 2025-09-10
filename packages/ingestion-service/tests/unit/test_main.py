@@ -12,15 +12,14 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 
-
 class TestTransactionTransformation:
     """Test transaction transformation logic"""
-    
+
     def test_transform_transaction_success(self):
         """Test successful transaction transformation"""
         from src.common.models import IncomingTransaction
         from src.main import transform_transaction
-        
+
         test_data = {
             'User': 1,
             'Card': 1,
@@ -36,12 +35,12 @@ class TestTransactionTransformation:
             'Zip': '10001',
             'MCC': 5411,
             'Errors?': '',
-            'Is Fraud?': 'No'
+            'Is Fraud?': 'No',
         }
-        
+
         incoming = IncomingTransaction(**test_data)
         result = transform_transaction(incoming)
-        
+
         assert result.user == 1
         assert result.amount == 10.0
         assert result.is_fraud is False
@@ -51,7 +50,7 @@ class TestTransactionTransformation:
         """Test transaction transformation with fraud=Yes"""
         from src.common.models import IncomingTransaction
         from src.main import transform_transaction
-        
+
         test_data = {
             'User': 1,
             'Card': 1,
@@ -67,10 +66,10 @@ class TestTransactionTransformation:
             'Zip': '10001',
             'MCC': 5411,
             'Errors?': '',
-            'Is Fraud?': 'Yes'
+            'Is Fraud?': 'Yes',
         }
-        
+
         incoming = IncomingTransaction(**test_data)
         result = transform_transaction(incoming)
-        
+
         assert result.is_fraud is True

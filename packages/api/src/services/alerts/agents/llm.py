@@ -1,8 +1,9 @@
 import logging
-import os
 
 import httpx
 from langchain_openai import ChatOpenAI
+
+from ....core.config import settings
 
 async_client = httpx.AsyncClient(verify=False)
 http_client = httpx.Client(verify=False)
@@ -21,9 +22,9 @@ class LLMClient:
         self, max_tokens: int = 8192, temperature: float = 0.1, top_p: float = 1
     ):
         self.llm = ChatOpenAI(
-            api_key=os.getenv('API_KEY', ''),
-            model=os.getenv('MODEL', ''),
-            base_url=os.getenv('BASE_URL', ''),
+            api_key=settings.API_KEY,
+            model=settings.MODEL,
+            base_url=settings.BASE_URL,
             async_client=async_client,
             http_client=http_client,
             max_tokens=max_tokens,
