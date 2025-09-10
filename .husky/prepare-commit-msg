@@ -1,5 +1,17 @@
 #!/bin/sh
 
+# Skip the hook if we're in the middle of an interactive rebase
+if [ -n "$GIT_SEQUENCE_EDITOR" ]; then
+  echo "Skipping prepare-commit-msg hook due to rebase."
+  exit 0
+fi
+
+# Also skip if we're in a rebase directory
+if [ -d ".git/rebase-merge" ] || [ -d ".git/rebase-apply" ]; then
+  echo "Skipping prepare-commit-msg hook due to rebase."
+  exit 0
+fi
+
 # Enforce conventional branch names: <type>/<short-description>
 BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || true)
 

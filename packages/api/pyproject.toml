@@ -26,6 +26,13 @@ dependencies = [
     "langgraph>=0.1.0",
     "cryptography>=3.0.0",
     "google-cloud-aiplatform>=1.0.0",
+    "kafka-python>=2.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "requests>=2.31.0",
+    "langchain>=0.1.0",
+    "langchain-core>=0.1.0", 
+    "langchain-openai>=0.1.0",
+    "langgraph>=0.2.0",
     
     "spending-monitor-db",
 ]
@@ -37,6 +44,9 @@ dev = [
     "httpx>=0.25.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
+    "pytest-mock>=3.14.0",
+    "responses>=0.25.0",
+    "respx>=0.22.0",
 ]
 
 [project.urls]
@@ -82,4 +92,14 @@ addopts = "-v --tb=short --ignore=tests/integration"
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
     "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-mock>=3.15.0",
+    "respx>=0.22.0",
+    "ruff>=0.12.11",
 ]
