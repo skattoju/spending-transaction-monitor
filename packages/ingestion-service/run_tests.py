@@ -42,12 +42,10 @@ def run_integration_tests():
         from fastapi.testclient import TestClient
 
         from src.common.models import IncomingTransaction
-        from src.main import app, kafka_manager, transform_transaction
+        from src.main import app, transform_transaction
         
         print("✅ Service modules imported successfully")
         
-        # Test Kafka manager
-        print(f"✅ Kafka manager initialized - Host: {kafka_manager.kafka_host}:{kafka_manager.kafka_port}")
         
         # Test transaction transformation - use the correct field names/aliases
         test_incoming_data = {
@@ -89,7 +87,6 @@ def run_integration_tests():
             assert data["service"] == "ingestion-service"
             print(f"✅ Comprehensive health endpoint: {response.status_code}")
             print(f"   Service status: {data.get('status')}")
-            print(f"   Kafka status: {data.get('kafka', {}).get('kafka_status')}")
             
             # Test transaction endpoint
             transaction_data = {
@@ -134,23 +131,14 @@ def run_service_validation():
     
     try:
         # Test that we can import everything without errors
-        from src.main import KafkaConnectionManager, app
+        from src.main import app
         print("✅ All imports successful")
         
         # Test that we can create the app
         assert app is not None
         print("✅ FastAPI app created successfully")
         
-        # Test Kafka manager creation
-        test_manager = KafkaConnectionManager()
-        assert test_manager.kafka_host is not None
-        assert test_manager.kafka_port is not None
-        print("✅ KafkaConnectionManager created successfully")
         
-        # Test health check method
-        health = test_manager.health_check()
-        assert "kafka_status" in health
-        print(f"✅ Kafka health check method works - Status: {health['kafka_status']}")
         
         print("✅ Service validation PASSED")
         return True
@@ -161,27 +149,6 @@ def run_service_validation():
         traceback.print_exc()
         return False
 
-def run_e2e_tests():
-    """Run E2E tests using pytest"""
-    print("=" * 50)
-    print("RUNNING E2E TESTS")
-    print("=" * 50)
-    
-    try:
-        # Import and run E2E tests
-        import pytest
-        exit_code = pytest.main(["-v", "tests/e2e/", "-s"])  # -s to show print output
-        if exit_code == 0:
-            print("✅ E2E tests PASSED")
-            return True
-        else:
-            print("❌ E2E tests FAILED")
-            return False
-    except Exception as e:
-        print(f"❌ E2E tests failed with error: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
 
 def main():
     """Run all tests"""

@@ -7,7 +7,6 @@ import os
 
 # Import from parent directory
 import sys
-from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -19,11 +18,8 @@ from main import app
 class TestIngestionServiceIntegration:
     """Integration tests using FastAPI TestClient"""
 
-    @patch('main.kafka_manager.get_producer')
-    def test_create_transaction_success(self, mock_get_producer):
+    def test_create_transaction_success(self):
         """Test successful transaction creation through API"""
-        mock_producer = mock_get_producer.return_value
-        mock_producer.send.return_value.get.return_value = None
         
         with TestClient(app) as client:
             incoming_transaction = {
@@ -66,18 +62,9 @@ class TestIngestionServiceIntegration:
             }
             assert response.json() == expected_response
             
-            # Verify Kafka producer was called
-            mock_producer.send.assert_called_once()
-            call_args = mock_producer.send.call_args
-            assert call_args[0][0] == 'transactions'  # topic
-            payload = call_args[0][1]
-            assert payload['user'] == 1
-            assert payload['amount'] == 10.0
 
-    @patch('main.kafka_manager.get_producer')
-    def test_create_transaction_kafka_unavailable(self, mock_get_producer):
-        """Test transaction creation when Kafka is unavailable"""
-        mock_get_producer.return_value = None
+    def test_create_transaction_simple(self):
+        """Test simple transaction creation"""
         
         with TestClient(app) as client:
             incoming_transaction = {
@@ -99,7 +86,7 @@ class TestIngestionServiceIntegration:
             }
             response = client.post("/transactions/", json=incoming_transaction)
             
-            # Should still return 200 with graceful degradation
+            # Should return 200
             assert response.status_code == 200
             response_data = response.json()
             assert "user" in response_data
@@ -112,42 +99,14 @@ class TestIngestionServiceIntegration:
             assert response.status_code == 200
             assert response.json() == {"status": "ok"}
 
-    @patch('main.kafka_manager.health_check')
-    def test_health_kafka_healthy(self, mock_health_check):
-        """Test comprehensive health check when Kafka is healthy"""
-        mock_health_check.return_value = {
-            "kafka_status": "healthy",
-            "last_connection_attempt": "2023-01-01T12:00:00Z",
-            "connection_pool_active": True
-        }
-        
+    def test_health_check(self):
+        """Test health check endpoint"""
         with TestClient(app) as client:
             response = client.get("/health")
             assert response.status_code == 200
             data = response.json()
             assert data["status"] == "healthy"
             assert data["service"] == "ingestion-service"
-            assert "kafka" in data
-            assert data["kafka"]["kafka_status"] == "healthy"
-            assert "environment" in data
-
-    @patch('main.kafka_manager.health_check')
-    def test_health_kafka_unhealthy(self, mock_health_check):
-        """Test comprehensive health check when Kafka is unhealthy"""
-        mock_health_check.return_value = {
-            "kafka_status": "unhealthy",
-            "last_connection_attempt": "2023-01-01T12:00:00Z",
-            "connection_pool_active": False,
-            "error": "Connection timeout"
-        }
-        
-        with TestClient(app) as client:
-            response = client.get("/health")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "degraded"
-            assert data["service"] == "ingestion-service"
-            assert data["kafka"]["kafka_status"] == "unhealthy"
 
     def test_invalid_transaction_data(self):
         """Test API with invalid transaction data"""

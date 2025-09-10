@@ -204,13 +204,6 @@ export const healthService = {
     return response.json();
   },
 
-  async getKafkaHealth() {
-    const response = await fetch('/api/kafka/health');
-    if (!response.ok) {
-      throw new Error('Failed to fetch Kafka health status');
-    }
-    return response.json();
-  },
 };
 
 // Real API-based alert service
@@ -342,23 +335,6 @@ export const alertService = {
         transaction_id: 'e87b191a-4bc3-49b3-9881-d6f44066c92a',
         resolved: false,
       },
-      {
-        id: 'ALT-002',
-        title: 'New Transaction via Kafka',
-        description: 'Real-time transaction processed: $150.00',
-        severity: 'medium',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        transaction_id: '52e66c39-f9e3-4bf7-b9d7-d18280654b90',
-        resolved: false,
-      },
-      {
-        id: 'ALT-003',
-        title: 'Kafka Consumer Active',
-        description: 'Successfully processing transactions from Kafka',
-        severity: 'low',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        resolved: true,
-      },
     ];
 
     return alerts;
@@ -376,14 +352,6 @@ export const alertService = {
         triggered: 3,
         last_triggered: '2 hours ago',
         created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
-      },
-      {
-        id: 'RULE-002',
-        rule: 'Notify me of Kafka consumer issues',
-        status: 'active',
-        triggered: 0,
-        last_triggered: 'Never',
-        created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
       },
       {
         id: 'RULE-003',
