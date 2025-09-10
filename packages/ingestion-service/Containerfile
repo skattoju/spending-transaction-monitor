@@ -14,8 +14,7 @@ COPY . .
 # --all-extras installs optional dependencies defined in pyproject.toml
 RUN uv sync --all-extras
 
-
-ENV KAFKA_HOST="localhost"
-ENV KAFKA_PORT="9092"
+ENV API_HOST="localhost"
+ENV API_PORT="8000"
 
 CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]

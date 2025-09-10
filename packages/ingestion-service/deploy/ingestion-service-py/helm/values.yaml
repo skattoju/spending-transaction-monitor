@@ -57,15 +57,14 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 80
 
-# This is for setting up kafka configuration
-# Default assumes Kafka release name is "kafka" (matching our Makefile)
-# Override these for different environments or release names
-kafka:
-  host: "kafka-kafka-kafka-bootstrap"  # Strimzi service name for release "kafka"
-  port: "9092"
 
 # This is for setting up generic configuration for the service
 config: {}
+
+# API service connection configuration
+api:
+  host: "spending-monitor-api"  # Service name for the API
+  port: "8000"
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:

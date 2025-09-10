@@ -16,7 +16,7 @@ dependencies = [
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
-    "kafka-python>=2.0.0",
+    "httpx>=0.25.0",
 ]
 
 
@@ -29,7 +29,6 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.7.0",
     "requests>=2.31.0",
-    "kafka-python>=2.0.0",
 ]
 
 [project.urls]

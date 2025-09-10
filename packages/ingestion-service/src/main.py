@@ -1,146 +1,63 @@
 """
-Ingestion Service with Kafka Connection Management
+Ingestion Service
 """
 
 import datetime
-import json
 import os
-import time
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from kafka import KafkaProducer
+import httpx
+from fastapi import FastAPI, HTTPException
 
 from .common.models import IncomingTransaction, Transaction
 
 
-class KafkaConnectionManager:
-    """Manages Kafka connections with lazy loading, retry logic, and health monitoring"""
+class APIClient:
+    """Client for posting transactions to the API service"""
     
     def __init__(self):
-        self.producer: KafkaProducer | None = None
-        self.kafka_host = os.environ.get("KAFKA_HOST", "localhost")
-        self.kafka_port = os.environ.get("KAFKA_PORT", "9092")
-        self.connection_timeout = int(os.environ.get("KAFKA_CONNECTION_TIMEOUT", "10"))
-        self.retry_attempts = int(os.environ.get("KAFKA_RETRY_ATTEMPTS", "3"))
-        self.retry_delay = int(os.environ.get("KAFKA_RETRY_DELAY", "2"))
-        self.last_connection_attempt = 0
-        self.connection_cooldown = 30  # seconds
+        self.api_host = os.environ.get("API_HOST", "localhost")
+        self.api_port = os.environ.get("API_PORT", "8000")
+        self.api_base_url = f"http://{self.api_host}:{self.api_port}"
+        self.timeout = 30.0
         
-    def get_producer(self) -> KafkaProducer | None:
-        """Get Kafka producer with lazy connection and retry logic"""
-        if self.producer is not None:
-            return self.producer
-            
-        # Check cooldown period
-        current_time = time.time()
-        if current_time - self.last_connection_attempt < self.connection_cooldown:
-            print(f"Kafka connection in cooldown period. Last attempt: {self.last_connection_attempt}")
-            return None
-            
-        # Attempt connection with retries
-        for attempt in range(self.retry_attempts):
-            try:
-                print(f"Attempting Kafka connection (attempt {attempt + 1}/{self.retry_attempts})")
-                self.producer = KafkaProducer(
-                    bootstrap_servers=f"{self.kafka_host}:{self.kafka_port}",
-                    value_serializer=lambda v: json.dumps(v, default=str).encode('utf-8'),
-                    request_timeout_ms=self.connection_timeout * 1000,
-                    retries=0  # We handle retries at the connection level
+    async def post_transaction(self, transaction_data: dict) -> bool:
+        """Post transaction to API service"""
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.api_base_url}/transactions",
+                    json=transaction_data
                 )
-                print(f"Successfully connected to Kafka at {self.kafka_host}:{self.kafka_port}")
-                return self.producer
-                
-            except Exception as e:
-                print(f"Kafka connection attempt {attempt + 1} failed: {e}")
-                if attempt < self.retry_attempts - 1:
-                    print(f"Retrying in {self.retry_delay} seconds...")
-                    time.sleep(self.retry_delay)
-                    
-        # All attempts failed
-        self.last_connection_attempt = current_time
-        print("All Kafka connection attempts failed. Entering cooldown period.")
-        return None
-        
-    def send_message(self, topic: str, message: dict) -> bool:
-        """Send message to Kafka topic with error handling"""
-        producer = self.get_producer()
-        if producer is None:
-            print("Cannot send message: Kafka producer unavailable")
+                response.raise_for_status()
+                print(f"Successfully posted transaction to API: {response.status_code}")
+                return True
+        except Exception as e:
+            print(f"Failed to post transaction to API: {e}")
             return False
             
+    async def health_check(self) -> dict:
+        """Check API connectivity"""
         try:
-            future = producer.send(topic, message)
-            record_metadata = future.get(timeout=10)
-            print(f"Successfully sent message to topic '{record_metadata.topic}' at partition {record_metadata.partition} with offset {record_metadata.offset}")
-            return True
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"{self.api_base_url}/health/")
+                response.raise_for_status()
+                return {
+                    "api_status": "healthy",
+                    "api_reachable": True,
+                    "response_code": response.status_code
+                }
         except Exception as e:
-            print(f"Failed to send message to Kafka: {e}")
-            # Reset producer on send failure
-            self.close()
-            return False
-            
-    def health_check(self) -> dict:
-        """Check Kafka connection health by attempting to connect"""
-        current_time = time.time()
-        
-        # If we're in cooldown period, return cached status
-        if current_time <= (self.last_connection_attempt + self.connection_cooldown):
-            producer_exists = self.producer is not None
             return {
-                "kafka_status": "healthy" if producer_exists else "unhealthy",
-                "connection_pool_active": producer_exists,
-                "last_connection_attempt": datetime.datetime.fromtimestamp(self.last_connection_attempt).isoformat() if self.last_connection_attempt > 0 else None,
-                "next_retry_available": False,
-                "in_cooldown": True
+                "api_status": "unhealthy",
+                "api_reachable": False,
+                "error": str(e)
             }
-        
-        # Try to establish connection for health check
-        try:
-            # Create a temporary producer just for health checking
-            test_producer = KafkaProducer(
-                bootstrap_servers=f"{self.kafka_host}:{self.kafka_port}",
-                request_timeout_ms=5000,  # Short timeout for health check
-                api_version=(0, 10, 1),
-                value_serializer=lambda x: json.dumps(x).encode('utf-8')
-            )
-            
-            # Just creating the producer and closing it verifies connectivity
-            # The constructor will fail if Kafka is not reachable
-            test_producer.close()
-            
-            # If we get here, Kafka is reachable
-            return {
-                "kafka_status": "healthy",
-                "connection_pool_active": self.producer is not None,
-                "last_health_check": datetime.datetime.now(datetime.UTC).isoformat(),
-                "kafka_reachable": True
-            }
-            
-        except Exception as e:
-            print(f"Kafka health check failed: {e}")
-            return {
-                "kafka_status": "unhealthy", 
-                "connection_pool_active": False,
-                "last_connection_attempt": datetime.datetime.fromtimestamp(self.last_connection_attempt).isoformat() if self.last_connection_attempt > 0 else None,
-                "next_retry_available": current_time > (self.last_connection_attempt + self.connection_cooldown),
-                "kafka_reachable": False,
-                "last_error": str(e)
-            }
-            
-    def close(self):
-        """Close Kafka producer connection"""
-        if self.producer is not None:
-            try:
-                self.producer.close()
-            except Exception as e:
-                print(f"Error closing Kafka producer: {e}")
-            finally:
-                self.producer = None
 
 
-# Global Kafka connection manager
-kafka_manager = KafkaConnectionManager()
+# Global API client
+api_client = APIClient()
 
 
 def transform_transaction(incoming_transaction: IncomingTransaction) -> Transaction:
@@ -171,14 +88,40 @@ def transform_transaction(incoming_transaction: IncomingTransaction) -> Transact
     )
 
 
+def transform_to_api_format(transaction: Transaction) -> dict:
+    """Transform transaction to API TransactionCreate format"""
+    # Create transaction date from year, month, day, time
+    transaction_date = datetime.datetime.combine(
+        datetime.date(transaction.year, transaction.month, transaction.day),
+        transaction.time
+    )
+    
+    return {
+        "id": str(uuid.uuid4()),
+        "user_id": str(transaction.user),
+        "credit_card_num": str(transaction.card),
+        "amount": transaction.amount,
+        "currency": "USD",
+        "description": f"Transaction at {transaction.merchant_id}",
+        "merchant_name": str(transaction.merchant_id),
+        "merchant_category": str(transaction.mcc),
+        "transaction_date": transaction_date.isoformat(),
+        "transaction_type": "PURCHASE",
+        "merchant_city": transaction.merchant_city,
+        "merchant_state": transaction.merchant_state,
+        "merchant_country": "US",
+        "merchant_zipcode": transaction.zip,
+        "status": "PENDING",
+        "trans_num": None
+    }
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan management"""
-    # No longer need to initialize Kafka connection at startup
     print("Ingestion service starting up...")
     yield
     print("Ingestion service shutting down...")
-    kafka_manager.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -190,11 +133,13 @@ async def create_transaction(incoming_transaction: IncomingTransaction):
     transaction = transform_transaction(incoming_transaction)
     print(f"Received transaction: {transaction.model_dump()}")
     
-    # Attempt to send to Kafka (graceful degradation if unavailable)
-    kafka_sent = kafka_manager.send_message('transactions', transaction.model_dump())
+    # Transform to API format and post to API service
+    api_transaction_data = transform_to_api_format(transaction)
+    api_success = await api_client.post_transaction(api_transaction_data)
     
-    if not kafka_sent:
-        print("Warning: Transaction processed but not sent to Kafka (service degraded)")
+    if not api_success:
+        print("Warning: Transaction processed but not sent to API service")
+        # Still return the transaction even if API posting fails
     
     return transaction
 
@@ -207,20 +152,18 @@ async def healthz():
 
 @app.get("/health")
 async def health():
-    """Comprehensive health check including Kafka status"""
-    kafka_health = kafka_manager.health_check()
-    overall_status = "healthy" if kafka_health["kafka_status"] == "healthy" else "degraded"
+    """Health check endpoint including API connectivity"""
+    api_health = await api_client.health_check()
+    overall_status = "healthy" if api_health["api_status"] == "healthy" else "degraded"
     
     return {
         "status": overall_status,
         "service": "ingestion-service",
         "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
-        "kafka": kafka_health,
+        "api": api_health,
         "environment": {
-            "kafka_host": kafka_manager.kafka_host,
-            "kafka_port": kafka_manager.kafka_port,
-            "connection_timeout": kafka_manager.connection_timeout,
-            "retry_attempts": kafka_manager.retry_attempts,
-            "retry_delay": kafka_manager.retry_delay
+            "api_host": api_client.api_host,
+            "api_port": api_client.api_port,
+            "api_base_url": api_client.api_base_url
         }
     }
