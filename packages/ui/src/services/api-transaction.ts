@@ -203,7 +203,6 @@ export const healthService = {
     }
     return response.json();
   },
-
 };
 
 // Real API-based alert service
