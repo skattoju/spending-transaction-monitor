@@ -22,6 +22,7 @@ def execute_sql(sql: str) -> str:
 
     with SyncSessionLocal() as session:
         try:
+            print(f'Executing SQL: {sql}')
             result = session.execute(text(sql))
 
             # Check if query returns rows

@@ -1,4 +1,5 @@
 {
+    "alert_text": "Alert me if I spend more than $300 on dining.",
     "user": {
       "id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
       "email": "michael.johnson@example.com",
@@ -37,7 +38,7 @@
         "merchant_city": "New York",
         "merchant_state": "NY",
         "merchant_country": "US",
-        "status": "COMPLETED",
+        "status": "SETTLED",
         "authorization_code": "AUTH001",
         "trans_num": "TXN001"
       },
@@ -55,7 +56,7 @@
         "merchant_city": "New York",
         "merchant_state": "NY",
         "merchant_country": "US",
-        "status": "COMPLETED",
+        "status": "SETTLED",
         "authorization_code": "AUTH002",
         "trans_num": "TXN002"
       },
@@ -73,7 +74,7 @@
         "merchant_city": "New York",
         "merchant_state": "NY",
         "merchant_country": "US",
-        "status": "COMPLETED",
+        "status": "SETTLED",
         "authorization_code": "AUTH003",
         "trans_num": "TXN003"
       }

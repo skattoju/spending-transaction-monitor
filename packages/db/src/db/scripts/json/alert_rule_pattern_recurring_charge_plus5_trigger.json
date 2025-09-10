@@ -1,0 +1,71 @@
+{
+    "alert_text": "Alert me if the amount of a recurring charge increases by more than 5 dollars.",
+    "user": {
+      "id": "u-rc-005",
+      "email": "jordan.lee@example.com",
+      "first_name": "Jordan",
+      "last_name": "Lee",
+      "address_city": "Austin",
+      "address_state": "TX",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-rc-1001",
+        "user_id": "u-rc-005",
+        "credit_card_num": "4111111111111111",
+        "amount": 14.99,
+        "currency": "USD",
+        "description": "Monthly cloud storage",
+        "merchant_name": "CloudBox",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-05-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC1001"
+      },
+      {
+        "id": "txn-rc-1002",
+        "user_id": "u-rc-005",
+        "credit_card_num": "4111111111111111",
+        "amount": 14.99,
+        "currency": "USD",
+        "description": "Monthly cloud storage",
+        "merchant_name": "CloudBox",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-06-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC1002"
+      },
+      {
+        "id": "txn-rc-1003",
+        "user_id": "u-rc-005",
+        "credit_card_num": "4111111111111111",
+        "amount": 14.99,
+        "currency": "USD",
+        "description": "Monthly cloud storage",
+        "merchant_name": "CloudBox",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-07-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC1003"
+      },
+      {
+        "id": "txn-rc-1004",
+        "user_id": "u-rc-005",
+        "credit_card_num": "4111111111111111",
+        "amount": 21.50,
+        "currency": "USD",
+        "description": "Monthly cloud storage (new pricing)",
+        "merchant_name": "CloudBox",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-08-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC1004"
+      }
+    ]
+  }
+  

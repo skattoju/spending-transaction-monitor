@@ -1,0 +1,70 @@
+{
+    "alert_text": "Alert me if I spend more than $300 in one day.",
+    "user": {
+      "id": "u-55555",
+      "email": "michael.johnson@example.com",
+      "first_name": "Michael",
+      "last_name": "Johnson",
+      "address_city": "New York",
+      "address_state": "NY",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-4001",
+        "user_id": "u-55555",
+        "credit_card_num": "4111111111111111",
+        "amount": 120.50,
+        "currency": "USD",
+        "description": "Dinner at The Cheesecake Factory",
+        "merchant_name": "The Cheesecake Factory",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T10:05:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN4001"
+      },
+      {
+        "id": "txn-4002",
+        "user_id": "u-55555",
+        "credit_card_num": "4111111111111111",
+        "amount": 95.20,
+        "currency": "USD",
+        "description": "Electronics purchase",
+        "merchant_name": "Best Buy",
+        "merchant_category": "electronics",
+        "transaction_date": "2025-08-26T14:30:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN4002"
+      },
+      {
+        "id": "txn-4003",
+        "user_id": "u-55555",
+        "credit_card_num": "4111111111111111",
+        "amount": 110.00,
+        "currency": "USD",
+        "description": "Groceries",
+        "merchant_name": "Whole Foods",
+        "merchant_category": "grocery",
+        "transaction_date": "2025-08-26T19:55:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN4003"
+      },
+      {
+        "id": "txn-4004",
+        "user_id": "u-55555",
+        "credit_card_num": "4111111111111111",
+        "amount": 18.00,
+        "currency": "USD",
+        "description": "Coffee",
+        "merchant_name": "Starbucks",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-27T09:10:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN4004"
+      }
+    ]
+  }

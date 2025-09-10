@@ -16,10 +16,25 @@
     "current": "uv run alembic current",
     "install:deps": "uv sync --extra dev",
     "seed": "uv run python -m db.scripts.seed",
-    "seed:transactions_last_hour": "uv run python -m db.scripts.transactions_last_hour",
+    "seed:dining": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_spending_amount_dining.json",
+    "seed:last-hour": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_transaction_last_hour.json",
+    "seed:dining-30d-avg-40pct": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_dining_30d_avg_40pct.json",
+    "seed:dining-avg-plus20": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_spending_dining_avg_plus20_trigger.json",
+    "seed:location-far-from-known": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_location_far_from_last_known_trigger.json",
+    "seed:merchant-same-day-dupes": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_merchant_same_day_duplicates_trigger.json",
+    "seed:pattern-new-recurring": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_pattern_new_recurring_detected_trigger.json",
+    "seed:pattern-recurring-20pct": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_pattern_recurring_charge_20pct_trigger.json",
+    "seed:pattern-recurring-plus5": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_pattern_recurring_charge_plus5_trigger.json",
+    "seed:spending-daily-300": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_spending_daily_300_trigger.json",
+    "seed:spending-electronics-3x": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_spending_electronics_apple_3x_trigger.json",
+    "seed:spending-weekly-500": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_spending_weekly_500_trigger.json",
+    "seed:custom": "echo 'Usage: pnpm run seed:custom <json-file>' && echo 'Example: pnpm run seed:custom json/my_test_data.json'",
     "verify": "uv run python -m db.scripts.verify_user",
     "reset": "uv run python -m db.scripts.reset_database",
     "reset:confirm": "echo 'WARNING: This will delete ALL data from the database!' && read -p 'Type YES to confirm: ' confirm && [ \"$confirm\" = \"YES\" ] && pnpm reset || echo 'Reset cancelled'",
-    "test": "uv run pytest"
+    "test": "uv run pytest",
+    "test:e2e": "cd src/db/scripts && ./test_alert_rules.sh",
+    "test:e2e:list": "cd src/db/scripts && ./test_alert_rules.sh --list",
+    "test:e2e:help": "cd src/db/scripts && ./test_alert_rules.sh --help"
   }
 }

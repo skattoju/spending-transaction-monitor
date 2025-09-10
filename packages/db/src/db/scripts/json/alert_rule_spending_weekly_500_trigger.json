@@ -1,0 +1,85 @@
+{
+    "alert_text": "Alert me if I exceed $500 in spending over a week.",
+    "user": {
+      "id": "u-78901",
+      "email": "emily.williams@example.com",
+      "first_name": "Emily",
+      "last_name": "Williams",
+      "address_city": "Chicago",
+      "address_state": "IL",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-5001",
+        "user_id": "u-78901",
+        "credit_card_num": "4444333322221111",
+        "amount": 120.00,
+        "currency": "USD",
+        "description": "Groceries at Whole Foods",
+        "merchant_name": "Whole Foods",
+        "merchant_category": "grocery",
+        "transaction_date": "2025-08-18T12:30:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN5001"
+      },
+      {
+        "id": "txn-5002",
+        "user_id": "u-78901",
+        "credit_card_num": "4444333322221111",
+        "amount": 85.00,
+        "currency": "USD",
+        "description": "Dinner at The Cheesecake Factory",
+        "merchant_name": "The Cheesecake Factory",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-19T19:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN5002"
+      },
+      {
+        "id": "txn-5003",
+        "user_id": "u-78901",
+        "credit_card_num": "4444333322221111",
+        "amount": 150.00,
+        "currency": "USD",
+        "description": "Electronics at Best Buy",
+        "merchant_name": "Best Buy",
+        "merchant_category": "electronics",
+        "transaction_date": "2025-08-20T16:15:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN5003"
+      },
+      {
+        "id": "txn-5004",
+        "user_id": "u-78901",
+        "credit_card_num": "4444333322221111",
+        "amount": 95.00,
+        "currency": "USD",
+        "description": "Gas station",
+        "merchant_name": "Shell",
+        "merchant_category": "fuel",
+        "transaction_date": "2025-08-22T09:45:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN5004"
+      },
+      {
+        "id": "txn-5005",
+        "user_id": "u-78901",
+        "credit_card_num": "4444333322221111",
+        "amount": 190.00,
+        "currency": "USD",
+        "description": "Furniture purchase",
+        "merchant_name": "IKEA",
+        "merchant_category": "furniture",
+        "transaction_date": "2025-08-24T13:20:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN5005"
+      }
+    ]
+  }
+  

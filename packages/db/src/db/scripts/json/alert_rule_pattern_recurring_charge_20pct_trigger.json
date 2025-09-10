@@ -1,0 +1,85 @@
+{
+    "alert_text": "Alert me if the amount of a recurring charge increases by more than 20%.",
+    "user": {
+      "id": "u-rc-001",
+      "email": "alex.taylor@example.com",
+      "first_name": "Alex",
+      "last_name": "Taylor",
+      "address_city": "Seattle",
+      "address_state": "WA",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-rc-0001",
+        "user_id": "u-rc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 9.99,
+        "currency": "USD",
+        "description": "Monthly streaming subscription",
+        "merchant_name": "Streamify",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-04-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC0001"
+      },
+      {
+        "id": "txn-rc-0002",
+        "user_id": "u-rc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 9.99,
+        "currency": "USD",
+        "description": "Monthly streaming subscription",
+        "merchant_name": "Streamify",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-05-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC0002"
+      },
+      {
+        "id": "txn-rc-0003",
+        "user_id": "u-rc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 9.99,
+        "currency": "USD",
+        "description": "Monthly streaming subscription",
+        "merchant_name": "Streamify",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-06-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC0003"
+      },
+      {
+        "id": "txn-rc-0004",
+        "user_id": "u-rc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 9.99,
+        "currency": "USD",
+        "description": "Monthly streaming subscription",
+        "merchant_name": "Streamify",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-07-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC0004"
+      },
+      {
+        "id": "txn-rc-0005",
+        "user_id": "u-rc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 12.49,
+        "currency": "USD",
+        "description": "Monthly streaming subscription (new pricing)",
+        "merchant_name": "Streamify",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-08-24T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "RC0005"
+      }
+    ]
+  }
+  

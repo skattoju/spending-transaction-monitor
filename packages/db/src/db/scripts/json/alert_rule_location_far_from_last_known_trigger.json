@@ -1,0 +1,65 @@
+{
+    "alert_text": "Alert me if a transaction occurs far from my last known location.",
+    "user": {
+      "id": "u-loc-001",
+      "email": "mia.nguyen@example.com",
+      "first_name": "Mia",
+      "last_name": "Nguyen",
+      "address_city": "New York",
+      "address_state": "NY",
+      "address_country": "US",
+  
+      "location_consent_given": true,
+      "last_app_location_latitude": 40.7128,
+      "last_app_location_longitude": -74.0060,
+      "last_app_location_timestamp": "2025-08-24T12:00:00Z",
+  
+      "last_transaction_latitude": 40.7128,
+      "last_transaction_longitude": -74.0060,
+      "last_transaction_timestamp": "2025-08-20T18:00:00Z",
+      "last_transaction_city": "New York",
+      "last_transaction_state": "NY",
+      "last_transaction_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-loc-0001",
+        "user_id": "u-loc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 22.50,
+        "currency": "USD",
+        "description": "Coffee",
+        "merchant_name": "Blue Bottle Coffee",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-24T12:30:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "merchant_city": "New York",
+        "merchant_state": "NY",
+        "merchant_country": "US",
+        "merchant_latitude": 40.7306,
+        "merchant_longitude": -73.9867,
+        "trans_num": "LOC0001"
+      },
+      {
+        "id": "txn-loc-0002",
+        "user_id": "u-loc-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 185.00,
+        "currency": "USD",
+        "description": "Dinner",
+        "merchant_name": "Bestia",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T02:15:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "merchant_city": "Los Angeles",
+        "merchant_state": "CA",
+        "merchant_country": "US",
+        "merchant_latitude": 34.0407,
+        "merchant_longitude": -118.2468,
+        "trans_num": "LOC0002"
+      }
+    ]
+  }
+  
