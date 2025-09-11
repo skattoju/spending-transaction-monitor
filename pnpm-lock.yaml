@@ -62,7 +62,6 @@ importers:
 
   packages/db: {}
 
-  packages/ingestion-service: {}
 
   packages/ui:
     dependencies:
