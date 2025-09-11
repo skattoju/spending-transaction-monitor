@@ -2,108 +2,114 @@
  * Authentication Context
  * Provides auth functionality with development bypass support
  */
+/* eslint-disable react-refresh/only-export-components */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   AuthProvider as OIDCProvider,
   useAuth as useOIDCAuth,
 } from 'react-oidc-context';
 import { authConfig } from '../config/auth';
+import type { User, AuthContextType } from '../types/auth';
+import { DEV_USER } from '../constants/auth';
 
-export interface User {
-  id: string;
-  email: string;
-  username?: string;
-  name?: string;
-  roles: string[];
-  isDevMode: boolean;
-}
-
-export interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: () => void;
-  logout: () => void;
-  // OIDC compatibility props
-  signinRedirect: () => void;
-  error: Error | null;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock development user
-const DEV_USER: User = {
-  id: 'dev-user-123',
-  email: 'developer@example.com',
-  username: 'developer',
-  name: 'Development User',
-  roles: ['user', 'admin'],
-  isDevMode: true,
-};
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Development Auth Provider - bypasses OIDC
  */
-function DevAuthProvider({ children }: { children: React.ReactNode }) {
+const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode }) => {
   const [user] = useState<User>(DEV_USER);
 
-  const contextValue: AuthContextType = {
-    user,
-    isAuthenticated: true,
-    isLoading: false,
-    login: () => console.log('🔓 Dev mode: login() called - already authenticated'),
-    logout: () => console.log('🔓 Dev mode: logout() called - staying authenticated'),
-    signinRedirect: () =>
-      console.log('🔓 Dev mode: signinRedirect() called - already authenticated'),
-    error: null,
-  };
+  const login = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.log('🔓 Dev mode: login() called - already authenticated');
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.log('🔓 Dev mode: logout() called - staying authenticated');
+    }
+  }, []);
+
+  const signinRedirect = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.log('🔓 Dev mode: signinRedirect() called - already authenticated');
+    }
+  }, []);
+
+  const contextValue: AuthContextType = useMemo(
+    () => ({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      login,
+      logout,
+      signinRedirect,
+      error: null,
+    }),
+    [user, login, logout, signinRedirect],
+  );
 
   useEffect(() => {
-    console.log('🔓 Development auth provider initialized');
+    if (import.meta.env.DEV) {
+      console.log('🔓 Development auth provider initialized');
+    }
   }, []);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
-}
+});
+DevAuthProvider.displayName = 'DevAuthProvider';
 
 /**
  * Production OIDC Auth Provider
  */
-function ProductionAuthProvider({ children }: { children: React.ReactNode }) {
-  const oidcConfig = {
-    authority: authConfig.keycloak.authority,
-    client_id: authConfig.keycloak.clientId,
-    redirect_uri: authConfig.keycloak.redirectUri,
-    post_logout_redirect_uri: authConfig.keycloak.postLogoutRedirectUri,
-    response_type: 'code',
-    scope: 'openid profile email',
-    automaticSilentRenew: true,
-    includeIdTokenInSilentRenew: true,
-  };
+const ProductionAuthProvider = React.memo(
+  ({ children }: { children: React.ReactNode }) => {
+    const oidcConfig = useMemo(
+      () => ({
+        authority: authConfig.keycloak.authority,
+        client_id: authConfig.keycloak.clientId,
+        redirect_uri: authConfig.keycloak.redirectUri,
+        post_logout_redirect_uri: authConfig.keycloak.postLogoutRedirectUri,
+        response_type: 'code',
+        scope: 'openid profile email',
+        automaticSilentRenew: true,
+        includeIdTokenInSilentRenew: true,
+      }),
+      [],
+    );
 
-  console.log('🔒 Production OIDC config:', {
-    authority: oidcConfig.authority,
-    client_id: oidcConfig.client_id,
-    redirect_uri: oidcConfig.redirect_uri,
-  });
+    useEffect(() => {
+      if (import.meta.env.DEV) {
+        console.log('🔒 Production OIDC config:', {
+          authority: oidcConfig.authority,
+          client_id: oidcConfig.client_id,
+          redirect_uri: oidcConfig.redirect_uri,
+        });
+      }
+    }, [oidcConfig]);
 
-  return (
-    <OIDCProvider {...oidcConfig}>
-      <OIDCAuthWrapper>{children}</OIDCAuthWrapper>
-    </OIDCProvider>
-  );
-}
+    return (
+      <OIDCProvider {...oidcConfig}>
+        <OIDCAuthWrapper>{children}</OIDCAuthWrapper>
+      </OIDCProvider>
+    );
+  },
+);
+ProductionAuthProvider.displayName = 'ProductionAuthProvider';
 
 /**
  * Wrapper for OIDC provider to adapt to our auth context
  */
-function OIDCAuthWrapper({ children }: { children: React.ReactNode }) {
+const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode }) => {
   const oidcAuth = useOIDCAuth();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (oidcAuth.user) {
-      setUser({
+      const newUser: User = {
         id: oidcAuth.user.profile.sub!,
         email: oidcAuth.user.profile.email!,
         username: oidcAuth.user.profile.preferred_username,
@@ -111,28 +117,48 @@ function OIDCAuthWrapper({ children }: { children: React.ReactNode }) {
         roles: (oidcAuth.user.profile as { realm_access?: { roles?: string[] } })
           .realm_access?.roles || ['user'],
         isDevMode: false,
-      });
-      console.log('🔒 User authenticated via OIDC:', {
-        id: oidcAuth.user.profile.sub,
-        email: oidcAuth.user.profile.email,
-      });
+      };
+      setUser(newUser);
+
+      if (import.meta.env.DEV) {
+        console.log('🔒 User authenticated via OIDC:', {
+          id: oidcAuth.user.profile.sub,
+          email: oidcAuth.user.profile.email,
+        });
+      }
     } else {
       setUser(null);
     }
   }, [oidcAuth.user]);
 
-  const contextValue: AuthContextType = {
-    user,
-    isAuthenticated: !!oidcAuth.user,
-    isLoading: oidcAuth.isLoading,
-    login: () => oidcAuth.signinRedirect(),
-    logout: () => oidcAuth.signoutRedirect(),
-    signinRedirect: () => oidcAuth.signinRedirect(),
-    error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
-  };
+  const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
+  const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);
+  const signinRedirect = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
+
+  const contextValue: AuthContextType = useMemo(
+    () => ({
+      user,
+      isAuthenticated: !!oidcAuth.user,
+      isLoading: oidcAuth.isLoading,
+      login,
+      logout,
+      signinRedirect,
+      error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
+    }),
+    [
+      user,
+      oidcAuth.user,
+      oidcAuth.isLoading,
+      oidcAuth.error,
+      login,
+      logout,
+      signinRedirect,
+    ],
+  );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
-}
+});
+OIDCAuthWrapper.displayName = 'OIDCAuthWrapper';
 
 /**
  * Main Auth Provider - chooses development or production mode
@@ -143,15 +169,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return <ProductionAuthProvider>{children}</ProductionAuthProvider>;
-}
-
-/**
- * Hook to use auth context
- */
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

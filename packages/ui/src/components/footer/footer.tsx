@@ -7,7 +7,7 @@ export function Footer() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">RH AI Kickstart</span>
+              <span className="font-medium text-foreground">Spending Monitor</span>
             </div>
           </div>
           <div className="flex items-center gap-4">

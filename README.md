@@ -116,10 +116,18 @@ Install
 pnpm setup
 ```
 
-Develop (starts DB, API, UI)
+**🚀 Start Development Mode** (starts DB, API, UI with auth bypassed)
 ```bash
 pnpm dev
 ```
+
+This command:
+- Starts PostgreSQL database
+- Starts FastAPI backend on port 8000  
+- Starts React UI on port 3000
+- **Automatically enables development mode auth bypass** 🔓
+
+The UI will show a yellow banner: "🔓 Development Mode - Auth Bypassed" when running.
 
 **Backend-only development** (API + Database with test data)
 ```bash
@@ -140,11 +148,45 @@ pnpm db:verify
 ```
 
 Dev URLs
-- Web UI: http://localhost:5173  
-- API (full stack): http://localhost:8000
+- Web UI: http://localhost:3000 (shows dev mode banner)
+- API (full stack): http://localhost:8000 (auth bypass enabled)
 - API (backend-only): http://localhost:8002
-- API Docs: http://localhost:8002/docs
+- API Docs: http://localhost:8000/docs (full stack) / http://localhost:8002/docs (backend-only)
 - Component Storybook: http://localhost:6006
+
+### 🔧 Development Mode (Authentication Bypass)
+
+**Quick Start for New Developers:**
+```bash
+git clone <repo>
+pnpm setup
+pnpm dev          # 🔓 Auth automatically bypassed in development
+```
+Visit http://localhost:3000 - you'll see a yellow banner and can use the app immediately as "John Doe" without any authentication setup.
+
+**How It Works:**
+- **Purpose**: Skip OAuth2/OIDC setup for faster development
+- **Auto-enabled**: When `VITE_ENVIRONMENT=development` (default)
+- **Visual indicator**: 🔓 Yellow banner: "Development Mode - Auth Bypassed"
+- **Mock user**: Automatically signed in as "John Doe" with admin roles
+- **Security**: Only works in development builds, never in production
+
+**Environment Controls:**
+```bash
+# Default: Auth bypass enabled (recommended for development)
+pnpm dev
+
+# To test real Keycloak authentication in development:
+VITE_BYPASS_AUTH=false pnpm dev
+
+# Production: Auth always required (automatic)
+VITE_ENVIRONMENT=production
+```
+
+**Troubleshooting:**
+- **No dev banner?** Check console for "Development auth provider initialized"  
+- **Customize mock user:** Edit `packages/ui/src/constants/auth.ts`
+- **Test real auth:** See `AUTH_INTEGRATION_GUIDE.md` for Keycloak setup
 
 Manual DB control (optional)
 ```bash

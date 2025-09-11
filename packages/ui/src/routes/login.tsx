@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useEffect } from 'react';
 import { Button } from '../components/atoms/button/button';
 import { Card } from '../components/atoms/card/card';
@@ -76,13 +76,13 @@ function LoginPage() {
         {/* Login Section */}
         <div className="space-y-4">
           <Button onClick={handleLogin} className="w-full" size="lg">
-            {auth.user?.isDevMode ? 'Continue (Dev Mode)' : 'Sign In with Keycloak'}
+            {auth.user?.isDevMode ? 'Continue' : 'Sign In with Keycloak'}
           </Button>
 
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
               {auth.user?.isDevMode
-                ? '🔓 Development mode - authentication bypassed'
+                ? 'Development mode - authentication bypassed'
                 : 'Secure authentication powered by OpenID Connect'}
             </p>
           </div>

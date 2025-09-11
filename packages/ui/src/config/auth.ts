@@ -31,21 +31,30 @@ export const authConfig: AuthConfig = {
       import.meta.env.VITE_KEYCLOAK_URL ||
       'http://localhost:8080/realms/spending-monitor',
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'spending-monitor',
-    redirectUri: import.meta.env.VITE_KEYCLOAK_REDIRECT_URI || window.location.origin,
+    redirectUri:
+      import.meta.env.VITE_KEYCLOAK_REDIRECT_URI ||
+      (typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost:3000'),
     postLogoutRedirectUri:
-      import.meta.env.VITE_KEYCLOAK_POST_LOGOUT_REDIRECT_URI || window.location.origin,
+      import.meta.env.VITE_KEYCLOAK_POST_LOGOUT_REDIRECT_URI ||
+      (typeof window !== 'undefined'
+        ? window.location.origin
+        : 'http://localhost:3000'),
   },
 };
 
-// Log configuration for debugging
-console.log('🔐 Auth Configuration:', {
-  environment: authConfig.environment,
-  bypassAuth: authConfig.bypassAuth,
-  keycloakConfigured: !!authConfig.keycloak.authority,
-});
+// Log configuration for debugging (only in development)
+if (import.meta.env.DEV) {
+  console.log('🔐 Auth Configuration:', {
+    environment: authConfig.environment,
+    bypassAuth: authConfig.bypassAuth,
+    keycloakConfigured: !!authConfig.keycloak.authority,
+  });
 
-if (authConfig.bypassAuth) {
-  console.log('🔓 Development Mode: Authentication bypassed');
-} else {
-  console.log('🔒 Production Mode: OIDC authentication enabled');
+  if (authConfig.bypassAuth) {
+    console.log('🔓 Development Mode: Authentication bypassed');
+  } else {
+    console.log('🔒 Production Mode: OIDC authentication enabled');
+  }
 }

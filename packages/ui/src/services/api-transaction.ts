@@ -321,7 +321,7 @@ export const realAlertService = {
 // User service for real API data
 export const userService = {
   // Get all users
-  async getUsers(): Promise<any[]> {
+  async getUsers(): Promise<unknown[]> {
     const response = await fetch('/api/users/');
     if (!response.ok) {
       throw new Error('Failed to fetch users');
@@ -330,7 +330,7 @@ export const userService = {
   },
 
   // Get user by ID
-  async getUserById(id: string): Promise<any> {
+  async getUserById(id: string): Promise<unknown> {
     const response = await fetch(`/api/users/${id}`);
     if (!response.ok) {
       if (response.status === 404) return null;
@@ -340,7 +340,11 @@ export const userService = {
   },
 
   // Get user transactions
-  async getUserTransactions(userId: string, limit = 50, offset = 0): Promise<any[]> {
+  async getUserTransactions(
+    userId: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<unknown[]> {
     const response = await fetch(
       `/api/users/${userId}/transactions?limit=${limit}&offset=${offset}`,
     );
@@ -351,7 +355,7 @@ export const userService = {
   },
 
   // Get user credit cards
-  async getUserCreditCards(userId: string): Promise<any[]> {
+  async getUserCreditCards(userId: string): Promise<unknown[]> {
     const response = await fetch(`/api/users/${userId}/credit-cards`);
     if (!response.ok) {
       throw new Error('Failed to fetch user credit cards');
@@ -360,7 +364,7 @@ export const userService = {
   },
 
   // Get user alert rules
-  async getUserAlertRules(userId: string): Promise<any[]> {
+  async getUserAlertRules(userId: string): Promise<unknown[]> {
     const response = await fetch(`/api/users/${userId}/rules`);
     if (!response.ok) {
       throw new Error('Failed to fetch user alert rules');
