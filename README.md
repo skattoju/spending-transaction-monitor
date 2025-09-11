@@ -121,6 +121,14 @@ Develop (starts DB, API, UI)
 pnpm dev
 ```
 
+**Backend-only development** (API + Database with test data)
+```bash
+pnpm dev:backend     # Complete backend setup + start
+pnpm backend:setup   # Setup only (DB + migrations + seed)
+pnpm backend:start   # Start API server only (port 8002)
+pnpm backend:stop    # Stop database
+```
+
 Common tasks
 ```bash
 pnpm build
@@ -132,9 +140,10 @@ pnpm db:verify
 ```
 
 Dev URLs
-- Web UI: http://localhost:3000
-- API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+- Web UI: http://localhost:5173  
+- API (full stack): http://localhost:8000
+- API (backend-only): http://localhost:8002
+- API Docs: http://localhost:8002/docs
 - Component Storybook: http://localhost:6006
 
 Manual DB control (optional)
