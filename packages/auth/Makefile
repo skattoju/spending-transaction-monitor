@@ -113,7 +113,7 @@ auth-setup: auth-up ## Setup Keycloak with automated configuration
 	@echo "   • Test user: testuser@example.com / password123"
 	@echo "   • Roles: user, admin"
 
-auth-test: auth-up ## Test authentication endpoints
+auth-test: auth-up ## Test authentication with real endpoints
 	@echo "🔐 Testing authentication endpoints..."
 	@sleep 5
 	@echo "🔍 For comprehensive auth testing, use: make test-e2e"

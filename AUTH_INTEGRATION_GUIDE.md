@@ -9,13 +9,12 @@ The authentication infrastructure has been set up with the following components:
 ### Backend Components
 - **JWT Middleware** (`packages/api/src/auth/middleware.py`)
 - **Keycloak Setup** (`packages/auth/`)
-- **Test Endpoints** (`packages/api/src/routes/auth_test.py`)
 - **Dependencies** (`python-jose`, `requests`)
 
 ### Test Endpoints
-- `GET /auth-test/public` - No authentication required
-- `GET /auth-test/protected` - Requires valid JWT token  
-- `GET /auth-test/optional-auth` - Optional authentication
+- `GET /health` - No authentication required (health check)
+- `GET /users/me` - Requires valid JWT token (user profile)
+- `GET /transactions/` - Requires valid JWT token (user transactions)
 ## Integration Steps
 
 ### 1. Backend Route Integration
@@ -201,8 +200,8 @@ cd packages/api
 uv run uvicorn src.main:app --reload
 
 # Test endpoints
-curl http://localhost:8000/auth-test/public
-curl -H "Authorization: Bearer <token>" http://localhost:8000/auth-test/protected
+curl http://localhost:8000/health
+curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me
 ```
 
 ## Environment Variables

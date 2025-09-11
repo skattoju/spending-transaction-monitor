@@ -66,8 +66,8 @@ cd ../api
 uv run uvicorn src.main:app --reload
 
 # Test endpoints
-curl http://localhost:8000/auth-test/public
-curl -H "Authorization: Bearer <token>" http://localhost:8000/auth-test/protected
+curl http://localhost:8000/health
+curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me
 ```
 
 ## Integration
