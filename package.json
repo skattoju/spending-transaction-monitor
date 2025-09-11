@@ -12,7 +12,7 @@
     "dev": "turbo dev",
     "dev:backend": "pnpm backend:setup && pnpm backend:start",
     "backend:setup": "pnpm db:start && sleep 3 && pnpm db:upgrade && pnpm db:seed",
-    "backend:start": "pnpm --filter @*/api dev",
+    "backend:start": "ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002 pnpm --filter @*/api dev",
     "backend:stop": "pnpm db:stop",
     "db:start": "pnpm --filter @*/db run db:start",
     "db:stop": "pnpm --filter @*/db run db:stop",
