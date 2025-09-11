@@ -185,7 +185,7 @@ VITE_BYPASS_AUTH=false  # Explicit override
 ### 1. Start Keycloak
 ```bash
 cd packages/auth
-make services-up
+./scripts/auth-dev.sh services-up
 ```
 
 ### 2. Configure Keycloak Realm

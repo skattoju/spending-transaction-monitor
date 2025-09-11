@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: parseInt(process.env.PORT || process.env.UI_PORT || '3000'),
+    port: parseInt(process.env.UI_PORT || process.env.PORT || '3000'),
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:8000',

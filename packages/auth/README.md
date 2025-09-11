@@ -11,9 +11,9 @@ OAuth2/OIDC authentication infrastructure using Keycloak for the Spending Monito
 
 ## Quick Start
 
-### 1. Start Keycloak
+### 1. Start Services
 ```bash
-make services-up
+./scripts/auth-dev.sh services-up
 ```
 
 ### 2. Configure Realm
@@ -72,13 +72,22 @@ curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me  # ⚠️
 
 ## Integration
 
-See `AUTH_INTEGRATION_GUIDE.md` for detailed integration instructions.
+See [`docs/auth/INTEGRATION.md`](../../docs/auth/INTEGRATION.md) for detailed integration instructions.
 
 ## Commands
 
 ```bash
-make services-up    # Start Keycloak
-make services-down  # Stop Keycloak  
-make services-logs  # View logs
-make clean         # Remove volumes
+./scripts/auth-dev.sh services-up    # Start DB + prepare for Keycloak
+./scripts/auth-dev.sh services-down  # Stop services
+./scripts/auth-dev.sh setup          # Setup Keycloak configuration
+./scripts/auth-dev.sh status         # Check service status
+./scripts/auth-dev.sh help           # Show all available commands
+```
+
+Or use the consolidated pnpm commands:
+```bash
+pnpm dev           # Start all services (API + UI + DB)
+pnpm status        # Check all service health  
+pnpm db:start      # Start just database
+pnpm db:stop       # Stop database
 ```

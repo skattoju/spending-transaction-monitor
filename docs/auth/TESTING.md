@@ -54,15 +54,15 @@ python scripts/test_e2e.py
 
 **Full authentication flow testing:**
 ```bash
-# Start services (includes Keycloak)
-cd packages/auth
-make services-up
+# Start services + setup Keycloak
+./scripts/auth-dev.sh dev-full
 
-# Setup Keycloak realm/client  
-make auth-setup
+# Or step by step:
+./scripts/auth-dev.sh services-up  # Start DB + prepare for Keycloak
+./scripts/auth-dev.sh setup        # Setup Keycloak realm/client
 
 # Run E2E validation
-make test-e2e
+./scripts/auth-dev.sh test
 ```
 
 ---

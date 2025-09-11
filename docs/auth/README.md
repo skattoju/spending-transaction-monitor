@@ -42,7 +42,7 @@ sequenceDiagram
 | **JWT Middleware** | Token validation, role-based access | `packages/api/src/auth/middleware.py` |
 | **Keycloak Setup** | Automated realm/client configuration | `packages/auth/scripts/setup_keycloak.py` |
 | **Test Suite** | 27 comprehensive tests + E2E validation | `packages/auth/tests/` |
-| **Documentation** | Integration guides and testing docs | `AUTH_INTEGRATION_GUIDE.md`, `TESTING.md` |
+| **Documentation** | Integration guides and testing docs | [`INTEGRATION.md`](./INTEGRATION.md), [`TESTING.md`](./TESTING.md) |
 
 > **Frontend Integration**: OIDC client with `react-oidc-context` will be delivered in a separate PR
 
@@ -51,8 +51,8 @@ sequenceDiagram
 ```bash
 # 1. Start services & setup Keycloak
 cd packages/auth
-make services-up
-make auth-setup
+./scripts/auth-dev.sh services-up
+./scripts/auth-dev.sh setup
 
 # 2. Test the integration  
 cd packages/api
@@ -61,7 +61,7 @@ curl http://localhost:8000/health               # ✅ Works (public endpoint)
 curl http://localhost:8000/users/me            # ⚠️  Currently works but will require auth when enabled
 ```
 
-**For detailed setup and integration:** See [`AUTH_INTEGRATION_GUIDE.md`](./AUTH_INTEGRATION_GUIDE.md)
+**For detailed setup and integration:** See [`INTEGRATION.md`](./INTEGRATION.md)
 
 ## 🛠️ Usage Examples
 
@@ -83,7 +83,7 @@ async def admin_route(user: dict = Depends(require_role('admin'))):
     return {"message": "Admin access granted"}
 ```
 
-**For complete integration patterns:** See [`AUTH_INTEGRATION_GUIDE.md`](./AUTH_INTEGRATION_GUIDE.md)
+**For complete integration patterns:** See [`INTEGRATION.md`](./INTEGRATION.md)
 
 ## 🧪 Testing
 
@@ -92,7 +92,7 @@ async def admin_route(user: dict = Depends(require_role('admin'))):
 pnpm --filter @spending-monitor/api test
 
 # E2E validation
-cd packages/auth && make test-e2e
+./scripts/auth-dev.sh test
 ```
 
 **For comprehensive testing approaches:** See [`TESTING.md`](./TESTING.md)
@@ -115,7 +115,7 @@ cd packages/auth && make test-e2e
 
 ## 📚 Documentation
 
-- **[Integration Guide](./AUTH_INTEGRATION_GUIDE.md)** - Detailed setup and usage patterns
+- **[Integration Guide](./INTEGRATION.md)** - Detailed setup and usage patterns
 - **[Testing Guide](./TESTING.md)** - Comprehensive testing approaches  
 - **[API Docs](http://localhost:8000/docs)** - Interactive OpenAPI documentation
 

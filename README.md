@@ -186,7 +186,7 @@ VITE_ENVIRONMENT=production
 **Troubleshooting:**
 - **No dev banner?** Check console for "Development auth provider initialized"  
 - **Customize mock user:** Edit `packages/ui/src/constants/auth.ts`
-- **Test real auth:** See `AUTH_INTEGRATION_GUIDE.md` for Keycloak setup
+- **Test real auth:** See [`docs/auth/INTEGRATION.md`](docs/auth/INTEGRATION.md) for Keycloak setup
 
 Manual DB control (optional)
 ```bash
