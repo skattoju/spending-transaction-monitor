@@ -23,7 +23,30 @@ FastAPI backend application with Kafka consumer for real-time transaction proces
 - Docker and Docker Compose
 - Git
 
-### Complete Setup (All Services)
+### Quick Backend Setup (Recommended) ⚡
+
+**One Command - Complete Backend Setup**:
+```bash
+# From project root
+pnpm dev:backend
+```
+This single command will:
+1. 🗄️ Start PostgreSQL database  
+2. ⬆️ Run database migrations
+3. 🌱 Seed with test data
+4. 🚀 Start FastAPI server on port 8002
+5. 🔓 Enable auth bypass for development
+
+**Individual Commands**:
+```bash
+pnpm backend:setup    # Setup only (DB + migrations + seed)
+pnpm backend:start    # Start API only (port 8002)
+pnpm backend:stop     # Stop database
+```
+
+### Complete Setup (Manual)
+
+For more control or troubleshooting:
 
 1. **Clone the repository and navigate to API directory**:
 ```bash
@@ -45,13 +68,6 @@ uv sync
    cd ../api
    ```
 
-   **Kafka & Zookeeper**:
-   ```bash
-   cd ../ingestion-service/deploy/kafka
-   docker-compose up -d
-   cd ../../../api
-   ```
-
 4. **Run database migrations**:
 ```bash
 cd ../db
@@ -66,18 +82,21 @@ uv run python src/db/scripts/seed.py
 cd ../api
 ```
 
-6. **Start the API server with Kafka consumer**:
+6. **Start the API server**:
 ```bash
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+# With auth bypass (development)
+ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002 uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8002
+
+# Production mode  
+uv run uvicorn src.main:app --host 0.0.0.0 --port 8002
 ```
 
 The services will be available at:
-- **API**: http://localhost:8000
-- **Interactive Docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **Kafka Health**: http://localhost:8000/kafka/health
+- **API**: http://localhost:8002
+- **Interactive Docs**: http://localhost:8002/docs  
+- **ReDoc**: http://localhost:8002/redoc
+- **Health Check**: http://localhost:8002/health
 - **PostgreSQL**: localhost:5432
-- **Kafka**: localhost:9092
 
 ### Quick Test
 
@@ -187,11 +206,18 @@ All endpoints support async database operations with connection pooling.
 
 ### Authentication Modes
 
-**Development Mode (Default):**
+**Development Mode (Default with `pnpm dev:backend`):**
 ```bash
 # Authentication automatically bypassed - no Keycloak required
+ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002
+# ✅ Enabled automatically by our backend setup commands
+```
+
+**Manual Development Mode:**
+```bash
+# Authentication automatically bypassed - no Keycloak required  
 ENVIRONMENT=development
-# BYPASS_AUTH=true (auto-set)
+# BYPASS_AUTH=true (auto-set when ENVIRONMENT=development)
 ```
 
 **Production Mode:**
@@ -203,6 +229,8 @@ KEYCLOAK_URL=https://your-keycloak.com
 KEYCLOAK_REALM=your-realm
 KEYCLOAK_CLIENT_ID=your-client
 ```
+
+> **📝 Note**: The `pnpm dev:backend` command automatically configures development mode with auth bypass for immediate testing.
 
 ### Kafka Configuration
 - `KAFKA_BOOTSTRAP_SERVERS` - Kafka broker addresses (default: "localhost:9092")
