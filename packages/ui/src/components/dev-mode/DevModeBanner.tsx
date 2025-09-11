@@ -2,7 +2,6 @@
  * Minimal Development Mode Indicator
  * Single clean banner at the top of the page
  */
-import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
 export function DevModeBanner() {
