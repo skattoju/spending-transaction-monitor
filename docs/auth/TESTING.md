@@ -73,7 +73,7 @@ make test-e2e
 - KeycloakJWTBearer initialization
 - OIDC configuration (success/failure scenarios)
 - Token validation (valid/invalid tokens) 
-- Auth dependencies (optional/required auth)
+- Auth dependencies (protected endpoints)
 
 ### **Comprehensive Tests (`test_auth_middleware.py` - 18 tests):**
 - OIDC config caching and fallback

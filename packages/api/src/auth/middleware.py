@@ -199,7 +199,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     session: AsyncSession = Depends(get_db) if get_db else None,
 ) -> dict | None:
-    """Extract user info from JWT token (optional auth) with development bypass"""
+    """Extract user info from JWT token with development bypass (returns None if no token)"""
 
     # Development bypass - fetch first user from database
     if settings.BYPASS_AUTH:

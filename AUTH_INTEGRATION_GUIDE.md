@@ -13,8 +13,7 @@ The authentication infrastructure has been set up with the following components:
 
 ### Test Endpoints
 - `GET /health` - No authentication required (health check)
-- `GET /users/me` - Requires valid JWT token (user profile)
-- `GET /transactions/` - Requires valid JWT token (user transactions)
+- `GET /users/me` - Will require valid JWT token (user profile)
 ## Integration Steps
 
 ### 1. Backend Route Integration
@@ -45,13 +44,15 @@ async def get_users(
     # route logic - can now access user['id'], user['username'], etc.
 ```
 
-### 2. Optional vs Required Authentication
+### 2. Adding Authentication to Endpoints (Future)
 
-Choose the appropriate dependency:
+The auth middleware is available for when endpoints need protection:
 
-- **Required**: `Depends(require_authentication)` - Returns 401 if no valid token
-- **Optional**: `Depends(get_current_user)` - Returns `None` if no token, user dict if valid
+- **Required Auth**: `Depends(require_authentication)` - Returns 401 if no valid token
+- **Token Extraction**: `Depends(get_current_user)` - Returns `None` if no token, user dict if valid  
 - **Role-based**: `Depends(require_role('admin'))` - Requires specific role
+
+*Note: Currently endpoints are unprotected. Endpoint protection will be added in a future PR.*
 
 ### 3. Development Bypass ✅ IMPLEMENTED
 
@@ -79,7 +80,7 @@ class Settings(BaseSettings):
 
 ```python
 async def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict | None:
-    """Extract user info from JWT token (optional auth) with development bypass"""
+    """Extract user info from JWT token with development bypass (returns None if no token)"""
     
     # Development bypass - return mock user
     if settings.BYPASS_AUTH:
@@ -200,8 +201,8 @@ cd packages/api
 uv run uvicorn src.main:app --reload
 
 # Test endpoints
-curl http://localhost:8000/health
-curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me
+curl http://localhost:8000/health                           # ✅ Works (no auth)
+curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me  # ⚠️  Will work when auth is enabled
 ```
 
 ## Environment Variables
