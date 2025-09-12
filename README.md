@@ -124,7 +124,7 @@ pnpm dev
 This command:
 - Starts PostgreSQL database
 - Starts FastAPI backend on port 8000  
-- Starts React UI on port 3000
+- Starts React UI on port 5173
 - **Automatically enables development mode auth bypass** 🔓
 
 The UI will show a yellow banner: "🔓 Development Mode - Auth Bypassed" when running.
@@ -148,10 +148,10 @@ pnpm db:verify
 ```
 
 Dev URLs
-- Web UI: http://localhost:3000 (shows dev mode banner)
+- Web UI: http://localhost:5173 (shows dev mode banner)
 - API (full stack): http://localhost:8000 (auth bypass enabled)
 - API (backend-only): http://localhost:8002
-- API Docs: http://localhost:8000/docs (full stack) / http://localhost:8002/docs (backend-only)
+- API Docs: http://localhost:8000/docs
 - Component Storybook: http://localhost:6006
 
 ### 🔧 Development Mode (Authentication Bypass)
@@ -162,7 +162,7 @@ git clone <repo>
 pnpm setup
 pnpm dev          # 🔓 Auth automatically bypassed in development
 ```
-Visit http://localhost:3000 - you'll see a yellow banner and can use the app immediately as "John Doe" without any authentication setup.
+Visit http://localhost:5173 - you'll see a yellow banner and can use the app immediately as "John Doe" without any authentication setup.
 
 **How It Works:**
 - **Purpose**: Skip OAuth2/OIDC setup for faster development
