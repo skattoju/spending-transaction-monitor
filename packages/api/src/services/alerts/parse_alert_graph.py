@@ -26,7 +26,11 @@ graph.add_node(
         lambda state: {
             **state,
             'sql_query': parse_alert_to_sql_with_context(
-                {'transaction': state['transaction'], 'alert_text': state['alert_text'], 'alert_rule': state['alert_rule']}
+                {
+                    'transaction': state['transaction'],
+                    'alert_text': state['alert_text'],
+                    'alert_rule': state['alert_rule'],
+                }
             ),
         }
     ),

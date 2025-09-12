@@ -6,6 +6,7 @@ import os
 from typing import Literal
 
 from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -16,6 +17,10 @@ class Settings(BaseSettings):
 
     # Authentication settings
     BYPASS_AUTH: bool = False
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        extra='ignore',  # Allow extra environment variables without validation errors
+    )
 
     # Basic settings
     APP_NAME: str = 'spending-monitor'

@@ -1,41 +1,43 @@
+import argparse
 import asyncio
 import json
 import os
 import sys
 import uuid
-import argparse
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 # Add the parent directory to sys.path to make imports work when run as script
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from db.database import SessionLocal
-from db.models import CreditCard, Transaction, User, AlertRule, AlertNotification
-from sqlalchemy import text, select, func
+from db.models import AlertNotification, AlertRule, CreditCard, Transaction, User
+from sqlalchemy import func, select, text
 
 
 def get_user_confirmation() -> bool:
     """Get user confirmation to proceed with data deletion"""
-    print("\n" + "="*60)
-    print("⚠️  WARNING: DATABASE RESET IMMINENT")
-    print("="*60)
-    print("🗑️  This script will DELETE ALL existing data from:")
-    print("   • Users")
-    print("   • Credit Cards") 
-    print("   • Transactions")
-    print("   • Alert Rules")
-    print("   • Alert Notifications")
-    print("\n🔄 Then it will seed the database with new test data.")
-    print("="*60)
-    
+    print('\n' + '=' * 60)
+    print('⚠️  WARNING: DATABASE RESET IMMINENT')
+    print('=' * 60)
+    print('🗑️  This script will DELETE ALL existing data from:')
+    print('   • Users')
+    print('   • Credit Cards')
+    print('   • Transactions')
+    print('   • Alert Rules')
+    print('   • Alert Notifications')
+    print('\n🔄 Then it will seed the database with new test data.')
+    print('=' * 60)
+
     while True:
-        response = input("\n❓ Do you want to continue? (type 'YES' to confirm, 'no' to cancel): ").strip()
+        response = input(
+            "\n❓ Do you want to continue? (type 'YES' to confirm, 'no' to cancel): "
+        ).strip()
         if response == 'YES':
-            print("✅ Confirmed. Proceeding with database reset and seeding...")
+            print('✅ Confirmed. Proceeding with database reset and seeding...')
             return True
         elif response.lower() in ['no', 'n']:
-            print("❌ Cancelled. No changes made to database.")
+            print('❌ Cancelled. No changes made to database.')
             return False
         else:
             print("⚠️  Please type 'YES' to confirm or 'no' to cancel.")
@@ -43,38 +45,38 @@ def get_user_confirmation() -> bool:
 
 async def reset_database(session) -> None:
     """Delete all data from database tables"""
-    print("\n🗑️  Clearing existing database data...")
-    
+    print('\n🗑️  Clearing existing database data...')
+
     try:
         # Delete in correct order (respecting foreign key constraints)
-        print("📋 Deleting alert_notifications...")
-        await session.execute(text("DELETE FROM alert_notifications"))
-        
-        print("⚠️  Deleting alert_rules...")
-        await session.execute(text("DELETE FROM alert_rules"))
-        
-        print("💳 Deleting transactions...")
-        await session.execute(text("DELETE FROM transactions"))
-        
-        print("🏦 Deleting credit_cards...")
-        await session.execute(text("DELETE FROM credit_cards"))
-        
-        print("👤 Deleting users...")
-        await session.execute(text("DELETE FROM users"))
-        
+        print('📋 Deleting alert_notifications...')
+        await session.execute(text('DELETE FROM alert_notifications'))
+
+        print('⚠️  Deleting alert_rules...')
+        await session.execute(text('DELETE FROM alert_rules'))
+
+        print('💳 Deleting transactions...')
+        await session.execute(text('DELETE FROM transactions'))
+
+        print('🏦 Deleting credit_cards...')
+        await session.execute(text('DELETE FROM credit_cards'))
+
+        print('👤 Deleting users...')
+        await session.execute(text('DELETE FROM users'))
+
         await session.commit()
-        print("✅ Database cleared successfully!")
-        
+        print('✅ Database cleared successfully!')
+
     except Exception as e:
-        print(f"❌ Error during database reset: {e}")
+        print(f'❌ Error during database reset: {e}')
         await session.rollback()
         raise
 
 
-def normalize_json_structure(data: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+def normalize_json_structure(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     """Normalize JSON structure to handle both singular and plural formats"""
     normalized = {}
-    
+
     # Handle users
     if 'users' in data:
         normalized['users'] = data['users']
@@ -82,25 +84,25 @@ def normalize_json_structure(data: Dict[str, Any]) -> Dict[str, List[Dict[str, A
         normalized['users'] = [data['user']]
     else:
         normalized['users'] = []
-    
-    # Handle credit_cards  
+
+    # Handle credit_cards
     if 'credit_cards' in data:
         normalized['credit_cards'] = data['credit_cards']
     elif 'credit_card' in data:
         normalized['credit_cards'] = [data['credit_card']]
     else:
         normalized['credit_cards'] = []
-        
+
     # Handle transactions
     if 'transactions' in data:
         normalized['transactions'] = data['transactions']
     else:
         normalized['transactions'] = []
-    
+
     return normalized
 
 
-def convert_timestamps(obj_data: Dict[str, Any], fields: List[str]) -> Dict[str, Any]:
+def convert_timestamps(obj_data: dict[str, Any], fields: list[str]) -> dict[str, Any]:
     """Convert string timestamps to datetime objects"""
     obj_copy = obj_data.copy()
     for field in fields:
@@ -116,85 +118,182 @@ def convert_timestamps(obj_data: Dict[str, Any], fields: List[str]) -> Dict[str,
 
 async def seed_from_json(json_file_path: str) -> None:
     """Seed database with data from JSON file"""
-    
+
     # Validate file exists
     if not os.path.exists(json_file_path):
-        raise FileNotFoundError(f"JSON file not found: {json_file_path}")
-    
-    print(f"📂 Loading fixture from: {json_file_path}")
+        raise FileNotFoundError(f'JSON file not found: {json_file_path}')
+
+    print(f'📂 Loading fixture from: {json_file_path}')
     with open(json_file_path) as f:
         fixture_data = json.load(f)
-    
+
     # Normalize JSON structure
     fixture = normalize_json_structure(fixture_data)
-    
+
     async with SessionLocal() as session:
         try:
             # Reset database first
             await reset_database(session)
-            
-            print(f"\n🔄 Starting seeding from {os.path.basename(json_file_path)}...")
-            
+
+            print(f'\n🔄 Starting seeding from {os.path.basename(json_file_path)}...')
+
             # --- Insert Users ---
             for user_data in fixture['users']:
-                user_data_copy = convert_timestamps(user_data, [
-                    'created_at', 'updated_at', 
-                    'last_app_location_timestamp', 'last_transaction_timestamp'
-                ])
-                
+                user_data_copy = convert_timestamps(
+                    user_data,
+                    [
+                        'created_at',
+                        'updated_at',
+                        'last_app_location_timestamp',
+                        'last_transaction_timestamp',
+                    ],
+                )
+
                 user = User(**user_data_copy)
                 await session.merge(user)
                 print(f'👤 Seeded User: {user.first_name} {user.last_name}')
 
             # --- Insert Credit Cards ---
             for card_data in fixture['credit_cards']:
-                card_data_copy = convert_timestamps(card_data, ['created_at', 'updated_at'])
-                
+                card_data_copy = convert_timestamps(
+                    card_data, ['created_at', 'updated_at']
+                )
+
                 card = CreditCard(**card_data_copy)
                 await session.merge(card)
                 print(f'💳 Seeded Credit Card: ****{card.card_number[-4:]}')
 
             # --- Insert Transactions (with dynamic dates) ---
             if fixture['transactions']:
-                now = datetime.now()
+                now = datetime.now(UTC)  # Use timezone-aware datetime
                 print(f'\n⏰ Current time: {now}')
                 print(f'📊 Processing {len(fixture["transactions"])} transactions...')
-                print(f'🔍 fixture["transactions"] type: {type(fixture["transactions"])}')
-                print(f'🔍 First transaction: {fixture["transactions"][0] if fixture["transactions"] else "None"}')
+
+                # Calculate time offset based on first transaction
+                time_offset = None
+                first_transaction = fixture['transactions'][0]
+
+                # Parse the first transaction date to calculate offset
+                if 'transaction_date' in first_transaction:
+                    original_date_str = first_transaction['transaction_date']
+                    print(f'🔍 First transaction date from JSON: {original_date_str}')
+
+                    # Parse the original date
+                    if isinstance(original_date_str, str):
+                        # Handle ISO format with 'Z' timezone
+                        date_str_clean = original_date_str.replace('Z', '+00:00')
+                        try:
+                            original_date = datetime.fromisoformat(date_str_clean)
+                        except ValueError:
+                            # Fallback parsing - assume UTC if no timezone
+                            try:
+                                original_date = datetime.fromisoformat(
+                                    original_date_str
+                                )
+                                if original_date.tzinfo is None:
+                                    original_date = original_date.replace(tzinfo=UTC)
+                            except ValueError:
+                                # Last resort - parse as naive and assume UTC
+                                original_date = datetime.strptime(
+                                    original_date_str, '%Y-%m-%dT%H:%M:%S'
+                                )
+                                original_date = original_date.replace(tzinfo=UTC)
+                    else:
+                        original_date = original_date_str
+                        if original_date.tzinfo is None:
+                            original_date = original_date.replace(tzinfo=UTC)
+
+                    # Calculate the time difference to bring transactions to "now"
+                    time_offset = now - original_date
+                    print(
+                        f'🔍 Time offset calculated: {time_offset} (bringing {original_date} to ~{now})'
+                    )
+                else:
+                    print(
+                        '⚠️ No transaction_date found in first transaction, using fallback logic'
+                    )
+                    time_offset = timedelta(0)
 
                 for i, txn_data in enumerate(fixture['transactions']):
-                    print(f'🔍 Loop iteration {i}, type(i): {type(i)}')
-                    print(f'🔍 Processing transaction {i}: {txn_data.get("trans_num", "Unknown")}')
-                    print(f'🔍 About to copy txn_data')
+                    print(
+                        f'\n🔍 Processing transaction {i}: {txn_data.get("trans_num", "Unknown")}'
+                    )
                     txn_data_copy = txn_data.copy()
-                    print(f'🔍 Copy successful')
-                    
-                    # Generate new UUID and dynamic timestamps within the last hour
-                    print(f'🔍 Generating UUID')
+
+                    # Generate new UUID
                     txn_data_copy['id'] = str(uuid.uuid4())
-                    print(f'🔍 UUID generated: {txn_data_copy["id"]}')
-                    
-                    print(f'🔍 Calculating minutes offset: 5 * {i}')
-                    minutes_offset = 5 * i  # Debug: ensure this is an integer
-                    print(f'🔍 Minutes offset: {minutes_offset}, type: {type(minutes_offset)}')
-                    
-                    print(f'🔍 Creating timedelta with minutes={minutes_offset}')
-                    txn_data_copy['transaction_date'] = now - timedelta(minutes=minutes_offset)
-                    print(f'🔍 Transaction date set to: {txn_data_copy["transaction_date"]}')
-                    
+
+                    # Apply intelligent date transformation
+                    if 'transaction_date' in txn_data_copy and time_offset is not None:
+                        original_txn_date_str = txn_data_copy['transaction_date']
+                        print(f'🔍 Original transaction date: {original_txn_date_str}')
+
+                        # Parse the original transaction date
+                        if isinstance(original_txn_date_str, str):
+                            date_str_clean = original_txn_date_str.replace(
+                                'Z', '+00:00'
+                            )
+                            try:
+                                original_txn_date = datetime.fromisoformat(
+                                    date_str_clean
+                                )
+                            except ValueError:
+                                # Fallback parsing - assume UTC if no timezone
+                                try:
+                                    original_txn_date = datetime.fromisoformat(
+                                        original_txn_date_str
+                                    )
+                                    if original_txn_date.tzinfo is None:
+                                        original_txn_date = original_txn_date.replace(
+                                            tzinfo=UTC
+                                        )
+                                except ValueError:
+                                    # Last resort - parse as naive and assume UTC
+                                    original_txn_date = datetime.strptime(
+                                        original_txn_date_str, '%Y-%m-%dT%H:%M:%S'
+                                    )
+                                    original_txn_date = original_txn_date.replace(
+                                        tzinfo=UTC
+                                    )
+                        else:
+                            original_txn_date = original_txn_date_str
+                            if original_txn_date.tzinfo is None:
+                                original_txn_date = original_txn_date.replace(
+                                    tzinfo=UTC
+                                )
+
+                        # Apply the time offset to maintain relative timing
+                        new_txn_date = original_txn_date + time_offset
+                        txn_data_copy['transaction_date'] = new_txn_date
+
+                        print(
+                            f'🔍 Adjusted transaction date: {original_txn_date} + {time_offset} = {new_txn_date}'
+                        )
+                    else:
+                        # Fallback to old logic if no transaction_date
+                        minutes_offset = 5 * i
+                        txn_data_copy['transaction_date'] = now - timedelta(
+                            minutes=minutes_offset
+                        )
+                        print(
+                            f'🔍 Fallback: transaction date set to: {txn_data_copy["transaction_date"]}'
+                        )
+
+                    # Set created_at and updated_at to match transaction_date
                     txn_data_copy['created_at'] = txn_data_copy['transaction_date']
                     txn_data_copy['updated_at'] = txn_data_copy['transaction_date']
-                    print(f'🔍 All dates set successfully')
-                    
-                    # Convert any remaining string timestamps
-                    txn_data_copy = convert_timestamps(txn_data_copy, 
-                        ['transaction_date', 'created_at', 'updated_at'])
 
-                    print(f'🔍 Creating Transaction object with data keys: {list(txn_data_copy.keys())}')
+                    # Convert any remaining string timestamps
+                    txn_data_copy = convert_timestamps(
+                        txn_data_copy, ['transaction_date', 'created_at', 'updated_at']
+                    )
+
                     try:
                         txn = Transaction(**txn_data_copy)
                         await session.merge(txn)
-                        print(f'💰 Seeded Transaction: {txn.trans_num} - ${txn.amount} at {txn.merchant_name} ({txn.transaction_date})')
+                        print(
+                            f'💰 Seeded Transaction: {txn.trans_num} - ${txn.amount} at {txn.merchant_name} ({txn.transaction_date})'
+                        )
                     except Exception as e:
                         print(f'❌ Failed to create transaction: {e}')
                         print(f'❌ Transaction data: {txn_data_copy}')
@@ -209,11 +308,13 @@ async def seed_from_json(json_file_path: str) -> None:
             card_count = await session.scalar(select(func.count(CreditCard.id)))
             txn_count = await session.scalar(select(func.count(Transaction.id)))
             alert_rule_count = await session.scalar(select(func.count(AlertRule.id)))
-            alert_notif_count = await session.scalar(select(func.count(AlertNotification.id)))
+            alert_notif_count = await session.scalar(
+                select(func.count(AlertNotification.id))
+            )
 
-            print(f'\n📈 Final counts:')
+            print('\n📈 Final counts:')
             print(f'   • Users: {user_count}')
-            print(f'   • Credit Cards: {card_count}') 
+            print(f'   • Credit Cards: {card_count}')
             print(f'   • Transactions: {txn_count}')
             print(f'   • Alert Rules: {alert_rule_count}')
             print(f'   • Alert Notifications: {alert_notif_count}')
@@ -238,43 +339,44 @@ Examples:
 Available JSON files in json/ directory:
   • spending_amount_dining.json - Dining transactions test data
   • transaction_last_hour.json - Recent transactions test data
-        """
+        """,
     )
-    
+
     parser.add_argument(
-        'json_file', 
-        help='Path to JSON file containing test data (relative to script directory or absolute path)'
+        'json_file',
+        help='Path to JSON file containing test data (relative to script directory or absolute path)',
     )
-    
+
     parser.add_argument(
-        '--force', '-f',
+        '--force',
+        '-f',
         action='store_true',
-        help='Skip confirmation prompt and proceed directly'
+        help='Skip confirmation prompt and proceed directly',
     )
-    
+
     args = parser.parse_args()
-    
+
     # Resolve JSON file path
     if os.path.isabs(args.json_file):
         json_file_path = args.json_file
     else:
         script_dir = os.path.dirname(__file__)
         json_file_path = os.path.join(script_dir, args.json_file)
-    
+
     # Get user confirmation unless forced
     if not args.force:
         if not get_user_confirmation():
             return
     else:
-        print("🔧 Force mode enabled. Skipping confirmation...")
-    
+        print('🔧 Force mode enabled. Skipping confirmation...')
+
     # Execute seeding
     try:
         asyncio.run(seed_from_json(json_file_path))
     except KeyboardInterrupt:
-        print("\n⚠️  Interrupted by user. Exiting...")
+        print('\n⚠️  Interrupted by user. Exiting...')
     except Exception as e:
-        print(f"\n💥 Failed to complete seeding: {e}")
+        print(f'\n💥 Failed to complete seeding: {e}')
         sys.exit(1)
 
 

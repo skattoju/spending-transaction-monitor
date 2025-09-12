@@ -1,0 +1,48 @@
+{
+    "alert_text": "Alert me if a transaction happens outside my home state.",
+    "user": {
+      "id": "u-outstate-001",
+      "email": "emily.clark@example.com",
+      "first_name": "Emily",
+      "last_name": "Clark",
+      "address_city": "San Francisco",
+      "address_state": "CA",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-os-1001",
+        "user_id": "u-outstate-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 85.50,
+        "currency": "USD",
+        "description": "Dinner at The Grove",
+        "merchant_name": "The Grove",
+        "merchant_category": "dining",
+        "merchant_city": "San Francisco",
+        "merchant_state": "CA",
+        "merchant_country": "US",
+        "transaction_date": "2025-08-20T19:30:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "OS1001"
+      },
+      {
+        "id": "txn-os-1002",
+        "user_id": "u-outstate-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 120.00,
+        "currency": "USD",
+        "description": "Hotel booking",
+        "merchant_name": "Marriott Hotel",
+        "merchant_category": "lodging",
+        "merchant_city": "Las Vegas",
+        "merchant_state": "NV",
+        "merchant_country": "US",
+        "transaction_date": "2025-08-22T15:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "OS1002"
+      }
+    ]
+  }

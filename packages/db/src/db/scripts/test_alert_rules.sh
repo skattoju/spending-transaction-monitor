@@ -48,11 +48,16 @@ list_files() {
     echo -e "${BLUE}Available Alert Rule Test Files:${NC}"
     echo "============================================"
     local count=0
-    for json_file in "$JSON_DIR"/alert_rule_*.json; do
-        if [[ -f "$json_file" ]]; then
+    local listed_files=()
+    for json_file in "$JSON_DIR"/alert_rule_*.json "$JSON_DIR"/alert_*.json; do
+        if [[ -f "$json_file" ]] && [[ "$(basename "$json_file")" != "alert_rules.txt" ]]; then
             local filename=$(basename "$json_file")
-            count=$((count + 1))
-            echo -e "${YELLOW}${count}.${NC} $filename"
+            # Skip if it's already counted (in case of overlap)
+            if [[ ! " ${listed_files[@]} " =~ " ${filename} " ]]; then
+                count=$((count + 1))
+                echo -e "${YELLOW}${count}.${NC} $filename"
+                listed_files+=("$filename")
+            fi
         fi
     done
     echo ""
@@ -158,6 +163,12 @@ test_alert_rule() {
             seed_command="seed:last-hour" ;;
         "alert_rule_spending_amount_dining.json")
             seed_command="seed:dining" ;;
+        "alert_charged_significantly_more_same_merchant.json")
+            seed_command="seed:charged-more-same-merchant" ;;
+        "alert_more_than_20_dollars_same_merchant.json")
+            seed_command="seed:more-than-20-same-merchant" ;;
+        "alert_outside_home_state_sample.json")
+            seed_command="seed:outside-home-state" ;;
         *)
             echo -e "${YELLOW}⚠️  No seed command mapped for ${filename}, skipping...${NC}"
             return ;;
@@ -301,10 +312,17 @@ find_and_test_files() {
     local target_pattern="$1"
     local found_files=()
     
-    # Find matching files
-    for json_file in "$JSON_DIR"/alert_rule_*.json; do
-        if [[ -f "$json_file" ]]; then
+    # Find matching files - search both patterns
+    local processed_files=()
+    for json_file in "$JSON_DIR"/alert_rule_*.json "$JSON_DIR"/alert_*.json; do
+        if [[ -f "$json_file" ]] && [[ "$(basename "$json_file")" != "alert_rules.txt" ]]; then
             local filename=$(basename "$json_file")
+            
+            # Skip if already processed (avoid duplicates)
+            if [[ " ${processed_files[@]} " =~ " ${filename} " ]]; then
+                continue
+            fi
+            processed_files+=("$filename")
             
             # If no specific file requested, add all files
             if [[ -z "$target_pattern" ]]; then

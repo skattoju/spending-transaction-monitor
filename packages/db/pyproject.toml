@@ -37,5 +37,9 @@ ignore = ["E501", "B008", "UP007"]
 quote-style = "single"
 indent-style = "space"
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
 [tool.hatch.version]
 path = "src/db/__init__.py"

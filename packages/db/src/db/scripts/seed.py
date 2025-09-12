@@ -5,8 +5,6 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select
-
 from db.database import SessionLocal
 from db.models import (
     AlertRule,
@@ -16,6 +14,7 @@ from db.models import (
     Transaction,
     User,
 )
+from sqlalchemy import select
 
 
 async def seed() -> None:

@@ -57,7 +57,7 @@ Instructions:
    - Why the alert fired (reference the configured rule).
    - Which transaction caused it (merchant, amount, category, location, or timeframe).
 4. Always use friendly, helpful, and human-readable language.
-5. Use the first_name and last_name of the user to address them.
+5. Use the first_name as {first_name} and last_name as {last_name} of the user to address them.
 
 
 Return ONLY the final alert message text, nothing else.
