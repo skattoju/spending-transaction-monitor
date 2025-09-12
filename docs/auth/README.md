@@ -58,7 +58,7 @@ cd packages/auth
 cd packages/api
 uv run uvicorn src.main:app --reload
 curl http://localhost:8000/health               # ✅ Works (public endpoint)  
-curl http://localhost:8000/users/me            # ⚠️  Currently works but will require auth when enabled
+curl http://localhost:8000/users/profile            # ⚠️  Currently works but will require auth when enabled
 ```
 
 **For detailed setup and integration:** See [`INTEGRATION.md`](./INTEGRATION.md)

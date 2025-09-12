@@ -133,9 +133,9 @@ async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get('/me', response_model=UserOut)
-async def get_current_user(session: AsyncSession = Depends(get_db)):
-    """Get the current logged-in user. For now, returns the first user from the database."""
+@router.get('/profile', response_model=UserOut)
+async def get_current_user_profile(session: AsyncSession = Depends(get_db)):
+    """Get the current logged-in user profile. For now, returns the first user from the database."""
     try:
         result = await session.execute(
             select(User)
