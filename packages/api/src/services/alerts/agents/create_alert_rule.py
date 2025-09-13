@@ -29,11 +29,14 @@ You must always output a JSON object with the following fields:
 - merchant_name: The specific merchant name if mentioned (e.g., "Apple", "Amazon"). If not specified, use "".
 - location: The location mentioned (e.g., "New York", "outside my home state"). If not specified, use "".
 - timeframe: The time window or duration mentioned in the alert text (e.g., "last 30 days", "last hour", "one week"). If not specified, use "".
+- recurring_interval_days: An integer number of days for recurring charge detection.
+   - If the text mentions "every 30 days", "monthly", or similar → extract it as days (30).
+   - If not specified, default to 30.
 - alert_type: One of the following categories:
    - "spending": Alerts about spending amounts, thresholds, or financial limits.
    - "location": Alerts about geographic locations or unusual location patterns.
    - "merchant": Alerts about specific merchants or merchant categories.
-   - "pattern": Alerts about complex behavioral or recurring charge patterns
+   - "pattern": Alerts about complex behavioral or recurring charge patterns.
 
 Rules:
 - If multiple categories apply, choose the most specific one (e.g., "merchant" > "spending").
@@ -44,6 +47,7 @@ Rules:
     - "3x" → 3.0
 - Timeframes should be captured verbatim (e.g., "last 30 days", "past week") if present. Otherwise, return "".
 - If no numeric threshold is mentioned, amount_threshold = 0.0.
+- If no recurring interval is mentioned, set recurring_interval_days = 30.
 - Always return valid JSON. No extra commentary.
 
 ---
@@ -54,15 +58,15 @@ Return the parsed dictionary as JSON.
 """
     client = get_llm_client()
     response = client.invoke(prompt)
-    if hasattr(response, 'content') and response.content:
-        content = response.content
-    else:
-        content = response
+    content = (
+        response.content
+        if hasattr(response, 'content') and response.content
+        else response
+    )
 
     content_json = clean_and_parse_json_response(content)
     classification = content_json.get('alert_type')
 
-    # Map natural language classification to AlertType enum
     classification_map = {
         'spending': AlertType.AMOUNT_THRESHOLD,
         'location': AlertType.LOCATION_BASED,
@@ -70,14 +74,12 @@ Return the parsed dictionary as JSON.
         'pattern': AlertType.PATTERN_BASED,
     }
 
-    # Get the classified alert type, defaulting to PATTERN_BASED for unknown classifications
     alert_type = classification_map.get(classification, AlertType.PATTERN_BASED)
 
-    # Create and return a dictionary representation of the AlertRule
     alert_rule_dict = {
         'id': str(uuid.uuid4()),
         'user_id': user_id,
-        'name': content_json.get('name'),  # Truncate if too long
+        'name': content_json.get('name'),
         'description': content_json.get('description'),
         'is_active': True,
         'alert_type': alert_type,
@@ -88,6 +90,7 @@ Return the parsed dictionary as JSON.
         'merchant_name': content_json.get('merchant_name'),
         'location': content_json.get('location'),
         'timeframe': content_json.get('timeframe'),
+        'recurring_interval_days': content_json.get('recurring_interval_days', 30),
         'sql_query': None,
         'notification_methods': None,
     }

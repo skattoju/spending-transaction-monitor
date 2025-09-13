@@ -5,7 +5,6 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from db.models import Transaction
 from services.transaction_service import TransactionService
 

@@ -1,16 +1,12 @@
-# agents/alert_parser.py
+***Alert Rule***
+Alert me if the amount of a recurring charge increases by more than 5 dollars.
 
-from langchain.tools import tool
-
-from .utils import extract_sql, get_llm_client
-
-
+***Prompt***
 def build_prompt(last_transaction: dict, alert_text: str, alert_rule: dict) -> str:
     user_id = last_transaction.get('user_id', '').strip()
     transaction_date = last_transaction.get('transaction_date', '')
     merchant_name = alert_rule.get('merchant_name', '').lower()
     merchant_category = alert_rule.get('merchant_category', '').lower()
-    recurring_interval_days = alert_rule.get('recurring_interval_days', 30)
 
     schema = """
 Table: transactions
@@ -153,18 +149,13 @@ You must generate **PostgreSQL-compatible SQL** only.
    - Use BETWEEN (TIMESTAMP '{transaction_date}' - INTERVAL 'X') AND TIMESTAMP '{transaction_date}'.
    - Always cast literals to TIMESTAMP before subtracting intervals.
 6. Recurring charge alerts:
-   - If the user specifies an interval (e.g., "every 30 days", "every 90 days"):
-     * Parse that interval (e.g., `interval_days = 30`).
-     * Use it in SQL instead of a fixed 30 days.
-     * Example:
-       ```sql
-       ABS(DATE_PART('day', (lt.transaction_date - prev.transaction_date)) - {recurring_interval_days}) <= 3
-       ```
-   - If no interval is provided, default to 30 days.
    - A "new recurring charge pattern" means:
-     a) The last transaction’s merchant/category has no prior history before `(last_transaction_date - INTERVAL '{recurring_interval_days} days')`.
-     b) The same merchant/category appears at least twice within the last `{recurring_interval_days}` days (including the last transaction).
-
+     a) The last transaction’s merchant/category has **no prior history before (last_transaction_date - 60 days)**.
+     b) The same merchant/category appears **at least twice** within the last 60 days (including the last transaction).
+   - Use two CTEs:
+     - `prior_txns`: transactions before (last_transaction_date - INTERVAL '60 days').
+     - `recent_txns`: count of this merchant/category in the last 60 days including last_transaction_date.
+   - Final SELECT should return an alert only when NOT EXISTS prior_txns AND recent_txns.count > 1.
 7. Thresholds:
    - "$20 more" → last_txn.amount > COALESCE(h.avg_amount,0) + 20.
    - "20% more" → last_txn.amount > COALESCE(h.avg_amount,0) * 1.2.
@@ -229,16 +220,51 @@ SQL:
     return prompt
 
 
-@tool
-def parse_alert_to_sql_with_context(
-    transaction: dict, alert_text: str, alert_rule: dict
-) -> str:
-    """
-    Inputs: { "transaction": {dict}, "alert_text": str, "alert_rule": dict }
-    Returns: SQL query
-    """
-    client = get_llm_client()
-    prompt = build_prompt(transaction, alert_text, alert_rule)
-    response = client.invoke(prompt)
+  
+***Generated SQL Query***
 
-    return extract_sql(str(response))
+WITH last_txn AS (
+    SELECT user_id, transaction_date, amount, merchant_name, merchant_category, trans_num,
+           merchant_city, merchant_state, merchant_country, merchant_latitude, merchant_longitude, merchant_zipcode
+    FROM transactions
+    WHERE user_id = 'u-rc-005'
+      AND transaction_date = TIMESTAMP '2025-12-16 16:23:57.188893+00:00'
+    LIMIT 1
+  ),
+  historical AS (
+    SELECT COALESCE(AVG(t.amount), 0) AS avg_amount
+    FROM transactions t
+    CROSS JOIN last_txn lt
+    WHERE t.user_id = lt.user_id
+      AND LOWER(t.merchant_name) LIKE LOWER(lt.merchant_name)
+      AND t.transaction_date >= lt.transaction_date - INTERVAL '60 days'
+      AND t.transaction_date < lt.transaction_date
+  ),
+  recent_txns AS (
+    SELECT COUNT(*) AS count
+    FROM transactions t
+    CROSS JOIN last_txn lt
+    WHERE t.user_id = lt.user_id
+      AND LOWER(t.merchant_name) LIKE LOWER(lt.merchant_name)
+      AND t.transaction_date >= lt.transaction_date - INTERVAL '60 days'
+      AND t.transaction_date <= lt.transaction_date
+  ),
+  prior_txns AS (
+    SELECT COUNT(*) AS count
+    FROM transactions t
+    CROSS JOIN last_txn lt
+    WHERE t.user_id = lt.user_id
+      AND LOWER(t.merchant_name) LIKE LOWER(lt.merchant_name)
+      AND t.transaction_date < lt.transaction_date - INTERVAL '60 days'
+  )
+  SELECT CASE
+    WHEN NOT EXISTS (SELECT 1 FROM prior_txns WHERE count > 0)
+      AND (SELECT count FROM recent_txns) > 1
+      AND lt.amount - (SELECT avg_amount FROM historical) > 5
+      THEN 'ALERT: Recurring charge amount increased by more than $5'
+    ELSE 'NO_ALERT'
+  END AS alert
+  FROM last_txn lt;
+
+  ***Issue***
+No rows returned
