@@ -1,0 +1,123 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.api.name }}
+  labels:
+    {{- include "spending-monitor.api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      {{- include "spending-monitor.api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "spending-monitor.api.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "spending-monitor.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: db-migration
+          image: {{ include "spending-monitor.image" (dict "name" .Values.api.image.repository "tag" .Values.api.image.tag "Values" .Values) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            {{- range $key, $value := .Values.api.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for database to be ready..."
+              until python3 -c "
+              import psycopg2
+              import time
+              try:
+                  conn = psycopg2.connect('postgresql://user:password@spending-monitor-db:5432/spending-monitor')
+                  conn.close()
+                  print('Database is ready!')
+              except Exception as e:
+                  print(f'Database not ready: {e}')
+                  exit(1)
+              "; do
+                echo "Database not ready, waiting..."
+                sleep 5
+              done
+              
+              echo "Running database migrations..."
+              cd /app/packages/db
+              python3 -c "
+              import os
+              from alembic.config import Config
+              from alembic import command
+              
+              try:
+                  # Create alembic config with correct database URL
+                  alembic_cfg = Config('alembic.ini')
+                  alembic_cfg.set_main_option('sqlalchemy.url', 'postgresql+psycopg2://user:password@spending-monitor-db:5432/spending-monitor')
+                  
+                  # Run migrations
+                  command.upgrade(alembic_cfg, 'head')
+                  print('Database migrations completed successfully!')
+              except Exception as e:
+                  if 'duplicate key value violates unique constraint' in str(e):
+                      print('Database already initialized, skipping migrations.')
+                  else:
+                      print(f'Migration error: {e}')
+                      raise
+              "
+              
+              echo "Running database seeding..."
+              cd /app/packages/db
+              echo "Current directory: $(pwd)"
+              echo "Running database seeding script..."
+              PYTHONPATH=/app/packages/db/src:/app/packages/api/src python3 -m db.scripts.seed
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      containers:
+        - name: api
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "spending-monitor.image" (dict "name" .Values.api.image.repository "tag" .Values.api.image.tag "Values" .Values) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.api.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- if .Values.api.healthCheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.api.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.api.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.api.healthCheck.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.api.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.api.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.api.healthCheck.periodSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,169 @@
+# Default values for spending-monitor
+global:
+  imageRegistry: quay.io
+  imageRepository: rh-ai-quickstart
+  imageTag: 1.0.16
+  imagePullPolicy: IfNotPresent
+  storageClass: ""
+
+# Database configuration
+database:
+  enabled: true
+  name: spending-monitor-db
+  image:
+    repository: spending-monitor-db
+    tag: 1.0.16
+  service:
+    type: ClusterIP
+    port: 5432
+  persistence:
+    enabled: true
+    size: 10Gi
+    accessMode: ReadWriteOnce
+  env:
+    POSTGRES_DB: spending-monitor
+    POSTGRES_USER: user
+    POSTGRES_PASSWORD: password
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# API configuration
+api:
+  enabled: true
+  name: spending-monitor-api
+  image:
+    repository: spending-monitor-api
+    tag: 1.0.16
+  service:
+    type: ClusterIP
+    port: 8000
+  replicas: 2
+  env:
+    DATABASE_URL: postgresql+asyncpg://user:password@spending-monitor-db:5432/spending-monitor
+    ENVIRONMENT: production
+    NODE_ENV: production
+    DEBUG: "false"
+    ALLOWED_HOSTS: '["*"]'
+    APP_NAME: spending-monitor
+    LLM_PROVIDER: openai
+    MODEL: "llama-3-3-70b-instruct-w8a8"
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  healthCheck:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+# UI configuration
+ui:
+  enabled: true
+  name: spending-monitor-ui
+  image:
+    repository: spending-monitor-ui
+    tag: 1.0.16
+  service:
+    type: ClusterIP
+    port: 8080
+  replicas: 2
+  env: {}
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  healthCheck:
+    enabled: true
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+# Nginx reverse proxy configuration
+nginx:
+  enabled: true
+  name: spending-monitor-nginx
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+  service:
+    type: ClusterIP
+    port: 8080
+  replicas: 2
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+  healthCheck:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# OpenShift Routes configuration (preferred over Ingress)
+routes:
+  enabled: true
+  annotations: {}
+  # nginx route configuration (when nginx.enabled=true)
+  nginx:
+    host: ""  # Leave empty to auto-generate hostname, or specify custom hostname
+    tls:
+      enabled: true
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+  # Legacy routes configuration (when nginx.enabled=false)
+  ui:
+    host: ""  # Leave empty to auto-generate hostname, or specify custom hostname
+    tls:
+      enabled: true
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+  api:
+    host: ""  # Leave empty to auto-generate hostname, or specify custom hostname
+    tls:
+      enabled: true
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod Security Context
+podSecurityContext: {}
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
