@@ -242,7 +242,7 @@ class AlertRule(Base):
     timeframe: Mapped[str | None]
 
     natural_language_query: Mapped[str | None]
-    sqlQuery: Mapped[str | None]
+    sql_query: Mapped[str | None]
 
     notification_methods: Mapped[list[NotificationMethod] | None] = mapped_column(
         ARRAY(SAEnum(NotificationMethod, name='notification_method')), nullable=True

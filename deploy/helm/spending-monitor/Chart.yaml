@@ -1,0 +1,16 @@
+apiVersion: v2
+name: spending-monitor
+description: A Helm chart for Spending Transaction Monitor application
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - monitoring
+  - transactions
+  - finance
+home: https://github.com/example/spending-monitor
+sources:
+  - https://github.com/example/spending-monitor
+maintainers:
+  - name: Development Team
+    email: dev@example.com

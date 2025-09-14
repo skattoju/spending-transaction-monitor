@@ -1,0 +1,17 @@
+{{- if and .Values.database.enabled .Values.database.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.database.name }}-pvc
+  labels:
+    {{- include "spending-monitor.database.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.database.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.database.persistence.size | quote }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+{{- end }}

@@ -48,7 +48,7 @@ class AlertRuleBase(BaseModel):
     natural_language_query: str | None = Field(
         None, description='Natural language query for custom alerts'
     )
-    sqlQuery: str | None = Field(
+    sql_query: str | None = Field(
         None, description='SQL query generated from natural language query'
     )
     notification_methods: list[NotificationMethod] | None = Field(
@@ -71,7 +71,7 @@ class AlertRuleUpdate(BaseModel):
     location: str | None = None
     timeframe: str | None = None
     natural_language_query: str | None = None
-    sqlQuery: str | None = None
+    sql_query: str | None = None
     notification_methods: list[NotificationMethod] | None = None
 
 
