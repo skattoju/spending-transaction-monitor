@@ -4,6 +4,10 @@ import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from db.models import AlertNotification, User
 from fastapi import HTTPException
@@ -36,7 +40,7 @@ class SMTPConfig(BaseModel):
 
 smtp_details = {
     'host': os.getenv('SMTP_HOST', 'localhost'),
-    'port': os.getenv('SMTP_PORT', 8025),
+    'port': int(os.getenv('SMTP_PORT', 8025)),
     'username': os.getenv('SMTP_USERNAME', ''),
     'password': os.getenv('SMTP_PASSWORD', ''),
     'from_email': os.getenv('SMTP_FROM_EMAIL', 'noreply@localhost'),
@@ -56,7 +60,7 @@ async def send_smtp_notification(
 
     try:
         user_email_result = await session.execute(
-            select(User.email).where(User.id == notification.userId)
+            select(User.email).where(User.id == notification.user_id)
         )
         user_email = user_email_result.scalar_one_or_none()
         if not user_email:
@@ -108,18 +112,6 @@ async def send_smtp_notification(
 
     finished_at = datetime.now()
 
-    return AlertNotification(
-        id=notification.id,
-        userId=notification.userId,
-        alertRuleId=notification.alertRuleId,
-        transactionId=notification.transactionId,
-        title=notification.title,
-        message=notification.message,
-        notificationMethod=notification.notificationMethod,
-        status=notification.status,
-        sentAt=finished_at,
-        deliveredAt=None,
-        readAt=None,
-        createdAt=finished_at,
-        updatedAt=finished_at,
-    )
+    notification.sent_at = finished_at
+    notification.status = 'SENT'
+    return notification

@@ -114,6 +114,7 @@ async def get_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
         location=rule.location,
         timeframe=rule.timeframe,
         natural_language_query=rule.natural_language_query,
+        sql_query=rule.sql_query,
         notification_methods=rule.notification_methods,
         created_at=rule.created_at.isoformat(),
         updated_at=rule.updated_at.isoformat(),
@@ -151,6 +152,7 @@ async def create_alert_rule(
         location=validate_result.get('alert_rule').get('location'),
         timeframe=validate_result.get('alert_rule').get('timeframe'),
         natural_language_query=payload.natural_language_query,
+        sql_query=validate_result.get('sql_query'),
         notification_methods=None,
     )
 
@@ -173,6 +175,7 @@ async def create_alert_rule(
         location=rule.location,
         timeframe=rule.timeframe,
         natural_language_query=rule.natural_language_query,
+        sql_query=rule.sql_query,
         notification_methods=rule.notification_methods,
         created_at=rule.created_at.isoformat(),
         updated_at=rule.updated_at.isoformat(),
@@ -221,6 +224,7 @@ async def update_alert_rule(
         location=rule.location,
         timeframe=rule.timeframe,
         natural_language_query=rule.natural_language_query,
+        sql_query=rule.sql_query,
         notification_methods=rule.notification_methods,
         created_at=rule.created_at.isoformat(),
         updated_at=rule.updated_at.isoformat(),
@@ -352,7 +356,7 @@ async def create_alert_notification(
 
     strategy = NoopStrategy()
 
-    if payload.notificationMethod == NotificationMethod.EMAIL:
+    if payload.notification_method == NotificationMethod.EMAIL:
         strategy = SmtpStrategy()
 
     ctx = Context(strategy)

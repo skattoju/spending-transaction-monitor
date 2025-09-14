@@ -2,7 +2,7 @@ name: Build and Push to Quay
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
@@ -90,12 +90,12 @@ jobs:
 
     - name: Install semantic-release dependencies
       run: |
-        npm install --save-dev semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/github
+        npm install -g semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/github
 
     - name: Run semantic-release
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-      run: npx semantic-release
+      run: semantic-release
 
     - name: Get latest tag
       id: get-tag
