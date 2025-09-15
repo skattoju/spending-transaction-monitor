@@ -1,22 +1,28 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { useAuth } from '../hooks/useAuth';
 import { useEffect } from 'react';
 import { Button } from '../components/atoms/button/button';
 import { Card } from '../components/atoms/card/card';
 
 export const Route = createFileRoute('/login')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: (search.redirect as string) || '/',
+    error: search.error as string,
+  }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const auth = useAuth();
+  const navigate = useNavigate();
+  const { redirect, error } = useSearch({ from: '/login' });
 
   useEffect(() => {
-    // If already authenticated, redirect to home
-    if (auth.isAuthenticated) {
-      window.location.href = '/';
+    // If already authenticated, redirect to intended destination
+    if (auth.isAuthenticated && !auth.isLoading) {
+      navigate({ to: redirect });
     }
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, auth.isLoading, navigate, redirect]);
 
   const handleLogin = () => {
     auth.signinRedirect();
@@ -72,6 +78,17 @@ function LoginPage() {
             </p>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+            <p className="text-sm text-destructive text-center">
+              {error === 'insufficient_permissions'
+                ? 'You do not have sufficient permissions to access that page.'
+                : 'Authentication required to access this page.'}
+            </p>
+          </div>
+        )}
 
         {/* Login Section */}
         <div className="space-y-4">

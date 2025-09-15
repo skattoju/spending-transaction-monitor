@@ -7,6 +7,7 @@ import { Card } from '../components/atoms/card/card';
 import { Button } from '../components/atoms/button/button';
 import { useHealth } from '../hooks/health';
 import { useTransactionStats } from '../hooks/transactions';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import {
   Server,
   Database,
@@ -20,7 +21,11 @@ import type { Alert } from '../schemas/transaction';
 import type { Stat } from '../components/stats-list/stats-list';
 
 export const Route = createFileRoute('/')({
-  component: Index,
+  component: () => (
+    <ProtectedRoute>
+      <Index />
+    </ProtectedRoute>
+  ),
 });
 
 function Index() {
