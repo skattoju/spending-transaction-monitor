@@ -126,6 +126,7 @@ You must generate **PostgreSQL-compatible SQL** only.
    - Always use CROSS JOIN last_txn to bring in context.
    - Exclude the last transaction from history (`t.transaction_date < lt.transaction_date`).
    - Always wrap the final SELECT in a CASE ... ELSE so it returns exactly one row.
+
         ```sql
     historical AS (
       SELECT COALESCE(AVG(t.amount),0) AS avg_amount
@@ -144,9 +145,29 @@ You must generate **PostgreSQL-compatible SQL** only.
     FROM last_txn lt
     CROSS JOIN historical h;
      ```
+    - Distinguish between two types of **threshold alerts**:
+      - **Transaction-based thresholds**: e.g., "Alert me if a single transaction exceeds $500".
+       → Compare `last_txn.amount` directly to the threshold.
+      ```sql
+      lt.amount > 300
+      ```
+     - **Cumulative spend thresholds**: e.g., "Alert me if I spend more than $300 on dining".
+       → Use `SUM(t.amount)` over the relevant time window (default: same calendar day as last_txn).
+       ```sql
+       SUM(t.amount) > 300
+       ```
    - This ensures only one row is returned and avoids GROUPING errors.
-4. When comparing last transaction against history:
-   - EXCLUDE the last transaction (t.transaction_date < lt.transaction_date).
+4. For comparison alerts (exceeds average, more than $X above usual):
+    - Historical aggregates must EXCLUDE the last transaction 
+    ```sql
+    (t.transaction_date < lt.transaction_date)
+    ```
+
+4. For cumulative/window alerts (e.g., daily/weekly spend totals):
+   - The aggregate must INCLUDE the last transaction
+     ```sql
+     t.transaction_date BETWEEN (lt.transaction_date - INTERVAL 'X') AND lt.transaction_date
+     ```
 
 5. Time-window alerts:
    - Anchor to last_transaction.transaction_date = '{transaction_date}'.

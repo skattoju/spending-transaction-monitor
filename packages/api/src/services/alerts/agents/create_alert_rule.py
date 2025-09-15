@@ -30,13 +30,9 @@ You must always output a JSON object with the following fields:
 - location: The location mentioned (e.g., "New York", "outside my home state"). If not specified, use "".
 - timeframe: The time window or duration mentioned in the alert text (e.g., "last 30 days", "last hour", "one week"). If not specified, use "".
 - recurring_interval_days: An integer number of days for recurring charge detection.
-   - If the text mentions "every 30 days", "monthly", or similar → extract it as days (30).
-   - If not specified, default to 30.
-- alert_type: One of the following categories:
-   - "spending": Alerts about spending amounts, thresholds, or financial limits.
-   - "location": Alerts about geographic locations or unusual location patterns.
-   - "merchant": Alerts about specific merchants or merchant categories.
-   - "pattern": Alerts about complex behavioral or recurring charge patterns.
+   - If the text mentions "every 30 days", "monthly", or similar → extract it as days (30). Add 5 days to it as a buffer for billing cycles.
+   - If not specified, default to 35.
+   - For the new recurring charge pattern, there should be only one previous transaction excluding the last transaction.
 
 Rules:
 - If multiple categories apply, choose the most specific one (e.g., "merchant" > "spending").

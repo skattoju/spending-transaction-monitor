@@ -19,7 +19,7 @@
         "description": "Dinner at The Cheesecake Factory",
         "merchant_name": "The Cheesecake Factory",
         "merchant_category": "dining",
-        "transaction_date": "2025-08-26T10:05:00Z",
+        "transaction_date": "2025-08-26T19:05:00Z",
         "transaction_type": "PURCHASE",
         "status": "SETTLED",
         "trans_num": "TXN4001"
@@ -33,7 +33,7 @@
         "description": "Electronics purchase",
         "merchant_name": "Best Buy",
         "merchant_category": "electronics",
-        "transaction_date": "2025-08-26T14:30:00Z",
+        "transaction_date": "2025-08-26T19:30:00Z",
         "transaction_type": "PURCHASE",
         "status": "SETTLED",
         "trans_num": "TXN4002"
@@ -61,7 +61,7 @@
         "description": "Coffee",
         "merchant_name": "Starbucks",
         "merchant_category": "dining",
-        "transaction_date": "2025-08-27T09:10:00Z",
+        "transaction_date": "2025-08-26T19:58:00Z",
         "transaction_type": "PURCHASE",
         "status": "SETTLED",
         "trans_num": "TXN4004"

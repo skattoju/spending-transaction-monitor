@@ -1,12 +1,14 @@
 ***Alert Rule***
-Alert me if the amount of a recurring charge increases by more than 5 dollars.
+Alert me if I spend more than $300 on dining.
 
 ***Prompt***
+
 def build_prompt(last_transaction: dict, alert_text: str, alert_rule: dict) -> str:
     user_id = last_transaction.get('user_id', '').strip()
     transaction_date = last_transaction.get('transaction_date', '')
     merchant_name = alert_rule.get('merchant_name', '').lower()
     merchant_category = alert_rule.get('merchant_category', '').lower()
+    recurring_interval_days = alert_rule.get('recurring_interval_days', 30)
 
     schema = """
 Table: transactions
@@ -122,6 +124,7 @@ You must generate **PostgreSQL-compatible SQL** only.
    - Always use CROSS JOIN last_txn to bring in context.
    - Exclude the last transaction from history (`t.transaction_date < lt.transaction_date`).
    - Always wrap the final SELECT in a CASE ... ELSE so it returns exactly one row.
+
         ```sql
     historical AS (
       SELECT COALESCE(AVG(t.amount),0) AS avg_amount
@@ -140,22 +143,47 @@ You must generate **PostgreSQL-compatible SQL** only.
     FROM last_txn lt
     CROSS JOIN historical h;
      ```
+    - Distinguish between two types of **threshold alerts**:
+      - **Transaction-based thresholds**: e.g., "Alert me if a single transaction exceeds $500".
+       → Compare `last_txn.amount` directly to the threshold.
+      ```sql
+      lt.amount > 300
+      ```
+     - **Cumulative spend thresholds**: e.g., "Alert me if I spend more than $300 on dining".
+       → Use `SUM(t.amount)` over the relevant time window (default: same calendar day as last_txn).
+       ```sql
+       SUM(t.amount) > 300
+       ```
    - This ensures only one row is returned and avoids GROUPING errors.
-4. When comparing last transaction against history:
-   - EXCLUDE the last transaction (t.transaction_date < lt.transaction_date).
+4. For comparison alerts (exceeds average, more than $X above usual):
+    - Historical aggregates must EXCLUDE the last transaction 
+    ```sql
+    (t.transaction_date < lt.transaction_date)
+    ```
+
+4. For cumulative/window alerts (e.g., daily/weekly spend totals):
+   - The aggregate must INCLUDE the last transaction
+     ```sql
+     t.transaction_date BETWEEN (lt.transaction_date - INTERVAL 'X') AND lt.transaction_date
+     ```
 
 5. Time-window alerts:
    - Anchor to last_transaction.transaction_date = '{transaction_date}'.
    - Use BETWEEN (TIMESTAMP '{transaction_date}' - INTERVAL 'X') AND TIMESTAMP '{transaction_date}'.
    - Always cast literals to TIMESTAMP before subtracting intervals.
 6. Recurring charge alerts:
+   - If the user specifies an interval (e.g., "every 30 days", "every 90 days"):
+     * Parse that interval (e.g., `interval_days = 30`).
+     * Use it in SQL instead of a fixed 30 days.
+     * Example:
+       ```sql
+       ABS(DATE_PART('day', (lt.transaction_date - prev.transaction_date)) - {recurring_interval_days}) <= 3
+       ```
+   - If no interval is provided, default to 30 days.
    - A "new recurring charge pattern" means:
-     a) The last transaction’s merchant/category has **no prior history before (last_transaction_date - 60 days)**.
-     b) The same merchant/category appears **at least twice** within the last 60 days (including the last transaction).
-   - Use two CTEs:
-     - `prior_txns`: transactions before (last_transaction_date - INTERVAL '60 days').
-     - `recent_txns`: count of this merchant/category in the last 60 days including last_transaction_date.
-   - Final SELECT should return an alert only when NOT EXISTS prior_txns AND recent_txns.count > 1.
+     a) The last transaction’s merchant/category has no prior history before `(last_transaction_date - INTERVAL '{recurring_interval_days} days')`.
+     b) The same merchant/category appears at least twice within the last `{recurring_interval_days}` days (including the last transaction).
+
 7. Thresholds:
    - "$20 more" → last_txn.amount > COALESCE(h.avg_amount,0) + 20.
    - "20% more" → last_txn.amount > COALESCE(h.avg_amount,0) * 1.2.
@@ -219,16 +247,15 @@ SQL:
 """
     return prompt
 
-
   
 ***Generated SQL Query***
-
 WITH last_txn AS (
     SELECT user_id, transaction_date, amount, merchant_name, merchant_category, trans_num,
            merchant_city, merchant_state, merchant_country, merchant_latitude, merchant_longitude, merchant_zipcode
     FROM transactions
-    WHERE user_id = 'u-rc-005'
-      AND transaction_date = TIMESTAMP '2025-12-16 16:23:57.188893+00:00'
+    WHERE user_id = '7bf1a252-9872-4f70-89c0-fc1a35c2a89f'
+      AND transaction_date = TIMESTAMP '2025-09-16 23:55:06.162030+00:00'
+      AND LOWER(merchant_category) LIKE '%dining%'
     LIMIT 1
   ),
   historical AS (
@@ -236,35 +263,17 @@ WITH last_txn AS (
     FROM transactions t
     CROSS JOIN last_txn lt
     WHERE t.user_id = lt.user_id
-      AND LOWER(t.merchant_name) LIKE LOWER(lt.merchant_name)
-      AND t.transaction_date >= lt.transaction_date - INTERVAL '60 days'
+      AND LOWER(t.merchant_category) LIKE LOWER(lt.merchant_category)
+      AND t.transaction_date >= lt.transaction_date - INTERVAL '30 days'
       AND t.transaction_date < lt.transaction_date
-  ),
-  recent_txns AS (
-    SELECT COUNT(*) AS count
-    FROM transactions t
-    CROSS JOIN last_txn lt
-    WHERE t.user_id = lt.user_id
-      AND LOWER(t.merchant_name) LIKE LOWER(lt.merchant_name)
-      AND t.transaction_date >= lt.transaction_date - INTERVAL '60 days'
-      AND t.transaction_date <= lt.transaction_date
-  ),
-  prior_txns AS (
-    SELECT COUNT(*) AS count
-    FROM transactions t
-    CROSS JOIN last_txn lt
-    WHERE t.user_id = lt.user_id
-      AND LOWER(t.merchant_name) LIKE LOWER(lt.merchant_name)
-      AND t.transaction_date < lt.transaction_date - INTERVAL '60 days'
   )
   SELECT CASE
-    WHEN NOT EXISTS (SELECT 1 FROM prior_txns WHERE count > 0)
-      AND (SELECT count FROM recent_txns) > 1
-      AND lt.amount - (SELECT avg_amount FROM historical) > 5
-      THEN 'ALERT: Recurring charge amount increased by more than $5'
+    WHEN lt.amount > 300
+      THEN 'ALERT: Dining expense exceeds $300'
     ELSE 'NO_ALERT'
   END AS alert
-  FROM last_txn lt;
+  FROM last_txn lt
+  CROSS JOIN historical h;
 
   ***Issue***
-No rows returned
+The issue here is that it using the average but it should be using the sum of the transactions
