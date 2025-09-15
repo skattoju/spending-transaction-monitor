@@ -1,5 +1,3 @@
-"""Test cases for AlertRuleService"""
-
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
