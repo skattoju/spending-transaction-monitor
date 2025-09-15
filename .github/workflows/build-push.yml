@@ -33,6 +33,7 @@ jobs:
         echo "Password exists: ${{ secrets.QUAY_PASSWORD != '' }}"
 
     - name: Login to Quay.io
+      if: github.event.pull_request.head.repo.full_name == github.repository || github.ref == 'refs/heads/main'
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
@@ -63,49 +64,75 @@ jobs:
         context: .
         file: ./packages/${{ matrix.package }}/Dockerfile
         platforms: linux/amd64,linux/arm64
-        push: true
+        push: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.ref == 'refs/heads/main' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  update-image-tag:
+  semantic-release:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
+    if: github.ref == 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install semantic-release dependencies
+      run: |
+        npm install --save-dev semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/github
+
+    - name: Run semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      run: npx semantic-release
+
+    - name: Get latest tag
+      id: get-tag
+      run: |
+        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -n "$TAG" ]; then
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+          echo "has_new_tag=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_new_tag=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Update Makefile and values.yaml with new image tag
+      if: steps.get-tag.outputs.has_new_tag == 'true'
       run: |
-        # Extract short SHA for the image tag
-        SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-        NEW_TAG="${SHORT_SHA}"
-        
+        NEW_TAG="${{ steps.get-tag.outputs.version }}"
+
         # Update the IMAGE_TAG in Makefile
         sed -i "s/^IMAGE_TAG ?= .*/IMAGE_TAG ?= ${NEW_TAG}/" Makefile
-        
+
         # Update the global imageTag in values.yaml
         sed -i "s/^  imageTag: .*/  imageTag: ${NEW_TAG}/" deploy/helm/spending-monitor/values.yaml
-        
+
         # Update individual service image tags in values.yaml
         sed -i "s/^    tag: .*/    tag: ${NEW_TAG}/" deploy/helm/spending-monitor/values.yaml
-        
+
         # Check if there are changes
         if git diff --quiet; then
           echo "No changes to commit"
           exit 0
         fi
-        
+
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
+
         # Commit and push
         git add Makefile deploy/helm/spending-monitor/values.yaml
-        git commit -m "ci: update image tag to ${NEW_TAG}"
+        git commit -m "ci: update image tag to ${NEW_TAG} [skip ci]"
         git push
