@@ -57,7 +57,6 @@ class TestAuthBypass:
         # Test with development environment and no explicit BYPASS_AUTH
         with patch.dict(os.environ, {'ENVIRONMENT': 'development'}, clear=True):
             settings = Settings()
-            settings.__post_init__()
 
             assert settings.ENVIRONMENT == 'development'
             assert settings.BYPASS_AUTH is True
@@ -71,7 +70,6 @@ class TestAuthBypass:
             clear=True,
         ):
             settings = Settings()
-            settings.__post_init__()
 
             assert settings.ENVIRONMENT == 'development'
             assert settings.BYPASS_AUTH is False
@@ -80,7 +78,6 @@ class TestAuthBypass:
         """Test that production mode doesn't auto-enable bypass"""
         with patch.dict(os.environ, {'ENVIRONMENT': 'production'}, clear=True):
             settings = Settings()
-            settings.__post_init__()
 
             assert settings.ENVIRONMENT == 'production'
             assert settings.BYPASS_AUTH is False

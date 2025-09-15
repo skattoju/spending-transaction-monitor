@@ -10,7 +10,7 @@ def build_prompt(last_transaction: dict, alert_text: str, alert_rule: dict) -> s
     transaction_date = last_transaction.get('transaction_date', '')
     merchant_name = alert_rule.get('merchant_name', '').lower()
     merchant_category = alert_rule.get('merchant_category', '').lower()
-    recurring_interval_days = alert_rule.get('recurring_interval_days', 30)
+    recurring_interval_days = alert_rule.get('recurring_interval_days', 35)
 
     schema = """
 Table: transactions
@@ -176,15 +176,17 @@ You must generate **PostgreSQL-compatible SQL** only.
 6. Recurring charge alerts:
    - If the user specifies an interval (e.g., "every 30 days", "every 90 days"):
      * Parse that interval (e.g., `interval_days = 30`).
-     * Use it in SQL instead of a fixed 30 days.
+     * Use it in SQL instead of a fixed 30 days. Add 5 days to it as a buffer for billing cycles.
      * Example:
        ```sql
        ABS(DATE_PART('day', (lt.transaction_date - prev.transaction_date)) - {recurring_interval_days}) <= 3
        ```
-   - If no interval is provided, default to 30 days.
+   - If no interval is provided, default to 30 days. Add 5 days to it as a buffer for billing cycles.
    - A "new recurring charge pattern" means:
      a) The last transaction’s merchant/category has no prior history before `(last_transaction_date - INTERVAL '{recurring_interval_days} days')`.
      b) The same merchant/category appears at least twice within the last `{recurring_interval_days}` days (including the last transaction).
+  - For the new recurring charge pattern, there should be only one previous transaction excluding the last transaction.
+    Historica count_transactions should be >=1 and count_prior should be 0.
 
 7. Thresholds:
    - "$20 more" → last_txn.amount > COALESCE(h.avg_amount,0) + 20.

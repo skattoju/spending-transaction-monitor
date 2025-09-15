@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file='.env',
-        extra='ignore'  # Allow extra environment variables without validation errors
+        extra='ignore',  # Allow extra environment variables without validation errors
     )
 
     # Environment settings
