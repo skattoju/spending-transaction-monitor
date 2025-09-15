@@ -28,6 +28,7 @@
     "type-check": "turbo type-check",
     "storybook": "turbo storybook",
     "build-storybook": "turbo build-storybook",
+    "status": "scripts/status-check.sh",
     "prepare": "husky install",
     "release": "semantic-release"
   },
