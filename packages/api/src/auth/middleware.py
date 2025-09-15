@@ -5,10 +5,10 @@ JWT Authentication middleware for Keycloak integration using python-jose
 from datetime import datetime, timedelta
 import logging
 
+import requests
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-import requests
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,11 +23,38 @@ except ImportError:
     get_db = None
     User = None
 
+# Location services import
+try:
+    from ..services.location_middleware import update_user_location_on_login
+except ImportError:
+    # Location services not available
+    update_user_location_on_login = None
+
 logger = logging.getLogger(__name__)
 
 # Global cache for OIDC configuration and keys
 _oidc_config_cache: dict | None = None
 _jwks_cache: dict | None = None
+
+
+async def _capture_user_location_safe(
+    request: Request, user: dict, session: AsyncSession
+) -> None:
+    """
+    Safely capture user location without throwing exceptions
+    Called during authentication to update user location from headers
+    """
+    if not update_user_location_on_login or not request or not session or not user:
+        return
+
+    try:
+        await update_user_location_on_login(request, user, session)
+    except Exception as e:
+        # Log error but don't fail authentication
+        logger.warning(f'Failed to capture user location: {e}')
+        pass
+
+
 _cache_expiry: datetime | None = None
 
 # Keycloak configuration (loaded from environment variables)
@@ -398,6 +425,10 @@ async def require_authentication(
     user = await get_current_user(credentials, session, request)
     if not user:
         raise HTTPException(status_code=401, detail='Invalid authentication')
+
+    # Capture user location on successful authentication
+    if request and session:
+        await _capture_user_location_safe(request, user, session)
 
     return user
 

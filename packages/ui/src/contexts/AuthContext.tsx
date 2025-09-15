@@ -13,6 +13,11 @@ import { authConfig } from '../config/auth';
 import type { User, AuthContextType } from '../types/auth';
 import { DEV_USER } from '../constants/auth';
 import { apiClient } from '../services/apiClient';
+import {
+  useLocationOnMount,
+  storeLocation,
+  clearStoredLocation,
+} from '../hooks/useLocation';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -21,12 +26,27 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
  */
 const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode }) => {
   const [user] = useState<User>(DEV_USER);
+  const { location } = useLocationOnMount(true); // Auto-request location in dev mode
+
+  // Store location when captured
+  useEffect(() => {
+    if (location) {
+      storeLocation(location);
+      if (import.meta.env.DEV) {
+        console.log('📍 Development mode - location captured for fraud detection');
+      }
+    }
+  }, [location]);
 
   const login = useCallback(() => {
     // No-op in dev mode since user is always authenticated
   }, []);
 
   const logout = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.log('🔓 Dev mode: logout() called - staying authenticated');
+    }
+    clearStoredLocation(); // Clear location data on logout
     // No-op in dev mode since user stays authenticated
   }, []);
 
@@ -99,6 +119,8 @@ ProductionAuthProvider.displayName = 'ProductionAuthProvider';
 const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode }) => {
   const oidcAuth = useOIDCAuth();
   const [user, setUser] = useState<User | null>(null);
+  const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
+  const { location, requestLocation } = useLocationOnMount(false); // Don't auto-request, we'll do it manually on login
 
   useEffect(() => {
     if (oidcAuth.error) {
@@ -117,26 +139,43 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       };
       setUser(newUser);
 
-      // User authenticated via OIDC
+      // Request location on successful login (only once per session)
+      if (!hasRequestedLocation) {
+        requestLocation();
+        setHasRequestedLocation(true);
+      }
 
       // Pass token to ApiClient
       if (oidcAuth.user.access_token) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (apiClient as any).constructor.setToken(oidcAuth.user.access_token);
       }
+
+      if (import.meta.env.DEV) {
+        console.log('🔒 User authenticated via OIDC:', {
+          id: oidcAuth.user.profile.sub,
+          email: oidcAuth.user.profile.email,
+        });
+      }
     } else {
       setUser(null);
+      setHasRequestedLocation(false);
+      clearStoredLocation(); // Clear location data on logout
       // Clear token from ApiClient
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (apiClient as any).constructor.setToken(null);
     }
-  }, [
-    oidcAuth.user,
-    oidcAuth.isLoading,
-    oidcAuth.error,
-    oidcAuth.activeNavigator,
-    oidcAuth.isAuthenticated,
-  ]);
+  }, [oidcAuth.user, hasRequestedLocation, requestLocation]);
+
+  // Store location when captured
+  useEffect(() => {
+    if (location && user) {
+      storeLocation(location);
+      if (import.meta.env.DEV) {
+        console.log('📍 Production mode - location captured for fraud detection');
+      }
+    }
+  }, [location, user]);
 
   const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
   const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);
