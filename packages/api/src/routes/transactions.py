@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_db
 from db.models import CreditCard, Transaction, User
 
-from ..auth.middleware import require_authentication, require_admin, require_user
+from ..auth.middleware import require_authentication
 from ..schemas.transaction import (
     CategorySpending,
     CreditCardCreate,
@@ -42,7 +42,7 @@ async def get_transactions(
 ):
     """Get all transactions with optional filtering"""
     query = select(Transaction)
-    
+
     # Authorization: Non-admin users can only see their own transactions
     if 'admin' not in current_user.get('roles', []):
         # Force user_id filter to current user for non-admins
@@ -136,9 +136,12 @@ async def get_transaction(
     tx: Transaction | None = result.scalar_one_or_none()
     if not tx:
         raise HTTPException(status_code=404, detail='Transaction not found')
-        
+
     # Authorization: Users can only access their own transactions, admins can access any
-    if 'admin' not in current_user.get('roles', []) and tx.user_id != current_user['id']:
+    if (
+        'admin' not in current_user.get('roles', [])
+        and tx.user_id != current_user['id']
+    ):
         raise HTTPException(status_code=403, detail='Access denied')
 
     return TransactionOut(
@@ -534,7 +537,7 @@ async def get_transaction_summary(
     # Authorization: Users can only access their own summaries, admins can access any
     if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
         raise HTTPException(status_code=403, detail='Access denied')
-        
+
     # Verify user exists
     user_result = await session.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()
@@ -602,7 +605,7 @@ async def get_category_spending(
     # Authorization: Users can only access their own category data, admins can access any
     if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
         raise HTTPException(status_code=403, detail='Access denied')
-        
+
     # Verify user exists
     user_result = await session.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()

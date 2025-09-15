@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_db
 from db.models import AlertNotification, AlertRule, NotificationMethod, User
 
-from ..auth.middleware import require_authentication, require_admin, require_user
+from ..auth.middleware import require_authentication
 from ..schemas.alert import (
     AlertNotificationCreate,
     AlertNotificationOut,
@@ -43,7 +43,7 @@ async def get_alert_rules(
 ):
     """Get all alert rules with optional filtering"""
     query = select(AlertRule)
-    
+
     # Authorization: Non-admin users can only see their own alert rules
     if 'admin' not in current_user.get('roles', []):
         # Force user_id filter to current user for non-admins

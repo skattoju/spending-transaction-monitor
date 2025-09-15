@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 from db import get_db
 from db.models import AlertRule, User
 
-from ..auth.middleware import require_authentication, require_admin, require_user
+from ..auth.middleware import require_admin, require_authentication
 from ..schemas.user import UserOut
 
 router = APIRouter()
@@ -117,11 +117,14 @@ async def get_user(
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-            
+
         # Authorization: Users can only access their own data, admins can access any
-        if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
             raise HTTPException(status_code=403, detail='Access denied')
-            
+
     except SQLAlchemyError as err:
         # Surface DB errors with proper exception chaining
         raise HTTPException(status_code=500, detail=str(err)) from err
@@ -251,9 +254,12 @@ async def update_user(
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
-            
+
         # Authorization: Users can only update themselves, admins can update anyone
-        if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
             raise HTTPException(status_code=403, detail='Access denied')
 
         # Check if email is being updated and if it already exists
@@ -335,7 +341,7 @@ async def get_user_rules(
     # Authorization: Users can only access their own rules, admins can access any
     if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
         raise HTTPException(status_code=403, detail='Access denied')
-        
+
     result = await session.execute(
         select(AlertRule).where(AlertRule.user_id == user_id)
     )
@@ -365,9 +371,12 @@ async def get_user_transactions(
     """Get all transactions for a specific user"""
     try:
         # Authorization: Users can only access their own transactions, admins can access any
-        if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
             raise HTTPException(status_code=403, detail='Access denied')
-            
+
         # Check if user exists
         result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalar_one_or_none()
@@ -413,9 +422,12 @@ async def get_user_credit_cards(
     """Get all credit cards for a specific user"""
     try:
         # Authorization: Users can only access their own credit cards, admins can access any
-        if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
             raise HTTPException(status_code=403, detail='Access denied')
-            
+
         # Check if user exists
         result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalar_one_or_none()
