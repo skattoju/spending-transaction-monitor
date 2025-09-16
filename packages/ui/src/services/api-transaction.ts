@@ -331,7 +331,6 @@ export const realAlertService = {
       }
 
       const updatedApiRule = await response.json();
-
       // Transform API response to match UI schema
       const updatedRule: AlertRule = {
         id: updatedApiRule.id,
