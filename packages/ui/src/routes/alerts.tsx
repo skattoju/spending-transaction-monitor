@@ -9,6 +9,7 @@ import {
   useAlertRules,
   useCreateAlertRule,
   useToggleAlertRule,
+  useDeleteAlertRule,
 } from '../hooks/transactions';
 import { cn } from '../lib/utils';
 import { statusColors } from '../lib/colors';
@@ -26,6 +27,7 @@ function AlertsPage() {
   const { data: rules, isLoading } = useAlertRules();
   const createRule = useCreateAlertRule();
   const toggleRule = useToggleAlertRule();
+  const deleteRule = useDeleteAlertRule();
 
   const handleCreateRule = async (data: CreateAlertRuleInput) => {
     try {
@@ -38,6 +40,12 @@ function AlertsPage() {
 
   const handleToggleRule = (ruleId: string) => {
     toggleRule.mutate(ruleId);
+  };
+
+  const handleDeleteRule = (ruleId: string) => {
+    if (window.confirm('Are you sure you want to delete this alert rule? This action cannot be undone.')) {
+      deleteRule.mutate(ruleId);
+    }
   };
 
   return (
@@ -119,7 +127,12 @@ function AlertsPage() {
                         <Play className="h-4 w-4" />
                       )}
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteRule(rule.id)}
+                      disabled={deleteRule.isPending}
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>

@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from db.models import AlertNotification, AlertRule, AlertType, Transaction
-
 from services.alert_rule_service import AlertRuleService
 
 

@@ -80,6 +80,18 @@ export const useToggleAlertRule = () => {
   });
 };
 
+export const useDeleteAlertRule = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => alertService.deleteAlertRule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alertRules'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
+};
+
 export const useTransactionChartData = (timeRange: '7d' | '30d' | '90d' | '1y') => {
   return useQuery({
     queryKey: ['transactions', 'chart', timeRange],

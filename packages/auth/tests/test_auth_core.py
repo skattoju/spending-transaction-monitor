@@ -3,10 +3,10 @@ Core tests for JWT authentication middleware
 """
 
 import pytest
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from jose import JWTError
 import sys
 from pathlib import Path
 

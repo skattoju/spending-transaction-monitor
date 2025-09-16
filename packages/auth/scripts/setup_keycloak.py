@@ -3,10 +3,9 @@
 Create a new Keycloak realm for spending-monitor with OIDC discovery enabled
 """
 
-import json
 import time
 import requests
-from typing import Dict, Any, Optional
+from typing import Optional
 
 
 class KeycloakRealmCreator:
@@ -230,7 +229,7 @@ class KeycloakRealmCreator:
                         user_id = response.json()[0]["id"]
                         self.log(f"ℹ️  User '{username}' already exists")
                     else:
-                        self.log(f"❌ Failed to get existing user ID")
+                        self.log("❌ Failed to get existing user ID")
                         return False
                 else:
                     self.log(f"❌ Failed to create user: {response.status_code}")

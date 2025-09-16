@@ -235,16 +235,28 @@ async def update_alert_rule(
 
 @router.delete('/rules/{rule_id}')
 async def delete_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
-    """Delete an alert rule"""
+    """Delete an alert rule and all associated notifications"""
+    from sqlalchemy import delete as sql_delete
+
+    # First check if the rule exists
     result = await session.execute(select(AlertRule).where(AlertRule.id == rule_id))
     rule = result.scalar_one_or_none()
     if not rule:
         raise HTTPException(status_code=404, detail='Alert rule not found')
 
+    # First, delete all associated notifications using bulk delete
+    notification_delete_result = await session.execute(
+        sql_delete(AlertNotification).where(AlertNotification.alert_rule_id == rule_id)
+    )
+    notifications_deleted = notification_delete_result.rowcount
+
+    # Now delete the alert rule
     await session.delete(rule)
     await session.commit()
 
-    return {'message': 'Alert rule deleted successfully'}
+    return {
+        'message': f'Alert rule deleted successfully. {notifications_deleted} associated notifications were also deleted.'
+    }
 
 
 # Alert Notifications endpoints
