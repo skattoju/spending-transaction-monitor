@@ -26,17 +26,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
  */
 const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode }) => {
   const [user] = useState<User>(DEV_USER);
-  const { location } = useLocationOnMount(true); // Auto-request location in dev mode
-
-  // Store location when captured
-  useEffect(() => {
-    if (location) {
-      storeLocation(location);
-      if (import.meta.env.DEV) {
-        console.log('📍 Development mode - location captured for fraud detection');
-      }
-    }
-  }, [location]);
+  // Note: Location is now handled by LocationCapture component on user interaction
 
   const login = useCallback(() => {
     // No-op in dev mode since user is always authenticated
@@ -46,7 +36,8 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
     if (import.meta.env.DEV) {
       console.log('🔓 Dev mode: logout() called - staying authenticated');
     }
-    clearStoredLocation(); // Clear location data on logout
+    clearStoredLocation(); // Clear location data on logout (frontend cleanup)
+    // Note: Location clearing also handled by backend on logout
     // No-op in dev mode since user stays authenticated
   }, []);
 
@@ -119,8 +110,7 @@ ProductionAuthProvider.displayName = 'ProductionAuthProvider';
 const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode }) => {
   const oidcAuth = useOIDCAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
-  const { location, requestLocation } = useLocationOnMount(false); // Don't auto-request, we'll do it manually on login
+  // Note: Location is now handled by LocationCapture component on user interaction
 
   useEffect(() => {
     if (oidcAuth.error) {
@@ -160,22 +150,15 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
     } else {
       setUser(null);
       setHasRequestedLocation(false);
-      clearStoredLocation(); // Clear location data on logout
+      clearStoredLocation(); // Clear location data on logout (frontend cleanup)
       // Clear token from ApiClient
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (apiClient as any).constructor.setToken(null);
+      // Note: Location clearing also handled by backend on logout
     }
-  }, [oidcAuth.user, hasRequestedLocation, requestLocation]);
+  }, [oidcAuth.user]);
 
-  // Store location when captured
-  useEffect(() => {
-    if (location && user) {
-      storeLocation(location);
-      if (import.meta.env.DEV) {
-        console.log('📍 Production mode - location captured for fraud detection');
-      }
-    }
-  }, [location, user]);
+  // Location is now handled by LocationCapture component
 
   const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
   const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);

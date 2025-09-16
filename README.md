@@ -1,6 +1,6 @@
 # Spending Transaction Monitor
 
-An **AI-driven application** that enables users to define **natural language alert rules** for their credit card transactions. The system ingests real-time data, evaluates transactions against user-defined rules, applies AI/ML analysis for anomaly detection, and sends alerts through preferred channels such as email or SMS.
+An **AI-driven application** that enables users to define **natural language alert rules** for their credit card transactions. The system provides rule-based fraud detection and location-based security monitoring, ingesting real-time data, evaluating transactions against user-defined rules, applying AI/ML analysis for anomaly detection, and sending alerts through preferred channels such as email or SMS.
 
 ## 🚀 Overview
 
@@ -21,11 +21,19 @@ The solution is deployed on **OpenShift** and integrates multiple components:
 
 - **Transaction Ingestion Service**: Securely receives credit card transaction data in real-time and stores that in the database.  
 - **Transaction Data Store**: Stores both historical and streaming data (PostgreSQL).  
-- **Customer UI**: React frontend for defining and managing alerts.  
+- **Customer UI**: React frontend for defining and managing alerts with location-based fraud detection.  
 - **NLP Module (LlamaStack + LangGraph Agent)**: Parses natural language into machine-readable rules.  
-- **Rules Engine / Alerting Service**: Evaluates transactions against user rules and behavioral patterns.  
-- **AI/ML Behavioral Analysis**: Detects anomalies, spending spikes, and recurring patterns.  
-- **Notification Service**: Sends alerts via email, or SMS.  
+- **Rules Engine / Alerting Service**: Evaluates transactions against user rules, behavioral patterns, and location-based risk assessment.  
+- **AI/ML Behavioral Analysis**: Detects anomalies, spending spikes, recurring patterns, and location-based fraud indicators.  
+- **Location-based Security**: Captures user GPS coordinates for enhanced security monitoring and fraud detection.  
+- **Notification Service**: Sends alerts via email, SMS, push notifications, or webhooks.  
+
+## Key Features
+
+- Users create alert rules (amount, merchant, category, timeframe, location; notification methods: email/SMS/push/webhook).
+- Location-based fraud detection captures user GPS coordinates for enhanced security monitoring.
+- Incoming transactions are stored and evaluated against active rules, including location-based risk assessment.
+- Triggered rules produce alert notifications which are delivered via configured channels.
 
 ```mermaid
 graph TD
