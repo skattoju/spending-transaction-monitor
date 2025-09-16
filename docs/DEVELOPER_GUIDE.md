@@ -388,6 +388,20 @@ pnpm build        # Build all packages
 - **Environment** configuration via env vars
 
 ### Environment Variables
+
+#### Service Ports (for development conflicts)
+```bash
+# Service-specific ports - override defaults when needed
+API_PORT=8000       # API service port (default: 8000)
+UI_PORT=3000        # UI service port (default: 3000)  
+DB_PORT=5432        # Database external port (default: 5432)
+KEYCLOAK_PORT=8080  # Keycloak port (default: 8080)
+
+# Example: Run API on different port
+API_PORT=8002 pnpm --filter @spending-monitor/api dev
+```
+
+#### Core Configuration
 ```bash
 # Database
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost/spending_monitor
@@ -398,9 +412,8 @@ KEYCLOAK_REALM=spending-monitor
 KEYCLOAK_CLIENT_ID=spending-monitor
 BYPASS_AUTH=false  # Set to true for development
 
-# API Configuration
+# API Configuration  
 API_HOST=localhost
-API_PORT=8000
 ```
 
 ---
@@ -434,7 +447,7 @@ pnpm --filter @spending-monitor/ui build
 
 - [Main README](../README.md) - Project overview
 - [Contributing Guidelines](../CONTRIBUTING.md) - Development standards
-- [Auth Integration Guide](../AUTH_INTEGRATION_GUIDE.md) - Detailed auth setup
+- [Auth Integration Guide](auth/INTEGRATION.md) - Detailed auth setup
 - [API Documentation](../packages/api/README.md) - API service details
 - [Ingestion Service Docs](../packages/ingestion-service/README.md) - Data ingestion
 

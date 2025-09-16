@@ -10,6 +10,7 @@ Modern React frontend application built with Vite and TanStack Router.
 - **TanStack Router** - Type-safe routing with automatic code splitting
 - **Tailwind CSS** - Utility-first CSS framework for rapid styling
 - **Storybook** - Component development and documentation
+- **Authentication** - OIDC integration with development bypass
 - **API Integration** - Ready-to-use API service layer
 - **Development** - Hot module replacement for instant feedback
 - **Production** - Optimized builds with tree shaking and minification
@@ -36,6 +37,50 @@ pnpm dev
 ```
 
 The application will be available at http://localhost:3000
+
+## Authentication Configuration
+
+The UI supports both development and production authentication modes:
+
+### Development Mode (Default)
+
+Authentication is automatically bypassed for faster development:
+
+```bash
+# .env (optional - these are defaults)
+VITE_ENVIRONMENT=development
+VITE_BYPASS_AUTH=true
+```
+
+Features in development mode:
+
+- 🔓 **No login required** - automatic authentication as dev user
+- 🚀 **Instant access** - no OIDC flow needed
+- 👤 **Mock user data** - consistent dev user for testing
+- 🎯 **Visual indicators** - UI shows "Dev Mode" badges
+
+### Production Mode
+
+Full OIDC authentication with Keycloak:
+
+```bash
+# .env
+VITE_ENVIRONMENT=production
+VITE_BYPASS_AUTH=false
+VITE_KEYCLOAK_URL=http://localhost:8080/realms/spending-monitor
+VITE_KEYCLOAK_CLIENT_ID=spending-monitor
+```
+
+### Force Production Auth in Development
+
+To test authentication flow in development:
+
+```bash
+# .env
+VITE_ENVIRONMENT=development
+VITE_BYPASS_AUTH=false  # Explicit override
+VITE_KEYCLOAK_URL=http://localhost:8080/realms/spending-monitor
+```
 
 ## Available Scripts
 
