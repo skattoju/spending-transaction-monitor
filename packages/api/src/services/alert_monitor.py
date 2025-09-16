@@ -52,12 +52,10 @@ class AlertMonitorService:
         # Get a single database session
         session_gen = get_db()
         session = await session_gen.__anext__()
-        
+
         try:
             # Get all active alert rules
-            result = await session.execute(
-                select(AlertRule).where(AlertRule.is_active)
-            )
+            result = await session.execute(select(AlertRule).where(AlertRule.is_active))
             active_rules = result.scalars().all()
 
             if not active_rules:
