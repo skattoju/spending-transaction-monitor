@@ -1,4 +1,5 @@
 {
+    "alert_text": "Alert me if I spend more than $300 on dining.",
     "user": {
       "id": "7bf1a252-9872-4f70-89c0-fc1a35c2a89f",
       "email": "michael.johnson@example.com",
@@ -32,12 +33,12 @@
         "description": "Dinner at The Cheesecake Factory",
         "merchant_name": "The Cheesecake Factory",
         "merchant_category": "dining",
-        "transaction_date": "2025-08-25T18:30:00Z",
+        "transaction_date": "2025-08-26T18:30:00Z",
         "transaction_type": "PURCHASE",
         "merchant_city": "New York",
         "merchant_state": "NY",
         "merchant_country": "US",
-        "status": "COMPLETED",
+        "status": "SETTLED",
         "authorization_code": "AUTH001",
         "trans_num": "TXN001"
       },
@@ -50,12 +51,12 @@
         "description": "Lunch at Shake Shack",
         "merchant_name": "Shake Shack",
         "merchant_category": "dining",
-        "transaction_date": "2025-08-26T12:15:00Z",
+        "transaction_date": "2025-08-26T20:15:00Z",
         "transaction_type": "PURCHASE",
         "merchant_city": "New York",
         "merchant_state": "NY",
         "merchant_country": "US",
-        "status": "COMPLETED",
+        "status": "SETTLED",
         "authorization_code": "AUTH002",
         "trans_num": "TXN002"
       },
@@ -73,7 +74,7 @@
         "merchant_city": "New York",
         "merchant_state": "NY",
         "merchant_country": "US",
-        "status": "COMPLETED",
+        "status": "SETTLED",
         "authorization_code": "AUTH003",
         "trans_num": "TXN003"
       }

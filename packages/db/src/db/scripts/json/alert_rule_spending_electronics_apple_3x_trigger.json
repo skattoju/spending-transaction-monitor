@@ -1,0 +1,70 @@
+{
+  "alert_text": "Alert me if my transaction amount for Apple exceeds my typical electronics spend by 3x.",
+  "user": {
+    "id": "u-67890",
+    "email": "sarah.smith@example.com",
+    "first_name": "Sarah",
+    "last_name": "Smith",
+    "address_city": "San Francisco",
+    "address_state": "CA",
+    "address_country": "US"
+  },
+  "transactions": [
+    {
+      "id": "txn-3001",
+      "user_id": "u-67890",
+      "credit_card_num": "5555444433332222",
+      "amount": 200.00,
+      "currency": "USD",
+      "description": "Purchase at Best Buy",
+      "merchant_name": "Best Buy",
+      "merchant_category": "electronics",
+      "transaction_date": "2025-08-21T09:15:00Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "TXN3001"
+    },
+    {
+      "id": "txn-3002",
+      "user_id": "u-67890",
+      "credit_card_num": "5555444433332222",
+      "amount": 199.00,
+      "currency": "USD",
+      "description": "Apple AirPods Pro",
+      "merchant_name": "Apple Store",
+      "merchant_category": "electronics",
+      "transaction_date": "2025-08-22T14:30:00Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "TXN3002"
+    },
+    {
+      "id": "txn-3003",
+      "user_id": "u-67890",
+      "credit_card_num": "5555444433332222",
+      "amount": 599.00,
+      "currency": "USD",
+      "description": "Apple iPad Pro",
+      "merchant_name": "Apple Store",
+      "merchant_category": "electronics",
+      "transaction_date": "2025-08-23T11:00:00Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "TXN3003"
+    },
+    {
+      "id": "txn-3004",
+      "user_id": "u-67890",
+      "credit_card_num": "5555444433332222",
+      "amount": 1299.00,
+      "currency": "USD",
+      "description": "Apple MacBook Pro",
+      "merchant_name": "Apple Store",
+      "merchant_category": "electronics",
+      "transaction_date": "2025-08-24T16:45:00Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "TXN3004"
+    }
+  ]
+}

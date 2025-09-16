@@ -1,0 +1,87 @@
+{
+    "alert_text": "Alert me when a new recurring charge pattern is detected.",
+    "user": {
+      "id": "u-rc-new-001",
+      "email": "sam.parker@example.com",
+      "first_name": "Sam",
+      "last_name": "Parker",
+      "address_city": "Denver",
+      "address_state": "CO",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-nr-0001",
+        "user_id": "u-rc-new-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 62.15,
+        "currency": "USD",
+        "description": "Groceries",
+        "merchant_name": "Whole Foods",
+        "merchant_category": "grocery",
+        "transaction_date": "2025-06-14T15:25:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "NR0001"
+      },
+
+      {
+        "id": "txn-nr-0002",
+        "user_id": "u-rc-new-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 28.70,
+        "currency": "USD",
+        "description": "Dinner",
+        "merchant_name": "Chipotle",
+        "merchant_category": "dining",
+        "transaction_date": "2025-07-06T18:10:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "NR0002"
+      },
+      {
+        "id": "txn-nr-0003",
+        "user_id": "u-rc-new-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 149.99,
+        "currency": "USD",
+        "description": "Headphones",
+        "merchant_name": "Best Buy",
+        "merchant_category": "electronics",
+        "transaction_date": "2025-07-21T12:05:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "NR0003"
+      },
+
+      {
+        "id": "txn-nr-1001",
+        "user_id": "u-rc-new-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 11.99,
+        "currency": "USD",
+        "description": "Monthly music subscription",
+        "merchant_name": "TuneStream",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-08-01T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "NR1001"
+      },
+      {
+        "id": "txn-nr-1002",
+        "user_id": "u-rc-new-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 11.99,
+        "currency": "USD",
+        "description": "Monthly music subscription",
+        "merchant_name": "TuneStream",
+        "merchant_category": "subscription",
+        "transaction_date": "2025-09-01T08:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "NR1002"
+      }
+    ]
+  }
+  

@@ -3,9 +3,8 @@ Database tests
 """
 
 import pytest
-from sqlalchemy import text
-
 from db.database import engine
+from sqlalchemy import text
 
 
 @pytest.mark.asyncio

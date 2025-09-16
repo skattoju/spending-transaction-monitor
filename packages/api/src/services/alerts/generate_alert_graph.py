@@ -11,6 +11,7 @@ from .agents.sql_executor import execute_sql
 # Define app state
 class AppState(dict):
     transaction: dict
+    user: dict
     alert_text: str
     sql_query: str
     query_result: str
@@ -43,7 +44,11 @@ graph.add_node(
         lambda state: {
             **state,
             'sql_query': parse_alert_to_sql_with_context(
-                {'transaction': state['transaction'], 'alert_text': state['alert_text']}
+                {
+                    'transaction': state['transaction'],
+                    'alert_text': state['alert_text'],
+                    'alert_rule': state['alert_rule'],
+                }
             ),
         }
     ),
@@ -83,6 +88,7 @@ graph.add_node(
                     'query_result': state['query_result'],
                     'alert_text': state['alert_text'],
                     'alert_rule': state['alert_rule'],
+                    'user': state['user'],
                 }
             )
             if state.get('alert_triggered')

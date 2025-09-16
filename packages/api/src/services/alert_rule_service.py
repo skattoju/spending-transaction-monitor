@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .alerts.generate_alert_graph import app as generate_alert_graph
 from .alerts.parse_alert_graph import app as parse_alert_graph
 from .transaction_service import TransactionService
+from .user_service import UserService
 
 
 class AlertRuleService:
@@ -23,6 +24,7 @@ class AlertRuleService:
 
     def __init__(self):
         self.transaction_service = TransactionService()
+        self.user_service = UserService()
 
     @staticmethod
     def parse_nl_rule_with_llm(
@@ -41,12 +43,12 @@ class AlertRuleService:
 
     @staticmethod
     def generate_alert_with_llm(
-        alert_text: str, transaction: dict[str, Any]
+        alert_text: str, transaction: dict[str, Any], user: dict[str, Any]
     ) -> dict[str, Any]:
         """Generate alert message using LLM."""
         try:
             result = generate_alert_graph.invoke(
-                {'transaction': transaction, 'alert_text': alert_text}
+                {'transaction': transaction, 'alert_text': alert_text, 'user': user}
             )
             return result
         except Exception as e:
@@ -123,9 +125,15 @@ class AlertRuleService:
         if transaction is None:
             raise ValueError('No transaction found for user')
 
+        # Get user data for alert generation
+        user_data = await self.user_service.get_user_summary(rule.user_id, session)
+        if user_data is None:
+            # Fallback to dummy user data for testing
+            raise ValueError('User data not found')
+
         try:
             alert_result = self.generate_alert_with_llm(
-                rule.natural_language_query, transaction.__dict__
+                rule.natural_language_query, transaction.__dict__, user_data
             )
 
             if alert_result and alert_result.get('alert_triggered', False):

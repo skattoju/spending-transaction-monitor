@@ -5,11 +5,16 @@ Application configuration
 import os
 from typing import Literal
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        extra='ignore',  # Allow extra environment variables without validation errors
+    )
 
     # Environment settings
     ENVIRONMENT: Literal['development', 'production', 'staging', 'test'] = 'development'
@@ -41,11 +46,7 @@ class Settings(BaseSettings):
     KEYCLOAK_REALM: str = 'spending-monitor'
     KEYCLOAK_CLIENT_ID: str = 'spending-monitor'
 
-    class Config:
-        env_file = '.env'
-        extra = 'ignore'  # Allow extra environment variables without validation errors
-
-    def __post_init__(self):
+    def model_post_init(self, __context):
         """Set derived values based on environment"""
         # Auto-enable auth bypass in development if not explicitly set
         if (
@@ -61,4 +62,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-settings.__post_init__()

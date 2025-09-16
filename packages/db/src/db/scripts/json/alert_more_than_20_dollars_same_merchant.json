@@ -1,0 +1,90 @@
+{
+    "alert_text": "Alert me if I’m charged more than 20 dollars than usual by the same merchant.",
+    "user": {
+      "id": "u-merchant-001",
+      "email": "alex.smith@example.com",
+      "first_name": "Alex",
+      "last_name": "Smith",
+      "address_city": "Chicago",
+      "address_state": "IL",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-m-1001",
+        "user_id": "u-merchant-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 45.00,
+        "currency": "USD",
+        "description": "Lunch at Olive Garden",
+        "merchant_name": "Olive Garden",
+        "merchant_category": "dining",
+        "transaction_date": "2025-07-15T12:20:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "authorization_code": "AUTHM001",
+        "trans_num": "M1001"
+      },
+      {
+        "id": "txn-m-1002",
+        "user_id": "u-merchant-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 48.50,
+        "currency": "USD",
+        "description": "Dinner at Olive Garden",
+        "merchant_name": "Olive Garden",
+        "merchant_category": "dining",
+        "transaction_date": "2025-07-28T19:10:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "authorization_code": "AUTHM002",
+        "trans_num": "M1002"
+      },
+      {
+        "id": "txn-m-1003",
+        "user_id": "u-merchant-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 47.25,
+        "currency": "USD",
+        "description": "Lunch at Olive Garden",
+        "merchant_name": "Olive Garden",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-05T13:15:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "authorization_code": "AUTHM003",
+        "trans_num": "M1003"
+      },
+      {
+        "id": "txn-m-2001",
+        "user_id": "u-merchant-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 75.00,
+        "currency": "USD",
+        "description": "Special dinner at Olive Garden",
+        "merchant_name": "Olive Garden",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-24T19:45:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "authorization_code": "AUTHM004",
+        "trans_num": "M2001"
+      },
+      {
+        "id": "txn-m-3001",
+        "user_id": "u-merchant-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 120.00,
+        "currency": "USD",
+        "description": "Dinner at Olive Garden - large party",
+        "merchant_name": "Olive Garden",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T20:10:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "authorization_code": "AUTHM005",
+        "trans_num": "M3001"
+      }
+    ]
+  }
+  

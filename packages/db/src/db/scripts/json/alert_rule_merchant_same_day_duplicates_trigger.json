@@ -1,0 +1,84 @@
+{
+    "alert_text": "Alert me if I’m charged more than once by the same merchant on the same day.",
+    "user": {
+      "id": "u-dup-001",
+      "email": "casey.morgan@example.com",
+      "first_name": "Casey",
+      "last_name": "Morgan",
+      "address_city": "Boston",
+      "address_state": "MA",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-dp-1001",
+        "user_id": "u-dup-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 18.50,
+        "currency": "USD",
+        "description": "Morning coffee",
+        "merchant_name": "Starbucks",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-24T08:15:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "DP1001"
+      },
+      {
+        "id": "txn-dp-1002",
+        "user_id": "u-dup-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 7.25,
+        "currency": "USD",
+        "description": "Afternoon coffee",
+        "merchant_name": "Starbucks",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-24T14:40:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "DP1002"
+      },
+      {
+        "id": "txn-dp-1003",
+        "user_id": "u-dup-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 62.10,
+        "currency": "USD",
+        "description": "Groceries",
+        "merchant_name": "Trader Joe's",
+        "merchant_category": "grocery",
+        "transaction_date": "2025-08-25T17:05:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "DP1003"
+      },
+      {
+        "id": "txn-dp-1004",
+        "user_id": "u-dup-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 42.00,
+        "currency": "USD",
+        "description": "Lunch combo",
+        "merchant_name": "The Cheesecake Factory",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T18:10:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "DP1004"
+      },
+      {
+        "id": "txn-dp-1005",
+        "user_id": "u-dup-001",
+        "credit_card_num": "4111111111111111",
+        "amount": 11.50,
+        "currency": "USD",
+        "description": "Dessert",
+        "merchant_name": "The Cheesecake Factory",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-26T19:35:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "DP1005"
+      }
+    ]
+  }

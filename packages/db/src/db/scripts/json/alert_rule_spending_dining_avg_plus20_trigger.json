@@ -1,0 +1,70 @@
+{
+    "alert_text": "Alert me if my dining expense exceeds my average by more than $20 in the last 30 days.",
+    "user": {
+      "id": "u-12345",
+      "email": "michael.johnson@example.com",
+      "first_name": "Michael",
+      "last_name": "Johnson",
+      "address_city": "New York",
+      "address_state": "NY",
+      "address_country": "US"
+    },
+    "transactions": [
+      {
+        "id": "txn-2001",
+        "user_id": "u-12345",
+        "credit_card_num": "4111111111111111",
+        "amount": 30.00,
+        "currency": "USD",
+        "description": "Lunch at Shake Shack",
+        "merchant_name": "Shake Shack",
+        "merchant_category": "dining",
+        "transaction_date": "2025-07-28T12:30:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN2001"
+      },
+      {
+        "id": "txn-2002",
+        "user_id": "u-12345",
+        "credit_card_num": "4111111111111111",
+        "amount": 35.00,
+        "currency": "USD",
+        "description": "Dinner at Chipotle",
+        "merchant_name": "Chipotle",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-05T19:15:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN2002"
+      },
+      {
+        "id": "txn-2003",
+        "user_id": "u-12345",
+        "credit_card_num": "4111111111111111",
+        "amount": 40.00,
+        "currency": "USD",
+        "description": "Dinner at Olive Garden",
+        "merchant_name": "Olive Garden",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-15T18:45:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN2003"
+      },
+      {
+        "id": "txn-2004",
+        "user_id": "u-12345",
+        "credit_card_num": "4111111111111111",
+        "amount": 75.00,
+        "currency": "USD",
+        "description": "Dinner at Nobu",
+        "merchant_name": "Nobu",
+        "merchant_category": "dining",
+        "transaction_date": "2025-08-24T20:00:00Z",
+        "transaction_type": "PURCHASE",
+        "status": "SETTLED",
+        "trans_num": "TXN2004"
+      }
+    ]
+  }

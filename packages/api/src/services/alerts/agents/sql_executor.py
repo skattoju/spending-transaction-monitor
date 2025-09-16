@@ -22,6 +22,7 @@ def execute_sql(sql: str) -> str:
 
     with SyncSessionLocal() as session:
         try:
+            print(f'Executing SQL: {sql}')
             result = session.execute(text(sql))
 
             # Check if query returns rows
@@ -30,8 +31,13 @@ def execute_sql(sql: str) -> str:
                 if rows:
                     # Convert each row to a tuple and then to string
                     formatted_rows = [tuple(row) for row in rows]
+                    print(f'****** Formatted rows: {str(formatted_rows)}')
+                    str_formatted_rows = str(formatted_rows)
+                    if 'NO_ALERT' in str_formatted_rows:
+                        return '[]'
                     return str(formatted_rows)
                 else:
+                    print('No rows returned *****')
                     return '[]'
             else:
                 # For non-SELECT queries (INSERT, UPDATE, DELETE)
@@ -40,4 +46,5 @@ def execute_sql(sql: str) -> str:
 
         except Exception as e:
             session.rollback()
+            print(f'SQL Error: {e}')
             return f'SQL Error: {e}'
