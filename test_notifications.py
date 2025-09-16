@@ -9,12 +9,19 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 import sys
-import os
-sys.path.append('packages/db/src')
-sys.path.append('packages/api/src')
+
+sys.path.append("packages/db/src")
+sys.path.append("packages/api/src")
 
 from db.database import SessionLocal
-from db.models import User, CreditCard, Transaction, AlertRule, NotificationMethod, AlertType
+from db.models import (
+    User,
+    CreditCard,
+    Transaction,
+    AlertRule,
+    NotificationMethod,
+    AlertType,
+)
 
 
 async def create_test_user_and_transactions():
@@ -42,7 +49,7 @@ async def create_test_user_and_transactions():
                 last_app_location_latitude=37.7849,
                 last_app_location_longitude=-122.4094,
                 last_app_location_timestamp=datetime.utcnow(),
-                last_app_location_accuracy=10.0
+                last_app_location_accuracy=10.0,
             )
 
             session.add(user)
@@ -58,7 +65,7 @@ async def create_test_user_and_transactions():
                 bank_name="Tech Bank",
                 card_holder_name="Yash Oza",
                 expiry_month=8,
-                expiry_year=2028
+                expiry_year=2028,
             )
 
             session.add(card)
@@ -81,7 +88,7 @@ async def create_test_user_and_transactions():
                     transaction_date=current_time - timedelta(minutes=5),
                     merchant_city="San Francisco",
                     merchant_state="CA",
-                    merchant_country="US"
+                    merchant_country="US",
                 ),
                 # Another high amount transaction
                 Transaction(
@@ -96,7 +103,7 @@ async def create_test_user_and_transactions():
                     transaction_date=current_time - timedelta(minutes=2),
                     merchant_city="San Francisco",
                     merchant_state="CA",
-                    merchant_country="US"
+                    merchant_country="US",
                 ),
                 # Recent dining transaction
                 Transaction(
@@ -111,8 +118,8 @@ async def create_test_user_and_transactions():
                     transaction_date=current_time - timedelta(minutes=1),
                     merchant_city="San Francisco",
                     merchant_state="CA",
-                    merchant_country="US"
-                )
+                    merchant_country="US",
+                ),
             ]
 
             # Create an alert rule for Yash that will trigger on $500+ transactions
@@ -125,7 +132,7 @@ async def create_test_user_and_transactions():
                 alert_type=AlertType.AMOUNT_THRESHOLD,
                 amount_threshold=Decimal("500.00"),
                 natural_language_query="Alert me when I spend more than $500 in one transaction",
-                notification_methods=[NotificationMethod.EMAIL]
+                notification_methods=[NotificationMethod.EMAIL],
             )
 
             session.add(alert_rule)
@@ -140,7 +147,9 @@ async def create_test_user_and_transactions():
             print(f"✅ Created alert rule: {alert_rule.name}")
             print("\nTransactions created:")
             for txn in transactions:
-                print(f"  - ${txn.amount} at {txn.merchant_name} ({txn.transaction_date})")
+                print(
+                    f"  - ${txn.amount} at {txn.merchant_name} ({txn.transaction_date})"
+                )
 
             return user_id, alert_rule.id
 

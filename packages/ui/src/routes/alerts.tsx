@@ -98,11 +98,14 @@ function AlertsPage() {
                       <Bell className="h-4 w-4 text-muted-foreground" />
                       <p className="font-medium text-foreground">{rule.rule}</p>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Triggered {rule.triggered} times</span>
-                      <span>•</span>
-                      <span>Last: {rule.last_triggered}</span>
-                    </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>Triggered {rule.triggered} times</span>
+                  <span>•</span>
+                  <span>Last: {rule.last_triggered}</span>
+                  {rule.status === 'inactive' && (
+                    <span className="text-orange-600 font-medium">• Paused</span>
+                  )}
+                </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge
@@ -120,11 +123,12 @@ function AlertsPage() {
                       size="sm"
                       onClick={() => handleToggleRule(rule.id)}
                       disabled={toggleRule.isPending}
+                      title={rule.status === 'active' ? 'Pause alert rule' : 'Resume alert rule'}
                     >
                       {rule.status === 'active' ? (
                         <Pause className="h-4 w-4" />
                       ) : (
-                        <Play className="h-4 w-4" />
+                        <Play className="h-4 w-4 text-green-600" />
                       )}
                     </Button>
                     <Button 

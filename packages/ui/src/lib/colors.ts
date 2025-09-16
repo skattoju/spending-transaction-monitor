@@ -29,9 +29,9 @@ export const statusColors = {
     badge: 'bg-success-muted text-success-muted-foreground',
   },
   inactive: {
-    text: 'text-muted-foreground',
-    icon: 'text-muted-foreground',
-    badge: 'bg-muted text-muted-foreground',
+    text: 'text-orange-600',
+    icon: 'text-orange-600',
+    badge: 'bg-orange-100 text-orange-800',
   },
   paused: {
     text: 'text-warning',
