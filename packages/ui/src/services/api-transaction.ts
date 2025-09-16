@@ -376,29 +376,6 @@ export const realAlertService = {
       );
     }
   },
-
-  // Delete alert rule
-  async deleteAlertRule(id: string): Promise<void> {
-    try {
-      const response = await fetch(`/api/alerts/rules/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to delete alert rule: ${response.status} ${response.statusText}`,
-        );
-      }
-
-      // The API should handle cascading deletion of associated notifications
-      console.log(`Alert rule ${id} deleted successfully`);
-    } catch (error) {
-      console.error('Error deleting alert rule:', error);
-      throw new Error(
-        error instanceof Error ? error.message : 'Failed to delete alert rule',
-      );
-    }
-  },
 };
 
 // User service for real API data

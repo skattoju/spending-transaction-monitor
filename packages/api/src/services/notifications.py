@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from db.models import AlertNotification
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models import AlertNotification
 
 from .smtp import send_smtp_notification
 

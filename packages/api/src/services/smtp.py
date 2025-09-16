@@ -1,9 +1,9 @@
-import logging
-import os
-import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import logging
+import os
+import smtplib
 
 from db.models import AlertNotification, User
 from dotenv import load_dotenv

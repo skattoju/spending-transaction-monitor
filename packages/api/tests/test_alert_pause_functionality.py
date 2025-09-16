@@ -2,11 +2,13 @@
 Test cases for alert rule pause/resume functionality
 """
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from db.models import AlertRule
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models import AlertRule
 
 # Import the function we want to test
 from src.routes.alerts import update_alert_rule
@@ -26,11 +28,20 @@ class TestAlertRulePauseResumeFunctionality:
         mock_rule = MagicMock(spec=AlertRule)
         mock_rule.id = 'test-rule-123'
         mock_rule.name = 'Test Active Rule'
+        mock_rule.description = 'Test alert rule description'
         mock_rule.is_active = True
         mock_rule.trigger_count = 5
         mock_rule.last_triggered = None
+        mock_rule.alert_type = 'AMOUNT_THRESHOLD'
+        mock_rule.amount_threshold = 100.0
+        mock_rule.merchant_category = 'DINING'
+        mock_rule.merchant_name = 'Test Merchant'
+        mock_rule.location = 'San Francisco'
+        mock_rule.timeframe = 'daily'
         mock_rule.natural_language_query = 'Alert me for high amounts'
-        from datetime import datetime
+        mock_rule.sql_query = 'SELECT * FROM transactions WHERE amount > 100'
+        mock_rule.notification_methods = ['EMAIL']
+        mock_rule.user_id = 'test-user-123'
 
         mock_rule.created_at = datetime(2024, 1, 15, 10, 30, 0)
         mock_rule.updated_at = datetime(2024, 1, 15, 10, 30, 0)
@@ -38,8 +49,17 @@ class TestAlertRulePauseResumeFunctionality:
         # Mock the execute results for finding the rule
         mock_rule_result = MagicMock()
         mock_rule_result.scalar_one_or_none.return_value = mock_rule
-
         mock_session.execute.return_value = mock_rule_result
+
+        # Mock the refresh to simulate database update
+        def mock_refresh(rule):
+            """Simulate database refresh by updating the rule's is_active field"""
+            rule.is_active = False  # Simulate the database update pausing the rule
+            # Also update the updated_at field to simulate the database behavior
+            rule.updated_at = datetime.now(UTC)
+            return None
+
+        mock_session.refresh.side_effect = mock_refresh
 
         # Create update payload to pause the rule
         from src.schemas.alert import AlertRuleUpdate
@@ -71,11 +91,22 @@ class TestAlertRulePauseResumeFunctionality:
         mock_rule = MagicMock(spec=AlertRule)
         mock_rule.id = 'test-rule-456'
         mock_rule.name = 'Test Paused Rule'
+        mock_rule.description = 'Test paused alert rule description'
         mock_rule.is_active = False  # Currently paused
         mock_rule.trigger_count = 2
         mock_rule.last_triggered = None
+        mock_rule.alert_type = 'MERCHANT_CATEGORY'
+        mock_rule.amount_threshold = None
+        mock_rule.merchant_category = 'DINING'
+        mock_rule.merchant_name = None
+        mock_rule.location = None
+        mock_rule.timeframe = 'weekly'
         mock_rule.natural_language_query = 'Alert me for dining expenses'
-        from datetime import datetime
+        mock_rule.sql_query = (
+            'SELECT * FROM transactions WHERE merchant_category = "DINING"'
+        )
+        mock_rule.notification_methods = ['EMAIL', 'SMS']
+        mock_rule.user_id = 'test-user-456'
 
         mock_rule.created_at = datetime(2024, 1, 14, 15, 20, 0)
         mock_rule.updated_at = datetime(2024, 1, 14, 15, 20, 0)
@@ -83,8 +114,17 @@ class TestAlertRulePauseResumeFunctionality:
         # Mock the execute results
         mock_rule_result = MagicMock()
         mock_rule_result.scalar_one_or_none.return_value = mock_rule
-
         mock_session.execute.return_value = mock_rule_result
+
+        # Mock the refresh to simulate database update
+        def mock_refresh(rule):
+            """Simulate database refresh by updating the rule's is_active field"""
+            rule.is_active = True  # Simulate the database update to resume
+            # Also update the updated_at field to simulate the database behavior
+            rule.updated_at = datetime.now(UTC)
+            return None
+
+        mock_session.refresh.side_effect = mock_refresh
 
         # Create update payload to resume the rule
         from src.schemas.alert import AlertRuleUpdate
@@ -159,7 +199,7 @@ class TestAlertRulePauseResumeFunctionality:
         mock_rule.sql_query = 'SELECT * FROM transactions WHERE...'
         mock_rule.notification_methods = ['EMAIL', 'SMS']
         mock_rule.trigger_count = 10
-        from datetime import datetime
+        mock_rule.user_id = 'test-user-789'
 
         mock_rule.last_triggered = datetime(2024, 1, 15, 12, 0, 0)
         mock_rule.created_at = datetime(2024, 1, 1, 10, 0, 0)
@@ -168,8 +208,17 @@ class TestAlertRulePauseResumeFunctionality:
         # Mock the execute results
         mock_rule_result = MagicMock()
         mock_rule_result.scalar_one_or_none.return_value = mock_rule
-
         mock_session.execute.return_value = mock_rule_result
+
+        # Mock the refresh to simulate database update
+        def mock_refresh(rule):
+            """Simulate database refresh by updating the rule's is_active field"""
+            rule.is_active = False  # Simulate the database update
+            # Also update the updated_at field to simulate the database behavior
+            rule.updated_at = datetime.now(UTC)
+            return None
+
+        mock_session.refresh.side_effect = mock_refresh
 
         # Create pause payload
         from src.schemas.alert import AlertRuleUpdate

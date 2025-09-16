@@ -99,3 +99,8 @@ dev = [
     "respx>=0.22.0",
     "ruff>=0.12.11",
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src", "db", "services"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+force-sort-within-sections = true

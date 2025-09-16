@@ -2,13 +2,13 @@
 JWT Authentication middleware for Keycloak integration using python-jose
 """
 
-import logging
 from datetime import datetime, timedelta
+import logging
 
-import requests
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+import requests
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

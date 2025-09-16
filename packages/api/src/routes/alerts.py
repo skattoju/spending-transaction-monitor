@@ -1,14 +1,15 @@
 """Alert endpoints for managing alert rules and notifications"""
 
+from datetime import UTC, datetime
 import uuid
-from datetime import datetime
 
-from db import get_db
-from db.models import AlertNotification, AlertRule, NotificationMethod, User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db import get_db
+from db.models import AlertNotification, AlertRule, NotificationMethod, User
 
 from ..schemas.alert import (
     AlertNotificationCreate,
@@ -197,12 +198,12 @@ async def update_alert_rule(
 
     # Build update data
     update_data = {}
-    for field, value in payload.dict(exclude_unset=True).items():
+    for field, value in payload.model_dump(exclude_unset=True).items():
         if value is not None:
             update_data[field] = value
 
     if update_data:
-        update_data['updated_at'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.now(UTC)
         await session.execute(
             update(AlertRule).where(AlertRule.id == rule_id).values(**update_data)
         )

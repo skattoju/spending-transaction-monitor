@@ -2,11 +2,12 @@
 
 import uuid
 
-from db import get_db
-from db.models import CreditCard, Transaction, User
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db import get_db
+from db.models import CreditCard, Transaction, User
 
 from ..schemas.transaction import (
     CategorySpending,

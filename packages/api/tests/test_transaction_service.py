@@ -5,8 +5,9 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from db.models import Transaction
-from services.transaction_service import TransactionService
+from src.services.transaction_service import TransactionService
 
 
 class TestTransactionService:
@@ -65,9 +66,20 @@ class TestTransactionService:
         self, transaction_service, mock_session, sample_transaction
     ):
         """Test successfully getting the latest transaction for a user"""
-        # Arrange
+        # Arrange - Create a simple transaction object instead of using the MagicMock fixture
+        from types import SimpleNamespace
+
+        simple_transaction = SimpleNamespace(
+            id='tx-123',
+            user_id='user-456',
+            amount=Decimal('150.00'),
+            currency='USD',
+            merchant_name='Test Store',
+            trans_num='trans-789',
+        )
+
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sample_transaction
+        mock_result.scalar_one_or_none.return_value = simple_transaction
         mock_session.execute.return_value = mock_result
 
         # Act
@@ -76,7 +88,7 @@ class TestTransactionService:
         )
 
         # Assert
-        assert result == sample_transaction
+        assert result == simple_transaction
         mock_session.execute.assert_called_once()
         mock_result.scalar_one_or_none.assert_called_once()
 
@@ -192,16 +204,27 @@ class TestTransactionService:
         self, transaction_service, mock_session, sample_transaction
     ):
         """Test successfully getting a transaction by ID"""
-        # Arrange
+        # Arrange - Create a simple transaction object instead of using the MagicMock fixture
+        from types import SimpleNamespace
+
+        simple_transaction = SimpleNamespace(
+            id='tx-123',
+            user_id='user-456',
+            amount=Decimal('150.00'),
+            currency='USD',
+            merchant_name='Test Store',
+            trans_num='trans-789',
+        )
+
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sample_transaction
+        mock_result.scalar_one_or_none.return_value = simple_transaction
         mock_session.execute.return_value = mock_result
 
         # Act
         result = await transaction_service.get_transaction_by_id('tx-123', mock_session)
 
         # Assert
-        assert result == sample_transaction
+        assert result == simple_transaction
         mock_session.execute.assert_called_once()
 
     @pytest.mark.asyncio
@@ -228,9 +251,20 @@ class TestTransactionService:
         self, transaction_service, mock_session, sample_transaction
     ):
         """Test user_has_transactions returns True when user has transactions"""
-        # Arrange
+        # Arrange - Create a simple transaction object instead of using the MagicMock fixture
+        from types import SimpleNamespace
+
+        simple_transaction = SimpleNamespace(
+            id='tx-123',
+            user_id='user-456',
+            amount=Decimal('150.00'),
+            currency='USD',
+            merchant_name='Test Store',
+            trans_num='trans-789',
+        )
+
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sample_transaction
+        mock_result.scalar_one_or_none.return_value = simple_transaction
         mock_session.execute.return_value = mock_result
 
         # Act

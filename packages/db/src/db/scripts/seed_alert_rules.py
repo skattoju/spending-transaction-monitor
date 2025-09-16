@@ -94,10 +94,7 @@ def normalize_json_structure(data: dict[str, Any]) -> dict[str, list[dict[str, A
         normalized['credit_cards'] = []
 
     # Handle transactions
-    if 'transactions' in data:
-        normalized['transactions'] = data['transactions']
-    else:
-        normalized['transactions'] = []
+    normalized['transactions'] = data.get('transactions', [])
 
     return normalized
 

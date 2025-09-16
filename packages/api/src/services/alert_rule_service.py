@@ -1,8 +1,11 @@
 """Alert Rule Service - Business logic for alert rule operations"""
 
-import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
+import uuid
+
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import (
     AlertNotification,
@@ -10,8 +13,6 @@ from db.models import (
     NotificationMethod,
     NotificationStatus,
 )
-from sqlalchemy import update
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from .alerts.generate_alert_graph import app as generate_alert_graph
 from .alerts.parse_alert_graph import app as parse_alert_graph
@@ -93,7 +94,9 @@ class AlertRuleService:
                     'user_id': user_id,
                     'message': 'Rule could not be parsed or validated',
                     'error': 'LLM could not parse rule structure',
-                    'alert_text': parsed_rule.get('alert_text'),
+                    'alert_text': parsed_rule.get('alert_text')
+                    if parsed_rule
+                    else None,
                     'validation_timestamp': datetime.now().isoformat(),
                 }
         except Exception as e:
@@ -145,7 +148,7 @@ class AlertRuleService:
                     id=str(uuid.uuid4()),
                     user_id=rule.user_id,
                     alert_rule_id=rule.id,
-                    transaction_id=transaction.id,
+                    transaction_id=transaction.trans_num,
                     title=f'Alert: {rule.name}',
                     message=alert_result.get('alert_message', 'Alert triggered'),
                     notification_method=NotificationMethod.EMAIL,
@@ -161,8 +164,8 @@ class AlertRuleService:
                     .where(AlertRule.id == rule.id)
                     .values(
                         trigger_count=new_trigger_count,
-                        last_triggered=datetime.utcnow(),
-                        updated_at=datetime.utcnow(),
+                        last_triggered=datetime.now(UTC),
+                        updated_at=datetime.now(UTC),
                     )
                 )
                 await session.commit()
@@ -174,7 +177,7 @@ class AlertRuleService:
                     'message': 'Alert rule triggered successfully',
                     'trigger_count': rule.trigger_count,
                     'rule_evaluation': alert_result,
-                    'transaction_id': transaction.id,
+                    'transaction_id': transaction.trans_num,
                     'notification_id': notification.id,
                 }
             else:

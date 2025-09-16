@@ -10,8 +10,8 @@
     "test": "uv run pytest",
     "lint": "uv run ruff check .",
     "lint:fix": "uv run ruff check . --fix",
-    "format": "uv run ruff format .",
-    "format:check": "uv run ruff format . --check",
+    "format": "uv run ruff format . && uv run ruff check . --fix",
+    "format:check": "uv run ruff format . --check && uv run ruff check .",
     "type-check": "uv run mypy src/"
   }
 }

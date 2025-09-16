@@ -6,8 +6,9 @@ This test demonstrates the core delete logic without complex async setup
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from db.models import AlertRule
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models import AlertRule
 
 # Import the function we want to test
 from src.routes.alerts import delete_alert_rule

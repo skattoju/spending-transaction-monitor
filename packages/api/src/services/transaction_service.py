@@ -3,9 +3,10 @@
 from datetime import datetime
 from typing import Any
 
-from db.models import Transaction
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models import Transaction
 
 
 class TransactionService:
