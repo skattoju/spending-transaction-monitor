@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_db
 from db.models import AlertNotification, AlertRule, NotificationMethod, User
 
+from ..auth.middleware import require_authentication
 from ..schemas.alert import (
     AlertNotificationCreate,
     AlertNotificationOut,
@@ -32,29 +33,23 @@ class AlertRuleCreateRequest(BaseModel):
 alert_rule_service = AlertRuleService()
 
 
-async def get_current_user(session: AsyncSession = Depends(get_db)) -> User:
-    """Get the current logged-in user. For now, returns the first user from the database.
-    This will be replaced with the actual user when we have a proper authentication system."""
-    result = await session.execute(select(User).limit(1))
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail='No users found in the system')
-
-    return user
-
-
 # Alert Rules endpoints
 @router.get('/rules', response_model=list[AlertRuleOut])
 async def get_alert_rules(
     user_id: str | None = Query(None, description='Filter by user ID'),
     is_active: bool | None = Query(None, description='Filter by active status'),
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all alert rules with optional filtering"""
     query = select(AlertRule)
 
-    if user_id:
+    # Authorization: Non-admin users can only see their own alert rules
+    if 'admin' not in current_user.get('roles', []):
+        # Force user_id filter to current user for non-admins
+        query = query.where(AlertRule.user_id == current_user['id'])
+    elif user_id:
+        # Admins can filter by any user_id if provided
         query = query.where(AlertRule.user_id == user_id)
 
     if is_active is not None:
@@ -92,7 +87,11 @@ async def get_alert_rules(
 
 
 @router.get('/rules/{rule_id}', response_model=AlertRuleOut)
-async def get_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
+async def get_alert_rule(
+    rule_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     """Get a specific alert rule by ID"""
     result = await session.execute(select(AlertRule).where(AlertRule.id == rule_id))
     rule = result.scalar_one_or_none()
@@ -128,21 +127,21 @@ async def get_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
 async def create_alert_rule(
     payload: AlertRuleCreateRequest,
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(require_authentication),
 ):
     """Create a new alert rule"""
-    print('Creating alert rule for user:', current_user.id, 'payload:', payload)
+    print('Creating alert rule for user:', current_user['id'], 'payload:', payload)
 
     # Validate alert rule
     validate_result = await alert_rule_service.validate_alert_rule(
-        payload.natural_language_query, current_user.id, session
+        payload.natural_language_query, current_user['id'], session
     )
     if validate_result.get('status') != 'valid':
         raise HTTPException(status_code=400, detail='Invalid alert rule')
 
     rule = AlertRule(
         id=str(uuid.uuid4()),
-        user_id=current_user.id,
+        user_id=current_user['id'],
         name=validate_result.get('alert_rule').get('name'),
         description=validate_result.get('alert_rule').get('description'),
         is_active=True,
@@ -187,7 +186,10 @@ async def create_alert_rule(
 
 @router.put('/rules/{rule_id}', response_model=AlertRuleOut)
 async def update_alert_rule(
-    rule_id: str, payload: AlertRuleUpdate, session: AsyncSession = Depends(get_db)
+    rule_id: str,
+    payload: AlertRuleUpdate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Update an existing alert rule"""
     # Check if rule exists
@@ -235,7 +237,11 @@ async def update_alert_rule(
 
 
 @router.delete('/rules/{rule_id}')
-async def delete_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
+async def delete_alert_rule(
+    rule_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     """Delete an alert rule and all associated notifications"""
     from sqlalchemy import delete as sql_delete
 
@@ -267,6 +273,7 @@ async def get_alert_notifications(
     alert_rule_id: str | None = Query(None, description='Filter by alert rule ID'),
     status: str | None = Query(None, description='Filter by notification status'),
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all alert notifications with optional filtering"""
     query = select(AlertNotification)
@@ -307,7 +314,9 @@ async def get_alert_notifications(
 
 @router.get('/notifications/{notification_id}', response_model=AlertNotificationOut)
 async def get_alert_notification(
-    notification_id: str, session: AsyncSession = Depends(get_db)
+    notification_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get a specific alert notification by ID"""
     result = await session.execute(
@@ -339,7 +348,9 @@ async def get_alert_notification(
 
 @router.post('/notifications', response_model=AlertNotificationOut)
 async def create_alert_notification(
-    payload: AlertNotificationCreate, session: AsyncSession = Depends(get_db)
+    payload: AlertNotificationCreate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Create a new alert notification"""
     # Verify user exists
@@ -403,6 +414,7 @@ async def update_alert_notification(
     notification_id: str,
     payload: AlertNotificationUpdate,
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Update an existing alert notification"""
     # Check if notification exists
@@ -453,7 +465,9 @@ async def update_alert_notification(
 
 @router.delete('/notifications/{notification_id}')
 async def delete_alert_notification(
-    notification_id: str, session: AsyncSession = Depends(get_db)
+    notification_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Delete an alert notification"""
     result = await session.execute(
@@ -472,7 +486,9 @@ async def delete_alert_notification(
 # Additional utility endpoints
 @router.get('/rules/{rule_id}/notifications', response_model=list[AlertNotificationOut])
 async def get_notifications_for_rule(
-    rule_id: str, session: AsyncSession = Depends(get_db)
+    rule_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all notifications for a specific alert rule"""
     result = await session.execute(
@@ -503,7 +519,11 @@ async def get_notifications_for_rule(
 
 
 @router.post('/rules/{rule_id}/trigger')
-async def trigger_alert_rule(rule_id: str, session: AsyncSession = Depends(get_db)):
+async def trigger_alert_rule(
+    rule_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     """Manually trigger an alert rule (for testing purposes)"""
     result = await session.execute(select(AlertRule).where(AlertRule.id == rule_id))
     rule = result.scalar_one_or_none()

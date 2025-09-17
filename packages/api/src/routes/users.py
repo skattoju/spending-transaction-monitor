@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 from db import get_db
 from db.models import AlertRule, User
 
+from ..auth.middleware import require_admin, require_authentication
 from ..schemas.user import UserOut
 
 router = APIRouter()
@@ -62,6 +63,7 @@ async def get_users(
     limit: int = 100,
     offset: int = 0,
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_admin),  # Admin only - sensitive operation
 ):
     """Get all users with optional filtering"""
     try:
@@ -98,7 +100,11 @@ async def get_users(
 
 
 @router.get('/{user_id}', response_model=UserOut)
-async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
+async def get_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     try:
         result = await session.execute(
             select(User)
@@ -111,6 +117,14 @@ async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
+
+        # Authorization: Users can only access their own data, admins can access any
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
+            raise HTTPException(status_code=403, detail='Access denied')
+
     except SQLAlchemyError as err:
         # Surface DB errors with proper exception chaining
         raise HTTPException(status_code=500, detail=str(err)) from err
@@ -133,22 +147,26 @@ async def get_user(user_id: str, session: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get('/profile', response_model=UserOut)
-async def get_current_user_profile(session: AsyncSession = Depends(get_db)):
-    """Get the current logged-in user profile. For now, returns the first user from the database."""
+@router.get('/me', response_model=UserOut)
+async def get_current_user(
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
+    """Get the current logged-in user profile."""
     try:
+        # Use the authenticated user's ID instead of arbitrary first user
         result = await session.execute(
             select(User)
             .options(
                 selectinload(User.creditCards),
                 selectinload(User.transactions),
             )
-            .limit(1)
+            .where(User.id == current_user['id'])
         )
         user: User | None = result.scalar_one_or_none()
 
         if not user:
-            raise HTTPException(status_code=404, detail='No users found in the system')
+            raise HTTPException(status_code=404, detail='User profile not found')
 
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err)) from err
@@ -172,7 +190,11 @@ async def get_current_user_profile(session: AsyncSession = Depends(get_db)):
 
 
 @router.post('', response_model=UserOut)
-async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_db)):
+async def create_user(
+    payload: UserCreate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_admin),  # Admin only - user creation
+):
     """Create a new user"""
     try:
         # Check if user with email already exists
@@ -213,7 +235,10 @@ async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_d
 
 @router.put('/{user_id}', response_model=UserOut)
 async def update_user(
-    user_id: str, payload: UserUpdate, session: AsyncSession = Depends(get_db)
+    user_id: str,
+    payload: UserUpdate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Update an existing user"""
     try:
@@ -229,6 +254,13 @@ async def update_user(
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
+
+        # Authorization: Users can only update themselves, admins can update anyone
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
+            raise HTTPException(status_code=403, detail='Access denied')
 
         # Check if email is being updated and if it already exists
         if payload.email and payload.email != user.email:
@@ -278,7 +310,11 @@ async def update_user(
 
 
 @router.delete('/{user_id}')
-async def delete_user(user_id: str, session: AsyncSession = Depends(get_db)):
+async def delete_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_admin),  # Admin only - user deletion
+):
     """Delete a user and all associated data"""
     try:
         # Check if user exists
@@ -297,7 +333,15 @@ async def delete_user(user_id: str, session: AsyncSession = Depends(get_db)):
 
 
 @router.get('/{user_id}/rules')
-async def get_user_rules(user_id: str, session: AsyncSession = Depends(get_db)):
+async def get_user_rules(
+    user_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
+    # Authorization: Users can only access their own rules, admins can access any
+    if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        raise HTTPException(status_code=403, detail='Access denied')
+
     result = await session.execute(
         select(AlertRule).where(AlertRule.user_id == user_id)
     )
@@ -322,9 +366,17 @@ async def get_user_transactions(
     limit: int = 50,
     offset: int = 0,
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all transactions for a specific user"""
     try:
+        # Authorization: Users can only access their own transactions, admins can access any
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
+            raise HTTPException(status_code=403, detail='Access denied')
+
         # Check if user exists
         result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalar_one_or_none()
@@ -362,10 +414,20 @@ async def get_user_transactions(
 
 @router.get('/{user_id}/credit-cards')
 async def get_user_credit_cards(
-    user_id: str, is_active: bool | None = None, session: AsyncSession = Depends(get_db)
+    user_id: str,
+    is_active: bool | None = None,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all credit cards for a specific user"""
     try:
+        # Authorization: Users can only access their own credit cards, admins can access any
+        if (
+            'admin' not in current_user.get('roles', [])
+            and current_user['id'] != user_id
+        ):
+            raise HTTPException(status_code=403, detail='Access denied')
+
         # Check if user exists
         result = await session.execute(select(User).where(User.id == user_id))
         user: User | None = result.scalar_one_or_none()
@@ -402,7 +464,11 @@ async def get_user_credit_cards(
 
 
 @router.patch('/{user_id}/deactivate')
-async def deactivate_user(user_id: str, session: AsyncSession = Depends(get_db)):
+async def deactivate_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_admin),  # Admin only
+):
     """Deactivate a user (soft delete)"""
     try:
         # Check if user exists
@@ -425,7 +491,11 @@ async def deactivate_user(user_id: str, session: AsyncSession = Depends(get_db))
 
 
 @router.patch('/{user_id}/activate')
-async def activate_user(user_id: str, session: AsyncSession = Depends(get_db)):
+async def activate_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_admin),  # Admin only
+):
     """Activate a user"""
     try:
         # Check if user exists

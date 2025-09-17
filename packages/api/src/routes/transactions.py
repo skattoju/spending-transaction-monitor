@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_db
 from db.models import CreditCard, Transaction, User
 
+from ..auth.middleware import require_authentication
 from ..schemas.transaction import (
     CategorySpending,
     CreditCardCreate,
@@ -37,11 +38,17 @@ async def get_transactions(
     limit: int = Query(100, description='Maximum number of transactions to return'),
     offset: int = Query(0, description='Number of transactions to skip'),
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all transactions with optional filtering"""
     query = select(Transaction)
 
-    if user_id:
+    # Authorization: Non-admin users can only see their own transactions
+    if 'admin' not in current_user.get('roles', []):
+        # Force user_id filter to current user for non-admins
+        query = query.where(Transaction.user_id == current_user['id'])
+    elif user_id:
+        # Admins can filter by any user_id if provided
         query = query.where(Transaction.user_id == user_id)
 
     if credit_card_id:
@@ -117,7 +124,11 @@ async def get_transactions(
 
 
 @router.get('/{transaction_id}', response_model=TransactionOut)
-async def get_transaction(transaction_id: str, session: AsyncSession = Depends(get_db)):
+async def get_transaction(
+    transaction_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     """Get a specific transaction by ID"""
     result = await session.execute(
         select(Transaction).where(Transaction.id == transaction_id)
@@ -125,6 +136,13 @@ async def get_transaction(transaction_id: str, session: AsyncSession = Depends(g
     tx: Transaction | None = result.scalar_one_or_none()
     if not tx:
         raise HTTPException(status_code=404, detail='Transaction not found')
+
+    # Authorization: Users can only access their own transactions, admins can access any
+    if (
+        'admin' not in current_user.get('roles', [])
+        and tx.user_id != current_user['id']
+    ):
+        raise HTTPException(status_code=403, detail='Access denied')
 
     return TransactionOut(
         id=tx.id,
@@ -155,7 +173,9 @@ async def get_transaction(transaction_id: str, session: AsyncSession = Depends(g
 
 @router.post('', response_model=TransactionOut)
 async def create_transaction(
-    payload: TransactionCreate, session: AsyncSession = Depends(get_db)
+    payload: TransactionCreate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Create a new transaction"""
     # Verify user exists
@@ -242,6 +262,7 @@ async def update_transaction(
     transaction_id: str,
     payload: TransactionUpdate,
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Update an existing transaction"""
     # Check if transaction exists
@@ -313,7 +334,9 @@ async def update_transaction(
 
 @router.delete('/{transaction_id}')
 async def delete_transaction(
-    transaction_id: str, session: AsyncSession = Depends(get_db)
+    transaction_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Delete a transaction"""
     result = await session.execute(
@@ -335,6 +358,7 @@ async def get_credit_cards(
     user_id: str | None = Query(None, description='Filter by user ID'),
     is_active: bool | None = Query(None, description='Filter by active status'),
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get all credit cards with optional filtering"""
     query = select(CreditCard)
@@ -367,7 +391,11 @@ async def get_credit_cards(
 
 
 @router.get('/cards/{card_id}', response_model=CreditCardOut)
-async def get_credit_card(card_id: str, session: AsyncSession = Depends(get_db)):
+async def get_credit_card(
+    card_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     """Get a specific credit card by ID"""
     result = await session.execute(select(CreditCard).where(CreditCard.id == card_id))
     card = result.scalar_one_or_none()
@@ -391,7 +419,9 @@ async def get_credit_card(card_id: str, session: AsyncSession = Depends(get_db))
 
 @router.post('/cards', response_model=CreditCardOut)
 async def create_credit_card(
-    payload: CreditCardCreate, session: AsyncSession = Depends(get_db)
+    payload: CreditCardCreate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Create a new credit card"""
     # Verify user exists
@@ -433,7 +463,10 @@ async def create_credit_card(
 
 @router.put('/cards/{card_id}', response_model=CreditCardOut)
 async def update_credit_card(
-    card_id: str, payload: CreditCardUpdate, session: AsyncSession = Depends(get_db)
+    card_id: str,
+    payload: CreditCardUpdate,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Update an existing credit card"""
     # Check if card exists
@@ -474,7 +507,11 @@ async def update_credit_card(
 
 
 @router.delete('/cards/{card_id}')
-async def delete_credit_card(card_id: str, session: AsyncSession = Depends(get_db)):
+async def delete_credit_card(
+    card_id: str,
+    session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
+):
     """Delete a credit card"""
     result = await session.execute(select(CreditCard).where(CreditCard.id == card_id))
     card = result.scalar_one_or_none()
@@ -494,8 +531,13 @@ async def get_transaction_summary(
     start_date: str | None = Query(None, description='Start date (ISO format)'),
     end_date: str | None = Query(None, description='End date (ISO format)'),
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get transaction summary for a user"""
+    # Authorization: Users can only access their own summaries, admins can access any
+    if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        raise HTTPException(status_code=403, detail='Access denied')
+
     # Verify user exists
     user_result = await session.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()
@@ -557,8 +599,13 @@ async def get_category_spending(
     start_date: str | None = Query(None, description='Start date (ISO format)'),
     end_date: str | None = Query(None, description='End date (ISO format)'),
     session: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_authentication),
 ):
     """Get spending breakdown by category for a user"""
+    # Authorization: Users can only access their own category data, admins can access any
+    if 'admin' not in current_user.get('roles', []) and current_user['id'] != user_id:
+        raise HTTPException(status_code=403, detail='Access denied')
+
     # Verify user exists
     user_result = await session.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()
