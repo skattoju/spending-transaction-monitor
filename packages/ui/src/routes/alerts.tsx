@@ -1,14 +1,24 @@
+import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Card } from '../components/atoms/card/card';
 import { Button } from '../components/atoms/button/button';
 import { Badge } from '../components/atoms/badge/badge';
 import { AlertRuleForm } from '../components/alert-rule-form/alert-rule-form';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/atoms/dialog/dialog';
 import { Bell, Pause, Play, Trash2 } from 'lucide-react';
 import {
   useAlertRules,
   useCreateAlertRule,
   useToggleAlertRule,
+  useDeleteAlertRule,
 } from '../hooks/transactions';
 import { cn } from '../lib/utils';
 import { statusColors } from '../lib/colors';
@@ -26,6 +36,11 @@ function AlertsPage() {
   const { data: rules, isLoading } = useAlertRules();
   const createRule = useCreateAlertRule();
   const toggleRule = useToggleAlertRule();
+  const deleteRule = useDeleteAlertRule();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ruleToDelete, setRuleToDelete] = useState<{ id: string; name: string } | null>(
+    null,
+  );
 
   const handleCreateRule = async (data: CreateAlertRuleInput) => {
     try {
@@ -38,6 +53,26 @@ function AlertsPage() {
 
   const handleToggleRule = (ruleId: string) => {
     toggleRule.mutate(ruleId);
+  };
+
+  const openDeleteDialog = (ruleId: string, ruleName: string) => {
+    setRuleToDelete({ id: ruleId, name: ruleName });
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setRuleToDelete(null);
+  };
+
+  const handleDeleteRule = () => {
+    if (!ruleToDelete) return;
+
+    deleteRule.mutate(ruleToDelete.id, {
+      onSuccess: () => {
+        closeDeleteDialog();
+      },
+    });
   };
 
   return (
@@ -94,6 +129,9 @@ function AlertsPage() {
                       <span>Triggered {rule.triggered} times</span>
                       <span>•</span>
                       <span>Last: {rule.last_triggered}</span>
+                      {rule.status === 'inactive' && (
+                        <span className="text-orange-600 font-medium">• Paused</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -112,14 +150,24 @@ function AlertsPage() {
                       size="sm"
                       onClick={() => handleToggleRule(rule.id)}
                       disabled={toggleRule.isPending}
+                      title={
+                        rule.status === 'active'
+                          ? 'Pause alert rule'
+                          : 'Resume alert rule'
+                      }
                     >
                       {rule.status === 'active' ? (
                         <Pause className="h-4 w-4" />
                       ) : (
-                        <Play className="h-4 w-4" />
+                        <Play className="h-4 w-4 text-green-600" />
                       )}
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDeleteDialog(rule.id, rule.rule)}
+                      disabled={deleteRule.isPending}
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -141,6 +189,32 @@ function AlertsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Alert Rule</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the alert rule "{ruleToDelete?.name}"?
+              This action cannot be undone and will also delete all associated
+              notifications.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeleteDialog}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRule}
+              disabled={deleteRule.isPending}
+            >
+              {deleteRule.isPending ? 'Deleting...' : 'Delete Rule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

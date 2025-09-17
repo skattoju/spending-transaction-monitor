@@ -1,7 +1,7 @@
 """Tests for alert endpoints"""
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 
 from src.main import app
 
@@ -137,7 +137,7 @@ class TestAlertRules(TestUserSetup):
         assert data['is_active'] == update_payload['is_active']
 
     def test_delete_alert_rule(self):
-        """Test deleting an alert rule"""
+        """Test deleting an alert rule without notifications"""
         # First create a rule
         create_payload = {
             'user_id': self.user_id,
@@ -152,11 +152,105 @@ class TestAlertRules(TestUserSetup):
         # Then delete it
         response = client.delete(f'/alerts/rules/{rule_id}')
         assert response.status_code == 200
-        assert response.json()['message'] == 'Alert rule deleted successfully'
+        response_data = response.json()
+        assert 'Alert rule deleted successfully' in response_data['message']
+        assert (
+            '0 associated notifications were also deleted' in response_data['message']
+        )
 
         # Verify it's gone
         get_response = client.get(f'/alerts/rules/{rule_id}')
         assert get_response.status_code == 404
+
+    def test_delete_alert_rule_with_notifications(self):
+        """Test deleting an alert rule that has associated notifications"""
+        # First create a rule
+        rule_payload = {
+            'user_id': self.user_id,
+            'name': 'Rule with Notifications',
+            'alert_type': 'AMOUNT_THRESHOLD',
+            'amount_threshold': 100.0,
+        }
+
+        rule_response = client.post('/alerts/rules', json=rule_payload)
+        rule_id = rule_response.json()['id']
+
+        # Create multiple notifications for this rule
+        notifications = [
+            {
+                'user_id': self.user_id,
+                'alert_rule_id': rule_id,
+                'title': 'Notification 1',
+                'message': 'First notification for this rule',
+                'notification_method': 'EMAIL',
+                'status': 'SENT',
+            },
+            {
+                'user_id': self.user_id,
+                'alert_rule_id': rule_id,
+                'title': 'Notification 2',
+                'message': 'Second notification for this rule',
+                'notification_method': 'SMS',
+                'status': 'PENDING',
+            },
+            {
+                'user_id': self.user_id,
+                'alert_rule_id': rule_id,
+                'title': 'Notification 3',
+                'message': 'Third notification for this rule',
+                'notification_method': 'PUSH',
+                'status': 'DELIVERED',
+            },
+        ]
+
+        notification_ids = []
+        for notification in notifications:
+            response = client.post('/alerts/notifications', json=notification)
+            if response.status_code == 200:
+                notification_ids.append(response.json()['id'])
+
+        # Verify notifications were created
+        rule_notifications_response = client.get(
+            f'/alerts/rules/{rule_id}/notifications'
+        )
+        assert rule_notifications_response.status_code == 200
+        created_notifications = rule_notifications_response.json()
+        assert len(created_notifications) == len(notification_ids)
+
+        # Now delete the rule
+        delete_response = client.delete(f'/alerts/rules/{rule_id}')
+        assert delete_response.status_code == 200
+
+        delete_data = delete_response.json()
+        assert 'Alert rule deleted successfully' in delete_data['message']
+        assert (
+            f'{len(notification_ids)} associated notifications were also deleted'
+            in delete_data['message']
+        )
+
+        # Verify the rule is gone
+        get_rule_response = client.get(f'/alerts/rules/{rule_id}')
+        assert get_rule_response.status_code == 404
+
+        # Verify all notifications are gone
+        for notification_id in notification_ids:
+            get_notification_response = client.get(
+                f'/alerts/notifications/{notification_id}'
+            )
+            assert get_notification_response.status_code == 404
+
+        # Verify no notifications exist for the deleted rule
+        rule_notifications_after_delete = client.get(
+            f'/alerts/rules/{rule_id}/notifications'
+        )
+        assert rule_notifications_after_delete.status_code == 200
+        assert rule_notifications_after_delete.json() == []
+
+    def test_delete_nonexistent_alert_rule(self):
+        """Test deleting a non-existent alert rule"""
+        response = client.delete('/alerts/rules/non-existent-rule-id')
+        assert response.status_code == 404
+        assert 'Alert rule not found' in response.json()['detail']
 
     def test_filter_alert_rules(self):
         """Test filtering alert rules"""

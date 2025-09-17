@@ -5,10 +5,10 @@ Tests for JWT authentication middleware
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
+import pytest
 
 # Import from source
 from src.auth.middleware import (

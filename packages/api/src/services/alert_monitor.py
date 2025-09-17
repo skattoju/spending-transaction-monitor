@@ -1,9 +1,12 @@
 """Alert monitoring service for continuous transaction monitoring"""
 
 import asyncio
+from datetime import datetime
 import logging
 import uuid
-from datetime import datetime
+
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import get_db
 from db.models import (
@@ -13,8 +16,6 @@ from db.models import (
     NotificationStatus,
     Transaction,
 )
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from .alert_rule_service import AlertRuleService
 from .notifications import Context, NoopStrategy, SmtpStrategy
