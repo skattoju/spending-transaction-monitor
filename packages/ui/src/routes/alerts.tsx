@@ -3,6 +3,7 @@ import { Card } from '../components/atoms/card/card';
 import { Button } from '../components/atoms/button/button';
 import { Badge } from '../components/atoms/badge/badge';
 import { AlertRuleForm } from '../components/alert-rule-form/alert-rule-form';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { Bell, Pause, Play, Trash2 } from 'lucide-react';
 import {
   useAlertRules,
@@ -14,7 +15,11 @@ import { statusColors } from '../lib/colors';
 import type { CreateAlertRuleInput } from '../schemas/alert-rule';
 
 export const Route = createFileRoute('/alerts')({
-  component: AlertsPage,
+  component: () => (
+    <ProtectedRoute>
+      <AlertsPage />
+    </ProtectedRoute>
+  ),
 });
 
 function AlertsPage() {

@@ -5,6 +5,7 @@ import { TransactionDrawer } from '../components/transaction-drawer/transaction-
 import { Card } from '../components/atoms/card/card';
 import { Button } from '../components/atoms/button/button';
 import { StatsList } from '../components/stats-list/stats-list';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import {
   Search,
   Filter,
@@ -21,7 +22,11 @@ import type { Transaction } from '../schemas/transaction';
 import type { Stat } from '../components/stats-list/stats-list';
 
 export const Route = createFileRoute('/transactions')({
-  component: TransactionsPage,
+  component: () => (
+    <ProtectedRoute>
+      <TransactionsPage />
+    </ProtectedRoute>
+  ),
 });
 
 function TransactionsPage() {
