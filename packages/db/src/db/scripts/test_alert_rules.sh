@@ -169,6 +169,8 @@ test_alert_rule() {
             seed_command="seed:more-than-20-same-merchant" ;;
         "alert_outside_home_state_sample.json")
             seed_command="seed:outside-home-state" ;;
+        "alert_over_500_transaction.json")
+            seed_command="seed:over-500-transaction" ;;
         *)
             echo -e "${YELLOW}⚠️  No seed command mapped for ${filename}, skipping...${NC}"
             return ;;

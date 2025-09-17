@@ -148,7 +148,7 @@ class AlertRuleService:
                     id=str(uuid.uuid4()),
                     user_id=rule.user_id,
                     alert_rule_id=rule.id,
-                    transaction_id=transaction.trans_num,
+                    transaction_id=transaction.id,
                     title=f'Alert: {rule.name}',
                     message=alert_result.get('alert_message', 'Alert triggered'),
                     notification_method=NotificationMethod.EMAIL,
@@ -177,7 +177,7 @@ class AlertRuleService:
                     'message': 'Alert rule triggered successfully',
                     'trigger_count': rule.trigger_count,
                     'rule_evaluation': alert_result,
-                    'transaction_id': transaction.trans_num,
+                    'transaction_id': transaction.id,
                     'notification_id': notification.id,
                 }
             else:
@@ -185,12 +185,12 @@ class AlertRuleService:
                     'status': 'not_triggered',
                     'message': 'Rule evaluated but alert not triggered',
                     'rule_evaluation': alert_result,
-                    'transaction_id': transaction.trans_num,
+                    'transaction_id': transaction.id,
                 }
 
         except Exception as e:
             print('Alert generation failed:', e)
-            transaction_id = transaction.trans_num if transaction else 'unknown'
+            transaction_id = transaction.id if transaction else 'unknown'
             return {
                 'status': 'error',
                 'message': f'Alert generation failed: {str(e)}',
