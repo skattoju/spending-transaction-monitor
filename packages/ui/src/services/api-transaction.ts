@@ -304,7 +304,7 @@ export const realAlertService = {
       // First get the current rule to determine its status
       const rules = await this.getAlertRules();
       const currentRule = rules.find((r) => r.id === id);
-      
+
       if (!currentRule) {
         console.warn(`Alert rule with id ${id} not found`);
         return null;
@@ -312,7 +312,7 @@ export const realAlertService = {
 
       // Determine new status (toggle between active and paused)
       const newIsActive = currentRule.status !== 'active';
-      
+
       // Make API call to update the rule
       const response = await fetch(`/api/alerts/rules/${id}`, {
         method: 'PUT',
@@ -331,14 +331,14 @@ export const realAlertService = {
       }
 
       const updatedApiRule = await response.json();
-      
+
       // Transform API response to match UI schema
       const updatedRule: AlertRule = {
         id: updatedApiRule.id,
         rule: updatedApiRule.natural_language_query || updatedApiRule.name,
         status: updatedApiRule.is_active ? 'active' : 'inactive',
         triggered: updatedApiRule.trigger_count || 0,
-        last_triggered: updatedApiRule.last_triggered 
+        last_triggered: updatedApiRule.last_triggered
           ? new Date(updatedApiRule.last_triggered).toLocaleString()
           : 'Never',
         created_at: updatedApiRule.created_at,
