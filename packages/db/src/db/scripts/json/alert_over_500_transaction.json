@@ -1,0 +1,56 @@
+{
+  "alert_text": "Alert when spending more than $500 in one transaction",
+  "user": {
+    "id": "u-high-001",
+    "email": "alex.jordan@example.com",
+    "first_name": "Alex",
+    "last_name": "Jordan",
+    "address_city": "San Francisco",
+    "address_state": "CA",
+    "address_country": "US"
+  },
+  "transactions": [
+    {
+      "id": "txn-h500-001",
+      "user_id": "u-high-001",
+      "credit_card_num": "4111111111111111",
+      "amount": 45.0,
+      "currency": "USD",
+      "description": "Dinner at Italian Bistro",
+      "merchant_name": "Italian Bistro",
+      "merchant_category": "dining",
+      "transaction_date": "2025-11-25T19:30:00Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "H500001"
+    },
+    {
+      "id": "txn-h500-002",
+      "user_id": "u-high-001",
+      "credit_card_num": "4111111111111111",
+      "amount": 75.5,
+      "currency": "USD",
+      "description": "Groceries",
+      "merchant_name": "Whole Foods",
+      "merchant_category": "grocery",
+      "transaction_date": "2025-12-01T17:45:00Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "H500002"
+    },
+    {
+      "id": "txn-h500-003",
+      "user_id": "u-high-001",
+      "credit_card_num": "4111111111111111",
+      "amount": 520.0,
+      "currency": "USD",
+      "description": "Luxury handbag",
+      "merchant_name": "Gucci",
+      "merchant_category": "retail",
+      "transaction_date": "2025-12-03T15:21:38Z",
+      "transaction_type": "PURCHASE",
+      "status": "SETTLED",
+      "trans_num": "H500003"
+    }
+  ]
+}

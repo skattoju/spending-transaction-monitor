@@ -290,7 +290,7 @@ class TestAlertRuleService:
             # Assert
             assert result['status'] == 'triggered'
             assert result['message'] == 'Alert rule triggered successfully'
-            assert result['transaction_id'] == sample_transaction_obj.trans_num
+            assert result['transaction_id'] == sample_transaction_obj.id
             assert 'notification_id' in result
             assert 'rule_evaluation' in result
 
@@ -343,7 +343,7 @@ class TestAlertRuleService:
             # Assert
             assert result['status'] == 'not_triggered'
             assert result['message'] == 'Rule evaluated but alert not triggered'
-            assert result['transaction_id'] == sample_transaction_obj.trans_num
+            assert result['transaction_id'] == sample_transaction_obj.id
             assert 'rule_evaluation' in result
 
     @pytest.mark.asyncio
@@ -421,7 +421,7 @@ class TestAlertRuleService:
             assert result['status'] == 'error'
             assert 'Alert generation failed' in result['message']
             assert result['error'] == 'LLM generation failed'
-            assert result['transaction_id'] == sample_transaction_obj.trans_num
+            assert result['transaction_id'] == sample_transaction_obj.id
 
     def test_parse_nl_rule_with_llm_success(self):
         """Test successful parsing of natural language rule with LLM"""
@@ -632,7 +632,7 @@ class TestAlertRuleService:
             assert isinstance(call_args, AlertNotification)
             assert call_args.user_id == sample_alert_rule.user_id
             assert call_args.alert_rule_id == sample_alert_rule.id
-            assert call_args.transaction_id == sample_transaction_obj.trans_num
+            assert call_args.transaction_id == sample_transaction_obj.id
             assert call_args.title == f'Alert: {sample_alert_rule.name}'
             assert call_args.message == 'Custom alert message'
             assert call_args.notification_method == 'EMAIL'
