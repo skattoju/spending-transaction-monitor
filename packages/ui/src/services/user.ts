@@ -76,10 +76,10 @@ export const userService = {
 
   // Get current logged-in user
   async getCurrentUser(): Promise<ApiUserResponse | null> {
-    const response = await fetch('/api/users/me');
+    const response = await fetch('/api/users/profile');
     if (!response.ok) {
       if (response.status === 404) return null;
-      throw new Error('Failed to fetch current user');
+      throw new Error('Failed to fetch current user profile');
     }
     return response.json();
   },

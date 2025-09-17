@@ -13,7 +13,7 @@ The authentication infrastructure has been set up with the following components:
 
 ### Test Endpoints
 - `GET /health` - No authentication required (health check)
-- `GET /users/me` - Will require valid JWT token (user profile)
+- `GET /users/profile` - Will require valid JWT token (user profile)
 ## Integration Steps
 
 ### 1. Backend Route Integration
@@ -202,7 +202,7 @@ uv run uvicorn src.main:app --reload
 
 # Test endpoints
 curl http://localhost:8000/health                           # ✅ Works (no auth)
-curl -H "Authorization: Bearer <token>" http://localhost:8000/users/me  # ⚠️  Will work when auth is enabled
+curl -H "Authorization: Bearer <token>" http://localhost:8000/users/profile  # ⚠️  Will work when auth is enabled
 ```
 
 ## Environment Variables
