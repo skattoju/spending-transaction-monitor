@@ -1,9 +1,8 @@
-name: Build and Push to Quay
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -13,68 +12,12 @@ env:
   PROJECT_NAME: spending-monitor
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    strategy:
-      matrix:
-        package: [ui, api, db]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Debug credentials
-      run: |
-        echo "Registry: ${{ env.REGISTRY }}"
-        echo "Username exists: ${{ secrets.QUAY_USERNAME != '' }}"
-        echo "Password exists: ${{ secrets.QUAY_PASSWORD != '' }}"
-
-    - name: Login to Quay.io
-      if: github.event.pull_request.head.repo.full_name == github.repository || github.ref == 'refs/heads/main'
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_PASSWORD }}
-
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.PROJECT_NAME }}-${{ matrix.package }}
-        tags: |
-          type=ref,event=branch,format=ref
-          type=ref,event=pr,format=pr-{{number}}
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,format=short
-          type=raw,value=latest,enable={{is_default_branch}}
-        flavor: |
-          latest=false
-          prefix=
-          suffix=
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./packages/${{ matrix.package }}/Dockerfile
-        platforms: linux/amd64,linux/arm64
-        push: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.ref == 'refs/heads/main' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
   semantic-release:
-    needs: build-and-push
+    # Skip running on forked repositories
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    outputs:
+      new_release_tag: ${{ steps.get-tag.outputs.tag }}
 
     steps:
     - name: Checkout code
@@ -93,6 +36,7 @@ jobs:
         npm install -g semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/github
 
     - name: Run semantic-release
+      id: semantic
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
       run: semantic-release
@@ -101,39 +45,40 @@ jobs:
       id: get-tag
       run: |
         TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        if [ -n "$TAG" ]; then
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
-          echo "has_new_tag=true" >> $GITHUB_OUTPUT
-        else
-          echo "has_new_tag=false" >> $GITHUB_OUTPUT
-        fi
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-    - name: Update Makefile and values.yaml with new image tag
-      if: steps.get-tag.outputs.has_new_tag == 'true'
-      run: |
-        NEW_TAG="${{ steps.get-tag.outputs.version }}"
+  build-and-push:
+    needs: semantic-release
+    # This job only runs if a new release tag was created by semantic-release
+    if: needs.semantic-release.outputs.new_release_tag != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [ui, api, db]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-        # Update the IMAGE_TAG in Makefile
-        sed -i "s/^IMAGE_TAG ?= .*/IMAGE_TAG ?= ${NEW_TAG}/" Makefile
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-        # Update the global imageTag in values.yaml
-        sed -i "s/^  imageTag: .*/  imageTag: ${NEW_TAG}/" deploy/helm/spending-monitor/values.yaml
+    - name: Login to Quay.io
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
 
-        # Update individual service image tags in values.yaml
-        sed -i "s/^    tag: .*/    tag: ${NEW_TAG}/" deploy/helm/spending-monitor/values.yaml
-
-        # Check if there are changes
-        if git diff --quiet; then
-          echo "No changes to commit"
-          exit 0
-        fi
-
-        # Configure git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-
-        # Commit and push
-        git add Makefile deploy/helm/spending-monitor/values.yaml
-        git commit -m "ci: update image tag to ${NEW_TAG} [skip ci]"
-        git push
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./packages/${{ matrix.package }}/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.PROJECT_NAME }}-${{ matrix.package }}:${{ needs.semantic-release.outputs.new_release_tag }}
+          ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.PROJECT_NAME }}-${{ matrix.package }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
