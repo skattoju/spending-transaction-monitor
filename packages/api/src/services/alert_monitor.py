@@ -224,9 +224,6 @@ class AlertMonitorService:
             status=NotificationStatus.PENDING,
         )
 
-        # Add notification to the session
-        session.add(notification)
-
         # Send notification based on rule's notification methods
         notification_methods = rule.notification_methods or [NotificationMethod.EMAIL]
 
