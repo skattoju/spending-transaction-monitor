@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import get_db
 from db.models import AlertNotification, AlertRule, NotificationMethod, User
+from src.services import transaction_service
+from src.services.user_service import UserService
 
 from ..auth.middleware import require_authentication
 from ..schemas.alert import (
@@ -31,6 +33,8 @@ class AlertRuleCreateRequest(BaseModel):
 
 # Initialize alert rule service instance
 alert_rule_service = AlertRuleService()
+user_service = UserService()
+transaction_service = transaction_service.TransactionService()
 
 
 # Alert Rules endpoints
@@ -435,7 +439,7 @@ async def update_alert_notification(
                 update_data[field] = value
 
     if update_data:
-        update_data['updated_at'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.now(UTC)
         await session.execute(
             update(AlertNotification)
             .where(AlertNotification.id == notification_id)
@@ -525,13 +529,36 @@ async def trigger_alert_rule(
     current_user: dict = Depends(require_authentication),
 ):
     """Manually trigger an alert rule (for testing purposes)"""
+    print(f'DEBUG: Starting trigger_alert_rule endpoint for rule_id: {rule_id}')
+
     result = await session.execute(select(AlertRule).where(AlertRule.id == rule_id))
     rule = result.scalar_one_or_none()
     if not rule:
         raise HTTPException(status_code=404, detail='Alert rule not found')
 
+    print(f'DEBUG: Found rule: {rule.id}, user_id: {rule.user_id}')
+
+    print('DEBUG: About to get latest transaction')
+    transaction = await transaction_service.get_latest_transaction(
+        rule.user_id, session
+    )
+    print(f'DEBUG: Got transaction: {transaction}')
+    if transaction is None:
+        raise ValueError('No transaction found for user')
+
+    print('DEBUG: About to get user')
+    user = await user_service.get_user(rule.user_id, session)
+    print(f'DEBUG: Got user: {user}')
+    if user is None:
+        # Fallback to dummy user data for testing
+        raise ValueError('User data not found')
+
     try:
-        trigger_result = await alert_rule_service.trigger_alert_rule(rule, session)
+        print('DEBUG: About to call trigger_alert_rule')
+        trigger_result = await alert_rule_service.trigger_alert_rule(
+            rule, transaction, user, session
+        )
+        print(f'DEBUG: trigger_alert_rule completed: {trigger_result}')
         return trigger_result
     except ValueError as e:
         # Handle business logic errors (inactive rule, no transaction)

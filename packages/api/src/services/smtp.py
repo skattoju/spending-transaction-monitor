@@ -11,7 +11,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models import AlertNotification, User
+from db.models import AlertNotification, NotificationStatus, User
 
 # Load environment variables from .env file
 load_dotenv()
@@ -114,5 +114,5 @@ async def send_smtp_notification(
     finished_at = datetime.now()
 
     notification.sent_at = finished_at
-    notification.status = 'SENT'
+    notification.status = NotificationStatus.SENT
     return notification

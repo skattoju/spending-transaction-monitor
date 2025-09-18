@@ -1,5 +1,5 @@
 # Standard library
-from datetime import datetime
+from datetime import UTC, datetime
 import uuid
 
 # Third-party
@@ -281,7 +281,7 @@ async def update_user(
         if update_data:
             from datetime import datetime
 
-            update_data['updated_at'] = datetime.utcnow()
+            update_data['updated_at'] = datetime.now(UTC)
 
             # Update the user object
             for field, value in update_data.items():
@@ -480,7 +480,7 @@ async def deactivate_user(
         user.is_active = False
         from datetime import datetime
 
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(UTC)
 
         await session.commit()
         await session.refresh(user)
@@ -507,7 +507,7 @@ async def activate_user(
         user.is_active = True
         from datetime import datetime
 
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(UTC)
 
         await session.commit()
         await session.refresh(user)

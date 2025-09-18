@@ -2,7 +2,6 @@
 FastAPI application entry point
 """
 
-import asyncio
 from contextlib import asynccontextmanager
 import logging
 
@@ -14,7 +13,7 @@ from .routes import alerts as alerts_routes
 from .routes import health
 from .routes import transactions as transactions_routes
 from .routes import users as users_routes
-from .services.alert_monitor import alert_monitor
+from .services.alert_job_queue import alert_job_queue
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,14 +25,13 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info('Starting up application...')
 
-    # Start the alert monitoring service in the background
-    asyncio.create_task(alert_monitor.start_monitoring())
+    # Start the alert job queue
+    await alert_job_queue.start()
     logger.info('Alert monitoring service started')
 
     yield
 
-    # Stop the alert monitoring service
-    alert_monitor.stop_monitoring()
+    await alert_job_queue.stop()
     logger.info('Alert monitoring service stopped')
     logger.info('Shutting down application...')
 
