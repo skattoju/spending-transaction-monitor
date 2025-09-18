@@ -1,8 +1,9 @@
 """Transaction endpoints"""
 
+from datetime import UTC
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,10 +19,13 @@ from ..schemas.transaction import (
     TransactionCreate,
     TransactionOut,
     TransactionSummary,
-    TransactionUpdate,
 )
+from ..services.alert_job_queue import alert_job_queue
+from ..services.alert_rule_service import AlertRuleService
+from ..services.background_alert_service import background_alert_service
 
 router = APIRouter()
+alert_rule_service = AlertRuleService()
 
 
 @router.get('/', response_model=list[TransactionOut])
@@ -174,6 +178,7 @@ async def get_transaction(
 @router.post('', response_model=TransactionOut)
 async def create_transaction(
     payload: TransactionCreate,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_authentication),
 ):
@@ -204,9 +209,10 @@ async def create_transaction(
             status_code=400,
             detail="Invalid transaction date format. Use ISO format (e.g., '2024-01-16T14:45:00Z')",
         ) from e
-
+    # Generate a transaction id
+    transaction_id = str(uuid.uuid4())
     tx = Transaction(
-        id=payload.id,
+        id=transaction_id,
         user_id=payload.user_id,
         credit_card_num=payload.credit_card_num,
         amount=payload.amount,
@@ -230,6 +236,22 @@ async def create_transaction(
     await session.commit()
     await session.refresh(tx)
 
+    # Process alert rules in the background
+    # Option 1: Using FastAPI BackgroundTasks (simpler)
+
+    background_tasks.add_task(
+        background_alert_service.process_alert_rules_background,
+        payload.user_id,
+        tx.id,
+    )
+
+    # Option 2: Using Job Queue (more robust, uncomment to use)
+    # job_id = await alert_job_queue.enqueue_job(
+    #     user_id=payload.user_id,
+    #     transaction_id=tx.id
+    # )
+    # print(f"Enqueued alert processing job: {job_id}")
+
     return TransactionOut(
         id=tx.id,
         user_id=tx.user_id,
@@ -249,81 +271,6 @@ async def create_transaction(
         merchant_state=tx.merchant_state,
         merchant_country=tx.merchant_country,
         merchant_zipcode=tx.merchant_zipcode,
-        status=tx.status,
-        authorization_code=tx.authorization_code,
-        trans_num=tx.trans_num,
-        created_at=tx.created_at.isoformat() if tx.created_at else None,
-        updated_at=tx.updated_at.isoformat() if tx.updated_at else None,
-    )
-
-
-@router.put('/{transaction_id}', response_model=TransactionOut)
-async def update_transaction(
-    transaction_id: str,
-    payload: TransactionUpdate,
-    session: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(require_authentication),
-):
-    """Update an existing transaction"""
-    # Check if transaction exists
-    result = await session.execute(
-        select(Transaction).where(Transaction.id == transaction_id)
-    )
-    tx = result.scalar_one_or_none()
-    if not tx:
-        raise HTTPException(status_code=404, detail='Transaction not found')
-
-    # Build update data
-    update_data = {}
-    for field, value in payload.dict(exclude_unset=True).items():
-        if value is not None:
-            # Handle date parsing for transaction_date
-            if field == 'transaction_date':
-                try:
-                    from datetime import datetime
-
-                    update_data[field] = datetime.fromisoformat(
-                        value.replace('Z', '+00:00')
-                    )
-                except ValueError as e:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Invalid transaction date format. Use ISO format (e.g., '2024-01-16T14:45:00Z')",
-                    ) from e
-            else:
-                update_data[field] = value
-
-    if update_data:
-        from datetime import datetime
-
-        update_data['updated_at'] = datetime.utcnow()
-        await session.execute(
-            update(Transaction)
-            .where(Transaction.id == transaction_id)
-            .values(**update_data)
-        )
-        await session.commit()
-        await session.refresh(tx)
-
-    return TransactionOut(
-        id=tx.id,
-        user_id=tx.user_id,
-        credit_card_num=tx.credit_card_num,
-        amount=float(tx.amount) if tx.amount is not None else None,
-        currency=tx.currency,
-        description=tx.description,
-        merchant_name=tx.merchant_name,
-        merchant_category=tx.merchant_category,
-        transaction_date=tx.transaction_date.isoformat()
-        if tx.transaction_date
-        else None,
-        transaction_type=tx.transaction_type,
-        merchant_city=tx.merchant_city,
-        merchant_state=tx.merchant_state,
-        merchant_country=tx.merchant_country,
-        merchant_zipcode=tx.merchant_zipcode,
-        merchant_latitude=tx.merchant_latitude,
-        merchant_longitude=tx.merchant_longitude,
         status=tx.status,
         authorization_code=tx.authorization_code,
         trans_num=tx.trans_num,
@@ -484,7 +431,7 @@ async def update_credit_card(
     if update_data:
         from datetime import datetime
 
-        update_data['updated_at'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.now(UTC)
         await session.execute(
             update(CreditCard).where(CreditCard.id == card_id).values(**update_data)
         )
@@ -663,3 +610,39 @@ async def get_category_spending(
         )
         for category, data in category_data.items()
     ]
+
+
+# Background Job Monitoring Endpoints
+@router.get('/background-jobs/{job_id}')
+async def get_job_status(job_id: str):
+    """Get the status of a background alert processing job"""
+    job = alert_job_queue.get_job_status(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail='Job not found')
+
+    return {
+        'job_id': job.job_id,
+        'status': job.status.value,
+        'user_id': job.user_id,
+        'transaction_id': job.transaction_id,
+        'result': job.result,
+        'error': job.error,
+        'created_at': job.created_at,
+    }
+
+
+@router.post('/background-jobs')
+async def create_alert_job(
+    user_id: str, transaction_id: str, alert_rule_ids: list[str] = None
+):
+    """Manually create a background alert processing job"""
+    job_id = await alert_job_queue.enqueue_job(
+        user_id=user_id, transaction_id=transaction_id, alert_rule_ids=alert_rule_ids
+    )
+
+    return {
+        'job_id': job_id,
+        'message': 'Alert processing job created',
+        'user_id': user_id,
+        'transaction_id': transaction_id,
+    }

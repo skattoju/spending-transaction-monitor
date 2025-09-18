@@ -154,7 +154,7 @@ async def health():
     return {
         'status': overall_status,
         'service': 'ingestion-service',
-        'timestamp': datetime.datetime.now(datetime.UTC).isoformat(),
+        'timestamp': datetime.now(UTC).isoformat(),
         'api': api_health,
         'environment': {
             'api_host': api_client.api_host,

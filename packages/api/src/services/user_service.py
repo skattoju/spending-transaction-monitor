@@ -1,6 +1,6 @@
 """User Service - Business logic for user operations"""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -64,7 +64,7 @@ class UserService:
             if hasattr(user, field):
                 setattr(user, field, value)
 
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(user)
         return user
@@ -76,7 +76,7 @@ class UserService:
             return False
 
         user.is_active = False
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(UTC)
         await session.commit()
         return True
 
@@ -87,7 +87,7 @@ class UserService:
             return False
 
         user.is_active = True
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(UTC)
         await session.commit()
         return True
 

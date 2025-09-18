@@ -35,6 +35,8 @@ def execute_sql(sql: str) -> str:
                     str_formatted_rows = str(formatted_rows)
                     if 'NO_ALERT' in str_formatted_rows:
                         return '[]'
+                    if 'NOT_APPLICABLE' in str_formatted_rows:
+                        return 'SQL Error: Invalid alert rule'
                     return str(formatted_rows)
                 else:
                     print('No rows returned *****')
