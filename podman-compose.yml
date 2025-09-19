@@ -28,7 +28,9 @@ services:
     container_name: spending-monitor-smtp
     ports:
       - "3002:80"   # Web UI
-      - "2525:25"   # SMTP Port
+      # smtp4dev listens on port 25 for incoming SMTP traffic.
+      # Uncomment the following line to also accept SMTP traffic from the host on port 2525.
+      # - "2525:25"
     networks:
       - spending-monitor
 
@@ -42,7 +44,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/spending-monitor
       - SMTP_HOST=smtp4dev
-      - SMTP_PORT=2525
+      - SMTP_PORT=25
       - SMTP_USERNAME=
       - SMTP_PASSWORD=
       - SMTP_FROM_EMAIL=spending-monitor@localhost
