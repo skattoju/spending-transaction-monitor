@@ -10,6 +10,12 @@ For contribution guidelines and repo conventions, see [CONTRIBUTING.md](CONTRIBU
 - [Overview](#overview)
 - [How it works](#how-it-works)
 - [Getting started](#getting-started)
+  - [Container Deployment (Recommended)](#-container-deployment-recommended)
+    - [Quick Start with Podman Compose](#-quick-start-with-podman-compose)
+    - [OpenShift Deployment](#️-openshift-deployment)
+  - [Local Development Mode](#-local-development-mode)
+  - [Development Mode (Authentication Bypass)](#-development-mode-authentication-bypass)
+  - [Environment Variables Configuration](#-environment-variables-configuration)
 - [Components](#components)
 - [Standards](#standards)
 - [Releases](#releases)
@@ -116,6 +122,83 @@ Install
 pnpm setup
 ```
 
+## 🐳 Container Deployment (Recommended)
+
+### 🚀 Quick Start with Podman Compose
+
+**Start with pre-built images:**
+```bash
+make run-local
+```
+
+**Build and run from source:**
+```bash
+make build-run-local
+```
+
+After starting, run database setup:
+```bash
+pnpm db:upgrade
+pnpm db:seed
+```
+
+**Container URLs:**
+- Frontend: http://localhost:3000
+- API: http://localhost:3000/api/* (proxied)
+- API Docs: http://localhost:8000/docs
+- SMTP Web UI: http://localhost:3002
+- Database: localhost:5432
+
+**Container Management:**
+```bash
+make run-local      # Start with registry images
+make build-local    # Build images from source
+make build-run-local # Build and start
+make stop-local     # Stop all services
+make logs-local     # View service logs
+make reset-local    # Reset with fresh data
+```
+
+### ☁️ OpenShift Deployment
+
+**Quick Deploy:**
+```bash
+make full-deploy
+```
+
+**Step-by-step:**
+```bash
+# Login and setup
+make login
+make create-project
+
+# Build and push images
+make build-all
+make push-all
+
+# Deploy
+make deploy
+```
+
+**OpenShift Management:**
+```bash
+make deploy           # Deploy to OpenShift
+make deploy-dev       # Deploy in development mode
+make undeploy         # Remove deployment
+make status           # Check deployment status
+make logs-api         # View API logs
+make logs-ui          # View UI logs
+```
+
+**Port Forwarding (for development):**
+```bash
+make port-forward-api  # Forward API to localhost:8000
+make port-forward-ui   # Forward UI to localhost:8080
+make port-forward-db   # Forward DB to localhost:5432
+```
+
+## 🔧 Local Development Mode
+
 **🚀 Start Development Mode** (starts DB, API, UI with auth bypassed)
 ```bash
 pnpm dev
@@ -123,7 +206,7 @@ pnpm dev
 
 This command:
 - Starts PostgreSQL database
-- Starts FastAPI backend on port 8000  
+- Starts FastAPI backend on port 8000
 - Starts React UI on port 5173
 - **Automatically enables development mode auth bypass** 🔓
 
@@ -147,7 +230,7 @@ pnpm db:revision
 pnpm db:verify
 ```
 
-Dev URLs
+**Local Dev URLs:**
 - Web UI: http://localhost:5173 (shows dev mode banner)
 - API (full stack): http://localhost:8000 (auth bypass enabled)
 - API (backend-only): http://localhost:8002
@@ -187,6 +270,145 @@ VITE_ENVIRONMENT=production
 - **No dev banner?** Check console for "Development auth provider initialized"  
 - **Customize mock user:** Edit `packages/ui/src/constants/auth.ts`
 - **Test real auth:** See [`docs/auth/INTEGRATION.md`](docs/auth/INTEGRATION.md) for Keycloak setup
+
+## 🔧 Environment Variables Configuration
+
+### Required Environment Variables
+
+The application requires these environment variables for proper operation:
+
+#### Database Configuration
+```bash
+DATABASE_URL=postgresql+asyncpg://user:password@host:port/database
+```
+
+#### SMTP Configuration (for email alerts)
+```bash
+SMTP_HOST=smtp.example.com
+SMTP_PORT=2525
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=alerts@spending-monitor.com
+SMTP_USE_TLS=false
+SMTP_USE_SSL=false
+```
+
+#### API Configuration
+```bash
+ENVIRONMENT=development|production
+BYPASS_AUTH=true|false
+API_PORT=8000
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+```
+
+#### LLM Configuration
+```bash
+LLM_PROVIDER=XXXXX
+BASE_URL=XXXXX
+API_KEY=sk-your-openai-api-key-here
+MODEL=XXXXX
+```
+
+### 🐳 Local Container Deployment (podman-compose.yml)
+
+Environment variables are configured in `podman-compose.yml` under the `api` service:
+
+```yaml
+api:
+  environment:
+    - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/spending-monitor
+    - SMTP_HOST=smtp4dev
+    - SMTP_PORT=25
+    - SMTP_USERNAME=
+    - SMTP_PASSWORD=
+    - SMTP_FROM_EMAIL=spending-monitor@localhost
+    - SMTP_USE_TLS=false
+    - SMTP_USE_SSL=false
+    - ENVIRONMENT=development
+    - BYPASS_AUTH=true
+    - API_PORT=8000
+    - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+    - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+    - LLM_PROVIDER=XXXXX
+    - BASE_URL=XXXXX
+    - API_KEY=add-your-openai-api-key-here
+    - MODEL=XXXXX
+```
+
+**To customize for your environment:**
+1. Edit `podman-compose.yml`
+2. Update the environment variables under the `api` service
+3. Restart: `make stop-local && make run-local`
+
+### ☁️ OpenShift Deployment (values.yaml)
+
+For OpenShift deployment, configure environment variables in `deploy/helm/spending-monitor/values.yaml`:
+
+```yaml
+api:
+  env:
+    DATABASE_URL: "postgresql+asyncpg://user:password@spending-monitor-db:5432/spending-monitor"
+    SMTP_HOST: "smtp.yourdomain.com"
+    SMTP_PORT: "587"
+    SMTP_USERNAME: "your-smtp-username"
+    SMTP_PASSWORD: "your-smtp-password"
+    SMTP_FROM_EMAIL: "alerts@yourdomain.com"
+    SMTP_USE_TLS: "true"
+    SMTP_USE_SSL: "false"
+    ENVIRONMENT: "production"
+    BYPASS_AUTH: "false"
+    API_PORT: "8000"
+    CORS_ALLOWED_ORIGINS: "https://your-ui-route.openshift.com"
+    ALLOWED_ORIGINS: "https://your-ui-route.openshift.com"
+    LLM_PROVIDER: XXXXX
+    BASE_URL: XXXXX
+    API_KEY: "add-your-openai-api-key-here"
+    MODEL: XXXXX
+```
+
+**To customize for OpenShift:**
+1. Edit `deploy/helm/spending-monitor/values.yaml`
+2. Update the `api.env` section with your values
+3. Deploy: `make deploy`
+
+**Using OpenShift Secrets (Recommended for production):**
+```yaml
+api:
+  envFrom:
+    - secretRef:
+        name: spending-monitor-secrets
+  env:
+    ENVIRONMENT: "production"
+    BYPASS_AUTH: "false"
+```
+
+### 🔧 Local Development Environment Variables
+
+For local development without containers, set these in your shell or `.env` file:
+
+```bash
+# Development settings
+export ENVIRONMENT=development
+export BYPASS_AUTH=true
+export API_PORT=8000
+
+# Database (when using local PostgreSQL)
+export DATABASE_URL="postgresql+asyncpg://user:password@localhost:5432/spending-monitor"
+
+# SMTP (using local SMTP server or external service)
+export SMTP_HOST=localhost
+export SMTP_PORT=1025
+export SMTP_FROM_EMAIL=dev@localhost
+export SMTP_USE_TLS=false
+export SMTP_USE_SSL=false
+
+# LLM Configuration
+export LLM_PROVIDER=XXXXX
+export BASE_URL=XXXXX
+export API_KEY=add-your-openai-api-key-here
+export MODEL=XXXXX
+```
 
 Manual DB control (optional)
 ```bash

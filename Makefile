@@ -5,7 +5,7 @@ PROJECT_NAME = spending-monitor
 REGISTRY_URL ?= quay.io
 REPOSITORY ?= rh-ai-quickstart
 NAMESPACE ?= spending-transaction-monitor
-IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
+IMAGE_TAG ?= latest
 
 # Component image names
 UI_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-ui:$(IMAGE_TAG)
@@ -42,6 +42,15 @@ help:
 	@echo "    port-forward-api   Forward API service to localhost:8000"
 	@echo "    port-forward-ui    Forward UI service to localhost:8080"
 	@echo "    port-forward-db    Forward database to localhost:5432"
+	@echo ""
+	@echo "  Local Development:"
+	@echo "    run-local          Start all services locally with Docker Compose"
+	@echo "    build-local        Build local Docker images"
+	@echo "    build-run-local    Build and run all services locally"
+	@echo "    stop-local         Stop local Docker Compose services"
+	@echo "    logs-local         Show logs from local services"
+	@echo "    reset-local        Reset local environment (restart with fresh data)"
+	@echo "    pull-local         Pull latest images from registry"
 	@echo ""
 	@echo "  Helm:"
 	@echo "    helm-lint          Lint Helm chart"
@@ -232,3 +241,88 @@ logs-api:
 .PHONY: logs-db
 logs-db:
 	@oc logs -f -l app.kubernetes.io/component=database --namespace $(NAMESPACE)
+
+# Local development targets using Docker Compose
+.PHONY: run-local
+run-local:
+	@echo "Starting all services locally with Docker Compose..."
+	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
+	@echo "Services will be available at:"
+	@echo "  - Frontend: http://localhost:3000"
+	@echo "  - API (proxied): http://localhost:3000/api/*"
+	@echo "  - API (direct): http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo "  - SMTP Web UI: http://localhost:3002"
+	@echo "  - Database: localhost:5432"
+	@echo ""
+	podman compose -f podman-compose.yml up -d
+	@echo ""
+	@echo "To also start pgAdmin for database management, run:"
+	@echo "  podman compose -f podman-compose.yml --profile tools up -d pgadmin"
+	@echo "  Then access pgAdmin at: http://localhost:8080"
+	@echo ""
+	@echo "To view logs: make logs-local"
+	@echo "To stop services: make stop-local"
+
+.PHONY: stop-local
+stop-local:
+	@echo "Stopping local Docker Compose services..."
+	podman compose -f podman-compose.yml down
+
+.PHONY: build-local
+build-local:
+	@echo "Building local Docker images..."
+	podman compose -f podman-compose.yml build
+
+.PHONY: pull-local
+pull-local:
+	@echo "Pulling latest images from registry..."
+	podman compose -f podman-compose.yml pull
+
+.PHONY: logs-local
+logs-local:
+	@echo "Showing logs from local services..."
+	podman compose -f podman-compose.yml logs -f
+
+.PHONY: reset-local
+reset-local:
+	@echo "Resetting local environment..."
+	@echo "This will stop services, remove containers and volumes, pull latest images, and restart"
+	podman compose -f podman-compose.yml down -v
+	podman compose -f podman-compose.yml pull
+	podman compose -f podman-compose.yml up -d
+	@echo "Local environment has been reset and restarted"
+
+.PHONY: build-run-local
+build-run-local: build-local
+	@echo "Starting all services locally with freshly built images..."
+	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
+	@echo "Services will be available at:"
+	@echo "  - Frontend: http://localhost:3000"
+	@echo "  - API (proxied): http://localhost:3000/api/*"
+	@echo "  - API (direct): http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo "  - SMTP Web UI: http://localhost:3002"
+	@echo "  - Database: localhost:5432"
+	@echo ""
+	podman compose -f podman-compose.yml up -d
+	@echo ""
+	@echo "To also start pgAdmin for database management, run:"
+	@echo "  podman compose -f podman-compose.yml --profile tools up -d pgadmin"
+	@echo "  Then access pgAdmin at: http://localhost:8080"
+	@echo ""
+	@echo "To view logs: make logs-local"
+	@echo "To stop services: make stop-local"
+	@echo ""
+	@echo "Don't forget to run database setup:"
+	@echo "  pnpm db:upgrade"
+	@echo "  pnpm db:seed"
+
+.PHONY: setup-local
+setup-local: pull-local run-local
+	@echo "Waiting for services to start..."
+	@sleep 10
+	@echo "Running database migrations and seeding..."
+	@echo "Note: You may need to run database setup manually:"
+	@echo "  pnpm db:upgrade"
+	@echo "  pnpm db:seed"
