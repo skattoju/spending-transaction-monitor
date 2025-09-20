@@ -80,17 +80,17 @@ create-project:
 .PHONY: build-ui
 build-ui:
 	@echo "Building UI image..."
-	podman build --platform=linux/amd64 -t $(UI_IMAGE) -f ./packages/ui/Dockerfile .
+	podman build --platform=linux/amd64 -t $(UI_IMAGE) -f ./packages/ui/Containerfile .
 
 .PHONY: build-api
 build-api:
 	@echo "Building API image..."
-	podman build --platform=linux/amd64 -t $(API_IMAGE) -f ./packages/api/Dockerfile .
+	podman build --platform=linux/amd64 -t $(API_IMAGE) -f ./packages/api/Containerfile .
 
 .PHONY: build-db
 build-db:
 	@echo "Building database image..."
-	podman build --platform=linux/amd64 -t $(DB_IMAGE) -f ./packages/db/Dockerfile .
+	podman build --platform=linux/amd64 -t $(DB_IMAGE) -f ./packages/db/Containerfile .
 
 .PHONY: build-all
 build-all: build-ui build-api build-db
