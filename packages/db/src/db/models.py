@@ -75,6 +75,7 @@ class User(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    keycloak_id: Mapped[str | None] = mapped_column(String, unique=True, nullable=True)
     first_name: Mapped[str] = mapped_column(String, nullable=False)
     last_name: Mapped[str] = mapped_column(String, nullable=False)
     phone_number: Mapped[str | None]

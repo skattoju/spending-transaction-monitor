@@ -63,11 +63,13 @@ export interface CurrentUser {
 // Storage key constant
 const CURRENT_USER_STORAGE_KEY = 'spending-monitor-current-user';
 
+import { apiClient } from './apiClient';
+
 // User service for real API data
 export const userService = {
   // Get all users
   async getUsers(): Promise<ApiUserResponse[]> {
-    const response = await fetch('/api/users/');
+    const response = await apiClient.fetch('/api/users/');
     if (!response.ok) {
       throw new Error('Failed to fetch users');
     }
@@ -76,7 +78,7 @@ export const userService = {
 
   // Get current logged-in user
   async getCurrentUser(): Promise<ApiUserResponse | null> {
-    const response = await fetch('/api/users/profile');
+    const response = await apiClient.fetch('/api/users/profile');
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch current user profile');
@@ -86,7 +88,7 @@ export const userService = {
 
   // Get user by ID
   async getUserById(id: string): Promise<ApiUserResponse | null> {
-    const response = await fetch(`/api/users/${id}`);
+    const response = await apiClient.fetch(`/api/users/${id}`);
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch user');
@@ -100,7 +102,7 @@ export const userService = {
     limit = 50,
     offset = 0,
   ): Promise<ApiTransactionResponse[]> {
-    const response = await fetch(
+    const response = await apiClient.fetch(
       `/api/users/${user_id}/transactions?limit=${limit}&offset=${offset}`,
     );
     if (!response.ok) {
@@ -111,7 +113,7 @@ export const userService = {
 
   // Get user credit cards
   async getUserCreditCards(user_id: string): Promise<ApiCreditCardResponse[]> {
-    const response = await fetch(`/api/users/${user_id}/credit-cards`);
+    const response = await apiClient.fetch(`/api/users/${user_id}/credit-cards`);
     if (!response.ok) {
       throw new Error('Failed to fetch user credit cards');
     }
@@ -120,7 +122,7 @@ export const userService = {
 
   // Get user alert rules
   async getUserAlertRules(user_id: string): Promise<ApiAlertRuleResponse[]> {
-    const response = await fetch(`/api/users/${user_id}/rules`);
+    const response = await apiClient.fetch(`/api/users/${user_id}/rules`);
     if (!response.ok) {
       throw new Error('Failed to fetch user alert rules');
     }

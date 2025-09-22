@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16
+    container_name: spending-monitor-db
+    environment:
+      POSTGRES_DB: spending-monitor
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d spending-monitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - spending-monitor
+
+  # Keycloak Identity Provider
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: spending-monitor-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    command: start-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - spending-monitor
+
+  # FastAPI Backend
+  api:
+    build: 
+      context: .
+      dockerfile: ./packages/api/Dockerfile
+    container_name: spending-monitor-api
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/spending-monitor
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=spending-monitor
+      - KEYCLOAK_CLIENT_ID=spending-monitor
+      - BYPASS_AUTH=true  # Enable for demo
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - spending-monitor
+    volumes:
+      - ./packages/api:/app
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React Frontend
+  ui:
+    build:
+      context: ./packages/ui
+      dockerfile: Dockerfile
+    container_name: spending-monitor-ui
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_KEYCLOAK_URL=http://localhost:8080/realms/spending-monitor
+      - VITE_KEYCLOAK_CLIENT_ID=spending-monitor
+      - VITE_BYPASS_AUTH=true  # Enable for demo
+      - VITE_ENVIRONMENT=development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+      - keycloak
+    networks:
+      - spending-monitor
+    volumes:
+      - ./packages/ui:/app
+      - /app/node_modules
+
+  # Keycloak Setup (runs once to configure realm and users)
+  keycloak-setup:
+    build:
+      context: ./packages/api  # Use API context since it has uv and requests
+      dockerfile: Dockerfile
+    container_name: spending-monitor-keycloak-setup
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - spending-monitor
+    volumes:
+      - ./scripts/auth:/scripts
+    command: >
+      sh -c "
+        sleep 10 &&
+        python /scripts/setup_keycloak.py
+      "
+    profiles:
+      - setup  # Only run when explicitly requested
+
+volumes:
+  postgres_data:
+
+networks:
+  spending-monitor:
+    driver: bridge
+

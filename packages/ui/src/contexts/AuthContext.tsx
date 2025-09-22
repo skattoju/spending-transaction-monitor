@@ -12,6 +12,7 @@ import {
 import { authConfig } from '../config/auth';
 import type { User, AuthContextType } from '../types/auth';
 import { DEV_USER } from '../constants/auth';
+import { apiClient } from '../services/apiClient';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -75,10 +76,21 @@ const ProductionAuthProvider = React.memo(
         post_logout_redirect_uri: authConfig.keycloak.postLogoutRedirectUri,
         response_type: 'code',
         scope: 'openid profile email',
-        automaticSilentRenew: true,
-        includeIdTokenInSilentRenew: true,
+        automaticSilentRenew: false, // Disable for debugging
+        includeIdTokenInSilentRenew: false, // Disable for debugging
+        // Ensure localStorage persistence
+        storeUser: true, // Explicitly enable user storage
+        userStore: undefined, // Use default WebStorageStateStore (localStorage)
+        // Remove problematic config
+        loadUserInfo: false,
+        monitorSession: false,
       }),
-      [],
+      [
+        authConfig.keycloak.authority,
+        authConfig.keycloak.clientId,
+        authConfig.keycloak.redirectUri,
+        authConfig.keycloak.postLogoutRedirectUri,
+      ],
     );
 
     useEffect(() => {
@@ -108,6 +120,20 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // Debug OIDC state changes
+    console.log('🔒 OIDC State Update:', {
+      isLoading: oidcAuth.isLoading,
+      hasUser: !!oidcAuth.user,
+      hasError: !!oidcAuth.error,
+      errorMessage: oidcAuth.error?.message,
+      activeNavigator: oidcAuth.activeNavigator,
+      isAuthenticated: oidcAuth.isAuthenticated,
+    });
+
+    if (oidcAuth.error) {
+      console.error('🚫 OIDC Error:', oidcAuth.error);
+    }
+
     if (oidcAuth.user) {
       const newUser: User = {
         id: oidcAuth.user.profile.sub!,
@@ -120,31 +146,50 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       };
       setUser(newUser);
 
-      if (import.meta.env.DEV) {
-        console.log('🔒 User authenticated via OIDC:', {
-          id: oidcAuth.user.profile.sub,
-          email: oidcAuth.user.profile.email,
-        });
+      console.log('✅ User authenticated via OIDC:', {
+        id: oidcAuth.user.profile.sub,
+        email: oidcAuth.user.profile.email,
+        accessToken: oidcAuth.user.access_token ? 'Present' : 'Missing',
+      });
+      
+      // Pass token to ApiClient
+      if (oidcAuth.user.access_token) {
+        (apiClient as any).constructor.setToken(oidcAuth.user.access_token);
       }
     } else {
       setUser(null);
+      // Clear token from ApiClient
+      (apiClient as any).constructor.setToken(null);
     }
-  }, [oidcAuth.user]);
+  }, [oidcAuth.user, oidcAuth.isLoading, oidcAuth.error]);
 
   const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
   const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);
   const signinRedirect = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
 
   const contextValue: AuthContextType = useMemo(
-    () => ({
-      user,
-      isAuthenticated: !!oidcAuth.user,
-      isLoading: oidcAuth.isLoading,
-      login,
-      logout,
-      signinRedirect,
-      error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
-    }),
+    () => {
+      const authState = {
+        user,
+        isAuthenticated: !!oidcAuth.user,
+        isLoading: oidcAuth.isLoading,
+        login,
+        logout,
+        signinRedirect,
+        error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
+      };
+
+      console.log('🔒 AuthContext: OIDC state update', {
+        isLoading: oidcAuth.isLoading,
+        hasOidcUser: !!oidcAuth.user,
+        isAuthenticated: !!oidcAuth.user,
+        hasError: !!oidcAuth.error,
+        errorMessage: oidcAuth.error?.message,
+        userEmail: user?.email,
+      });
+
+      return authState;
+    },
     [
       user,
       oidcAuth.user,

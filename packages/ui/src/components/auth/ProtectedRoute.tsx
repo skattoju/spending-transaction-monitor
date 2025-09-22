@@ -21,9 +21,18 @@ export function ProtectedRoute({
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('🛡️ ProtectedRoute: Auth state check', {
+      isLoading: auth.isLoading,
+      isAuthenticated: auth.isAuthenticated,
+      hasUser: !!auth.user,
+      userEmail: auth.user?.email,
+      currentPath: window.location.pathname,
+    });
+
     if (!auth.isLoading) {
       // Not authenticated - redirect to login
       if (!auth.isAuthenticated || !auth.user) {
+        console.log('🚫 ProtectedRoute: User not authenticated, redirecting to login');
         // Store current path for post-login redirect
         const currentPath = window.location.pathname + window.location.search;
         navigate({
@@ -35,9 +44,12 @@ export function ProtectedRoute({
 
       // Authenticated but insufficient permissions
       if (requireAdmin && !auth.user.roles.includes('admin')) {
+        console.log('🚫 ProtectedRoute: User lacks admin permissions, redirecting to home');
         navigate({ to: '/' });
         return;
       }
+
+      console.log('✅ ProtectedRoute: User authenticated, allowing access');
     }
   }, [auth.isAuthenticated, auth.isLoading, auth.user, navigate, requireAdmin]);
 

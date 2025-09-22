@@ -256,9 +256,44 @@ async def get_current_user(
         return None
 
     claims = await keycloak_jwt.validate_token(credentials.credentials)
+    
+    # In production mode, look up the database user by keycloak_id (preferred)
+    # or fall back to email lookup for backward compatibility
+    keycloak_id = claims.get('sub')
+    user_email = claims.get('email')
+    user_id = keycloak_id  # Default fallback
+    
+    if session and User and keycloak_id:
+        try:
+            # Primary lookup: by keycloak_id (fast, reliable)
+            result = await session.execute(select(User).where(User.keycloak_id == keycloak_id))
+            db_user = result.scalar_one_or_none()
+            
+            if db_user:
+                logger.info(f'✅ Found database user by Keycloak ID: {db_user.email} (ID: {db_user.id})')
+                user_id = db_user.id
+            elif user_email:
+                # Fallback: lookup by email and update keycloak_id
+                logger.info(f'🔄 Keycloak ID not found, trying email lookup for: {user_email}')
+                result = await session.execute(select(User).where(User.email == user_email))
+                db_user = result.scalar_one_or_none()
+                
+                if db_user:
+                    # Update user with keycloak_id for future fast lookups
+                    db_user.keycloak_id = keycloak_id
+                    await session.commit()
+                    logger.info(f'✅ Updated {user_email} with Keycloak ID: {keycloak_id}')
+                    user_id = db_user.id
+                else:
+                    logger.warning(f'⚠️ No database user found for {user_email}')
+            else:
+                logger.warning(f'⚠️ No email provided in token for Keycloak ID {keycloak_id}')
+                
+        except Exception as e:
+            logger.warning(f'⚠️ Database user lookup failed: {e}, using Keycloak ID as fallback')
 
     return {
-        'id': claims.get('sub'),
+        'id': user_id,
         'email': claims.get('email'),
         'username': claims.get('preferred_username'),
         'roles': claims.get('realm_access', {}).get('roles', []),

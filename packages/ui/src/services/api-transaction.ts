@@ -19,6 +19,8 @@ interface ApiNotificationResponse {
   read_at?: string | null;
 }
 
+import { apiClient } from './apiClient';
+
 interface AlertRuleData {
   name: string;
   description: string;
@@ -49,7 +51,7 @@ export const apiTransactionService = {
     page: number;
     totalPages: number;
   }> {
-    const response = await fetch('/api/transactions/');
+    const response = await apiClient.fetch('/api/transactions/');
     if (!response.ok) {
       throw new Error('Failed to fetch transactions');
     }
@@ -91,7 +93,7 @@ export const apiTransactionService = {
 
   // Get transaction by ID
   async getTransactionById(id: string): Promise<Transaction | null> {
-    const response = await fetch(`/api/transactions/${id}`);
+    const response = await apiClient.fetch(`/api/transactions/${id}`);
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch transaction');
@@ -215,7 +217,7 @@ export const apiTransactionService = {
 // Health check service
 export const healthService = {
   async getHealth() {
-    const response = await fetch('/api/health/');
+    const response = await apiClient.fetch('/api/health/');
     if (!response.ok) {
       throw new Error('Failed to fetch health status');
     }
@@ -227,7 +229,7 @@ export const healthService = {
 export const realAlertService = {
   // Get active alerts (using notifications as alerts)
   async getAlerts(): Promise<Alert[]> {
-    const response = await fetch('/api/alerts/notifications');
+    const response = await apiClient.fetch('/api/alerts/notifications');
     if (!response.ok) {
       throw new Error('Failed to fetch alerts');
     }
@@ -253,7 +255,7 @@ export const realAlertService = {
 
   // Get alert rules
   async getAlertRules(): Promise<AlertRule[]> {
-    const response = await fetch('/api/alerts/rules');
+    const response = await apiClient.fetch('/api/alerts/rules');
     if (!response.ok) {
       throw new Error('Failed to fetch alert rules');
     }
@@ -364,7 +366,7 @@ export const realAlertService = {
       // Note: userId parameter is now unused as the API automatically determines the current user
       void userId; // Suppress unused parameter warning
 
-      const response = await fetch('/api/alerts/rules', {
+      const response = await apiClient.fetch('/api/alerts/rules', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -417,7 +419,7 @@ export const realAlertService = {
       const newIsActive = currentRule.status !== 'active';
 
       // Make API call to update the rule
-      const response = await fetch(`/api/alerts/rules/${id}`, {
+      const response = await apiClient.fetch(`/api/alerts/rules/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -459,7 +461,7 @@ export const realAlertService = {
   // Delete alert rule
   async deleteAlertRule(id: string): Promise<void> {
     try {
-      const response = await fetch(`/api/alerts/rules/${id}`, {
+      const response = await apiClient.fetch(`/api/alerts/rules/${id}`, {
         method: 'DELETE',
       });
 
@@ -484,7 +486,7 @@ export const realAlertService = {
 export const userService = {
   // Get all users
   async getUsers(): Promise<unknown[]> {
-    const response = await fetch('/api/users/');
+    const response = await apiClient.fetch('/api/users/');
     if (!response.ok) {
       throw new Error('Failed to fetch users');
     }
@@ -493,7 +495,7 @@ export const userService = {
 
   // Get user by ID
   async getUserById(id: string): Promise<unknown> {
-    const response = await fetch(`/api/users/${id}`);
+    const response = await apiClient.fetch(`/api/users/${id}`);
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch user');
@@ -507,7 +509,7 @@ export const userService = {
     limit = 50,
     offset = 0,
   ): Promise<unknown[]> {
-    const response = await fetch(
+    const response = await apiClient.fetch(
       `/api/users/${userId}/transactions?limit=${limit}&offset=${offset}`,
     );
     if (!response.ok) {
@@ -518,7 +520,7 @@ export const userService = {
 
   // Get user credit cards
   async getUserCreditCards(userId: string): Promise<unknown[]> {
-    const response = await fetch(`/api/users/${userId}/credit-cards`);
+    const response = await apiClient.fetch(`/api/users/${userId}/credit-cards`);
     if (!response.ok) {
       throw new Error('Failed to fetch user credit cards');
     }
@@ -527,7 +529,7 @@ export const userService = {
 
   // Get user alert rules
   async getUserAlertRules(userId: string): Promise<unknown[]> {
-    const response = await fetch(`/api/users/${userId}/rules`);
+    const response = await apiClient.fetch(`/api/users/${userId}/rules`);
     if (!response.ok) {
       throw new Error('Failed to fetch user alert rules');
     }
