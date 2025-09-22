@@ -86,7 +86,9 @@ describe('ApiClient', () => {
     it('should make unauthenticated request when no JWT token found', async () => {
       // Arrange: No tokens in localStorage
       mockFetch.mockResolvedValueOnce(
-        new globalThis.Response('{"detail":"Authentication required"}', { status: 401 }),
+        new globalThis.Response('{"detail":"Authentication required"}', {
+          status: 401,
+        }),
       );
 
       // Act
@@ -139,7 +141,9 @@ describe('ApiClient', () => {
       );
 
       mockFetch.mockResolvedValueOnce(
-        new globalThis.Response('{"detail":"Authentication required"}', { status: 401 }),
+        new globalThis.Response('{"detail":"Authentication required"}', {
+          status: 401,
+        }),
       );
 
       // Act

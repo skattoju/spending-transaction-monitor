@@ -1,4 +1,3 @@
-
 /**
  * Centralized API client with authentication
  */

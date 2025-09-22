@@ -158,7 +158,13 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (apiClient as any).constructor.setToken(null);
     }
-  }, [oidcAuth.user, oidcAuth.isLoading, oidcAuth.error, oidcAuth.activeNavigator, oidcAuth.isAuthenticated]);
+  }, [
+    oidcAuth.user,
+    oidcAuth.isLoading,
+    oidcAuth.error,
+    oidcAuth.activeNavigator,
+    oidcAuth.isAuthenticated,
+  ]);
 
   const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
   const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);
