@@ -10,12 +10,20 @@ For contribution guidelines and repo conventions, see [CONTRIBUTING.md](CONTRIBU
 - [Overview](#overview)
 - [How it works](#how-it-works)
 - [Getting started](#getting-started)
-  - [Container Deployment (Recommended)](#-container-deployment-recommended)
-    - [Quick Start with Podman Compose](#-quick-start-with-podman-compose)
-    - [OpenShift Deployment](#️-openshift-deployment)
-  - [Local Development Mode](#-local-development-mode)
-  - [Development Mode (Authentication Bypass)](#-development-mode-authentication-bypass)
-  - [Environment Variables Configuration](#-environment-variables-configuration)
+- [🐳 Container Deployment (Recommended)](#-container-deployment-recommended)
+  - [🚀 Quick Start with Podman Compose](#-quick-start-with-podman-compose)
+  - [☁️ OpenShift Deployment](#️-openshift-deployment)
+- [🔧 Local Development Mode](#-local-development-mode)
+  - [🔧 Development Mode (Authentication Bypass)](#-development-mode-authentication-bypass)
+- [🔧 Environment Variables Configuration](#-environment-variables-configuration)
+  - [Required Environment Variables](#required-environment-variables)
+    - [Database Configuration](#database-configuration)
+    - [SMTP Configuration (for email alerts)](#smtp-configuration-for-email-alerts)
+    - [API Configuration](#api-configuration)
+    - [LLM Configuration](#llm-configuration)
+  - [🐳 Local Container Deployment (podman-compose.yml)](#-local-container-deployment-podman-composeyml)
+  - [☁️ OpenShift Deployment (values.yaml)](#️-openshift-deployment-valuesyaml)
+  - [🔧 Local Development Environment Variables](#-local-development-environment-variables)
 - [Components](#components)
 - [Standards](#standards)
 - [Releases](#releases)
@@ -136,11 +144,6 @@ make run-local
 make build-run-local
 ```
 
-After starting, run database setup:
-```bash
-pnpm db:upgrade
-pnpm db:seed
-```
 
 **Container URLs:**
 - Frontend: http://localhost:3000

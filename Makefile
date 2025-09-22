@@ -17,7 +17,7 @@ DB_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-db:$(IMAGE_TAG)
 help:
 	@echo "Available targets:"
 	@echo "  Building:"
-	@echo "    build-all          Build all Docker images"
+	@echo "    build-all          Build all Podman images"
 	@echo "    build-ui           Build UI image"
 	@echo "    build-api          Build API image"
 	@echo "    build-db           Build database image"
@@ -43,14 +43,15 @@ help:
 	@echo "    port-forward-ui    Forward UI service to localhost:8080"
 	@echo "    port-forward-db    Forward database to localhost:5432"
 	@echo ""
-	@echo "  Local Development:"
-	@echo "    run-local          Start all services locally with Docker Compose"
-	@echo "    build-local        Build local Docker images"
-	@echo "    build-run-local    Build and run all services locally"
-	@echo "    stop-local         Stop local Docker Compose services"
+	@echo   "  Local Development:"
+	@echo "    run-local          Start all services, run migrations, and seed database"
+	@echo "    build-local        Build local Podman images"
+	@echo "    build-run-local    Build and run all services with database setup"
+	@echo "    stop-local         Stop local Podman Compose services"
 	@echo "    logs-local         Show logs from local services"
 	@echo "    reset-local        Reset local environment (restart with fresh data)"
 	@echo "    pull-local         Pull latest images from registry"
+	@echo "    setup-local        Complete local setup (pull, run, migrate, seed)"
 	@echo ""
 	@echo "  Helm:"
 	@echo "    helm-lint          Lint Helm chart"
@@ -62,7 +63,7 @@ help:
 	@echo "    create-project     Create OpenShift project"
 	@echo "    status             Show deployment status"
 	@echo "    clean-all          Clean up all resources"
-	@echo "    clean-images       Remove local Docker images"
+	@echo "    clean-images       Remove local Podman images"
 
 # Login to OpenShift registry
 .PHONY: login
@@ -242,10 +243,10 @@ logs-api:
 logs-db:
 	@oc logs -f -l app.kubernetes.io/component=database --namespace $(NAMESPACE)
 
-# Local development targets using Docker Compose
+# Local development targets using Podman Compose
 .PHONY: run-local
 run-local:
-	@echo "Starting all services locally with Docker Compose..."
+	@echo "Starting all services locally with Podman Compose..."
 	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
 	@echo "Services will be available at:"
 	@echo "  - Frontend: http://localhost:3000"
@@ -255,10 +256,19 @@ run-local:
 	@echo "  - SMTP Web UI: http://localhost:3002"
 	@echo "  - Database: localhost:5432"
 	@echo ""
-	podman compose -f podman-compose.yml up -d
+	podman-compose -f podman-compose.yml up -d
+	@echo ""
+	@echo "Waiting for database to be ready..."
+	@sleep 15
+	@echo "Running database migrations..."
+	@pnpm db:upgrade || (echo "❌ Database upgrade failed. Check if database is running." && exit 1)
+	@echo "Seeding database with test data..."
+	@pnpm db:seed || (echo "❌ Database seeding failed. Check migration status." && exit 1)
+	@echo ""
+	@echo "✅ All services started and database is ready!"
 	@echo ""
 	@echo "To also start pgAdmin for database management, run:"
-	@echo "  podman compose -f podman-compose.yml --profile tools up -d pgadmin"
+	@echo "  podman-compose -f podman-compose.yml --profile tools up -d pgadmin"
 	@echo "  Then access pgAdmin at: http://localhost:8080"
 	@echo ""
 	@echo "To view logs: make logs-local"
@@ -266,32 +276,40 @@ run-local:
 
 .PHONY: stop-local
 stop-local:
-	@echo "Stopping local Docker Compose services..."
-	podman compose -f podman-compose.yml down
+	@echo "Stopping local Podman Compose services..."
+	podman-compose -f podman-compose.yml down
 
 .PHONY: build-local
 build-local:
-	@echo "Building local Docker images..."
-	podman compose -f podman-compose.yml build
+	@echo "Building local Podman images..."
+	podman-compose -f podman-compose.yml build
 
 .PHONY: pull-local
 pull-local:
 	@echo "Pulling latest images from registry..."
-	podman compose -f podman-compose.yml pull
+	podman-compose -f podman-compose.yml pull
 
 .PHONY: logs-local
 logs-local:
 	@echo "Showing logs from local services..."
-	podman compose -f podman-compose.yml logs -f
+	podman-compose -f podman-compose.yml logs -f
 
 .PHONY: reset-local
 reset-local:
 	@echo "Resetting local environment..."
 	@echo "This will stop services, remove containers and volumes, pull latest images, and restart"
-	podman compose -f podman-compose.yml down -v
-	podman compose -f podman-compose.yml pull
-	podman compose -f podman-compose.yml up -d
-	@echo "Local environment has been reset and restarted"
+	podman-compose -f podman-compose.yml down -v
+	podman-compose -f podman-compose.yml pull
+	podman-compose -f podman-compose.yml up -d
+	@echo ""
+	@echo "Waiting for database to be ready..."
+	@sleep 15
+	@echo "Running database migrations..."
+	@pnpm db:upgrade || (echo "❌ Database upgrade failed. Check if database is running." && exit 1)
+	@echo "Seeding database with test data..."
+	@pnpm db:seed || (echo "❌ Database seeding failed. Check migration status." && exit 1)
+	@echo ""
+	@echo "✅ Local environment has been reset and database is ready!"
 
 .PHONY: build-run-local
 build-run-local: build-local
@@ -305,24 +323,25 @@ build-run-local: build-local
 	@echo "  - SMTP Web UI: http://localhost:3002"
 	@echo "  - Database: localhost:5432"
 	@echo ""
-	podman compose -f podman-compose.yml up -d
+	podman-compose -f podman-compose.yml up -d
+	@echo ""
+	@echo "Waiting for database to be ready..."
+	@sleep 15
+	@echo "Running database migrations..."
+	@pnpm db:upgrade || (echo "❌ Database upgrade failed. Check if database is running." && exit 1)
+	@echo "Seeding database with test data..."
+	@pnpm db:seed || (echo "❌ Database seeding failed. Check migration status." && exit 1)
+	@echo ""
+	@echo "✅ All services started and database is ready!"
 	@echo ""
 	@echo "To also start pgAdmin for database management, run:"
-	@echo "  podman compose -f podman-compose.yml --profile tools up -d pgadmin"
+	@echo "  podman-compose -f podman-compose.yml --profile tools up -d pgadmin"
 	@echo "  Then access pgAdmin at: http://localhost:8080"
 	@echo ""
 	@echo "To view logs: make logs-local"
 	@echo "To stop services: make stop-local"
-	@echo ""
-	@echo "Don't forget to run database setup:"
-	@echo "  pnpm db:upgrade"
-	@echo "  pnpm db:seed"
 
 .PHONY: setup-local
 setup-local: pull-local run-local
-	@echo "Waiting for services to start..."
-	@sleep 10
-	@echo "Running database migrations and seeding..."
-	@echo "Note: You may need to run database setup manually:"
-	@echo "  pnpm db:upgrade"
-	@echo "  pnpm db:seed"
+	@echo "✅ Local development environment is fully set up and ready!"
+	@echo "Database has been migrated and seeded with test data."
