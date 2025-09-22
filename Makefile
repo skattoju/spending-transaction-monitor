@@ -12,6 +12,46 @@ UI_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-ui:$(IMAGE_TAG)
 API_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-api:$(IMAGE_TAG)
 DB_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-db:$(IMAGE_TAG)
 
+# Environment file path
+ENV_FILE = .env
+
+# Check if environment file exists
+.PHONY: check-env-file
+check-env-file:
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "❌ Error: Environment file not found at $(ENV_FILE)"; \
+		echo ""; \
+		echo "Please create the environment file by copying the example:"; \
+		echo "  cp env.example .env"; \
+		echo ""; \
+		echo "Then edit $(ENV_FILE) and update the values for your environment."; \
+		echo ""; \
+		echo "Key variables to update:"; \
+		echo "  - API_KEY: Your OpenAI API key"; \
+		echo "  - BASE_URL: Your LLM provider base URL"; \
+		echo "  - POSTGRES_PASSWORD: Your database password"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "✅ Environment file found at $(ENV_FILE)"
+
+# Create environment file from example
+.PHONY: create-env-file
+create-env-file:
+	@if [ -f "$(ENV_FILE)" ]; then \
+		echo "⚠️  Environment file already exists at $(ENV_FILE)"; \
+		echo "Remove it first if you want to recreate it."; \
+		exit 1; \
+	fi
+	@echo "📄 Creating environment file from example..."
+	@cp env.example "$(ENV_FILE)"
+	@echo "✅ Environment file created at $(ENV_FILE)"
+	@echo ""
+	@echo "🔧 Please edit .env and update the following required values:"
+	@echo "  - API_KEY: Your OpenAI API key"
+	@echo "  - POSTGRES_PASSWORD: Your desired database password"
+	@echo "  - Other values as needed for your environment"
+
 # Default target
 .PHONY: help
 help:
@@ -64,6 +104,13 @@ help:
 	@echo "    status             Show deployment status"
 	@echo "    clean-all          Clean up all resources"
 	@echo "    clean-images       Remove local Podman images"
+	@echo "    check-env-file     Check if environment file exists"
+	@echo "    create-env-file    Create environment file from example"
+	@echo ""
+	@echo "  Environment Setup:"
+	@echo "    Before running local development commands, create your environment file:"
+	@echo "      make create-env-file"
+	@echo "    Then edit .env with your settings."
 
 # Login to OpenShift registry
 .PHONY: login
@@ -245,7 +292,7 @@ logs-db:
 
 # Local development targets using Podman Compose
 .PHONY: run-local
-run-local:
+run-local: check-env-file
 	@echo "Starting all services locally with Podman Compose..."
 	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
 	@echo "Services will be available at:"
@@ -295,7 +342,7 @@ logs-local:
 	podman-compose -f podman-compose.yml logs -f
 
 .PHONY: reset-local
-reset-local:
+reset-local: check-env-file
 	@echo "Resetting local environment..."
 	@echo "This will stop services, remove containers and volumes, pull latest images, and restart"
 	podman-compose -f podman-compose.yml down -v
@@ -312,7 +359,7 @@ reset-local:
 	@echo "✅ Local environment has been reset and database is ready!"
 
 .PHONY: build-run-local
-build-run-local: build-local
+build-run-local: check-env-file build-local
 	@echo "Starting all services locally with freshly built images..."
 	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
 	@echo "Services will be available at:"
@@ -342,6 +389,6 @@ build-run-local: build-local
 	@echo "To stop services: make stop-local"
 
 .PHONY: setup-local
-setup-local: pull-local run-local
+setup-local: check-env-file pull-local run-local
 	@echo "✅ Local development environment is fully set up and ready!"
 	@echo "Database has been migrated and seeded with test data."
