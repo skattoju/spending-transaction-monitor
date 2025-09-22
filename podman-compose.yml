@@ -3,8 +3,8 @@ services:
   postgres:
     image: quay.io/rh-ai-quickstart/spending-monitor-db:latest
     build:
-      context: .
-      dockerfile: packages/db/Dockerfile
+      context: packages/db
+      dockerfile: Containerfile
     container_name: spending-monitor-db
     environment:
       POSTGRES_DB: spending-monitor
@@ -39,7 +39,7 @@ services:
     image: quay.io/rh-ai-quickstart/spending-monitor-api:latest
     build:
       context: .
-      dockerfile: packages/api/Dockerfile
+      dockerfile: packages/api/Containerfile
     container_name: spending-monitor-api
     environment:
       - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/spending-monitor
@@ -74,7 +74,7 @@ services:
     image: quay.io/rh-ai-quickstart/spending-monitor-ui:latest
     build:
       context: .
-      dockerfile: packages/ui/Dockerfile
+      dockerfile: packages/ui/Containerfile
     container_name: spending-monitor-ui
     depends_on:
       - api
