@@ -12,7 +12,7 @@ RUN apk add --no-cache python3 py3-pip
 RUN mkdir -p /app
 
 # Copy the db package
-COPY . /app/packages/db/
+COPY packages/db/ /app/packages/db/
 
 WORKDIR /app/packages/db
 
