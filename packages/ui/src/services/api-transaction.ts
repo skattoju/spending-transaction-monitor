@@ -20,9 +20,9 @@ interface ApiNotificationResponse {
 }
 
 interface AlertRuleData {
-  name?: string;
-  description?: string;
-  alert_type?: string;
+  name: string;
+  description: string;
+  alert_type: string;
   amount_threshold?: number;
   merchant_category?: string;
   merchant_name?: string;

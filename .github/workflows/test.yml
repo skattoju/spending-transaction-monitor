@@ -1,0 +1,57 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9.0.0
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Add uv to PATH
+      run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Install API Python dependencies
+      run: uv sync --extra dev
+      working-directory: packages/api
+
+    - name: Install DB Python dependencies
+      run: uv sync --extra dev
+      working-directory: packages/db
+
+    - name: Run linting
+      run: pnpm lint
+
+    - name: Run type checking
+      run: pnpm --filter @spending-monitor/ui type-check
+
+    - name: Run tests
+      run: pnpm test
+
+    - name: Check formatting
+      run: pnpm format:check

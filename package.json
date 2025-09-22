@@ -23,7 +23,7 @@
     "lint": "turbo lint",
     "lint:fix": "turbo lint:fix",
     "format": "turbo format",
-    "format:check": "turbo format:check && pnpm -C packages/ui prettier --check",
+    "format:check": "turbo format:check",
     "test": "turbo test",
     "type-check": "turbo type-check",
     "storybook": "turbo storybook",

@@ -74,7 +74,13 @@ function AlertsPage() {
   };
 
   const handleConfirmCreateRule = async () => {
-    if (!pendingRule || !validationResult) return;
+    if (
+      !pendingRule ||
+      !validationResult ||
+      !validationResult.alert_rule ||
+      !validationResult.sql_query
+    )
+      return;
 
     try {
       setCreateError(null);

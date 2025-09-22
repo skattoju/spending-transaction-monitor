@@ -5,7 +5,6 @@
 
 ## Related issues
 
-<!-- Link issues with keywords like Closes/Resolves/Fixes. Example: Closes #123 -->
 - Closes #
 - Related to #
 
