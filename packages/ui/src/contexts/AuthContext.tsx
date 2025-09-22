@@ -85,12 +85,7 @@ const ProductionAuthProvider = React.memo(
         loadUserInfo: false,
         monitorSession: false,
       }),
-      [
-        authConfig.keycloak.authority,
-        authConfig.keycloak.clientId,
-        authConfig.keycloak.redirectUri,
-        authConfig.keycloak.postLogoutRedirectUri,
-      ],
+      [],
     );
 
     useEffect(() => {
@@ -151,55 +146,54 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
         email: oidcAuth.user.profile.email,
         accessToken: oidcAuth.user.access_token ? 'Present' : 'Missing',
       });
-      
+
       // Pass token to ApiClient
       if (oidcAuth.user.access_token) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (apiClient as any).constructor.setToken(oidcAuth.user.access_token);
       }
     } else {
       setUser(null);
       // Clear token from ApiClient
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (apiClient as any).constructor.setToken(null);
     }
-  }, [oidcAuth.user, oidcAuth.isLoading, oidcAuth.error]);
+  }, [oidcAuth.user, oidcAuth.isLoading, oidcAuth.error, oidcAuth.activeNavigator, oidcAuth.isAuthenticated]);
 
   const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
   const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);
   const signinRedirect = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
 
-  const contextValue: AuthContextType = useMemo(
-    () => {
-      const authState = {
-        user,
-        isAuthenticated: !!oidcAuth.user,
-        isLoading: oidcAuth.isLoading,
-        login,
-        logout,
-        signinRedirect,
-        error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
-      };
-
-      console.log('🔒 AuthContext: OIDC state update', {
-        isLoading: oidcAuth.isLoading,
-        hasOidcUser: !!oidcAuth.user,
-        isAuthenticated: !!oidcAuth.user,
-        hasError: !!oidcAuth.error,
-        errorMessage: oidcAuth.error?.message,
-        userEmail: user?.email,
-      });
-
-      return authState;
-    },
-    [
+  const contextValue: AuthContextType = useMemo(() => {
+    const authState = {
       user,
-      oidcAuth.user,
-      oidcAuth.isLoading,
-      oidcAuth.error,
+      isAuthenticated: !!oidcAuth.user,
+      isLoading: oidcAuth.isLoading,
       login,
       logout,
       signinRedirect,
-    ],
-  );
+      error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
+    };
+
+    console.log('🔒 AuthContext: OIDC state update', {
+      isLoading: oidcAuth.isLoading,
+      hasOidcUser: !!oidcAuth.user,
+      isAuthenticated: !!oidcAuth.user,
+      hasError: !!oidcAuth.error,
+      errorMessage: oidcAuth.error?.message,
+      userEmail: user?.email,
+    });
+
+    return authState;
+  }, [
+    user,
+    oidcAuth.user,
+    oidcAuth.isLoading,
+    oidcAuth.error,
+    login,
+    logout,
+    signinRedirect,
+  ]);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 });

@@ -44,7 +44,9 @@ export function ProtectedRoute({
 
       // Authenticated but insufficient permissions
       if (requireAdmin && !auth.user.roles.includes('admin')) {
-        console.log('🚫 ProtectedRoute: User lacks admin permissions, redirecting to home');
+        console.log(
+          '🚫 ProtectedRoute: User lacks admin permissions, redirecting to home',
+        );
         navigate({ to: '/' });
         return;
       }
