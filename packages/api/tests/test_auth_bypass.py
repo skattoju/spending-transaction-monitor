@@ -3,12 +3,65 @@ Tests for authentication bypass functionality
 """
 
 import os
+from typing import Literal
 from unittest.mock import patch
 
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import pytest
 
 from src.auth.middleware import get_current_user, require_authentication
-from src.core.config import Settings
+
+
+class IsolatedSettings(BaseSettings):
+    """Test-only Settings class that doesn't load from env file"""
+
+    model_config = SettingsConfigDict(
+        extra='ignore',
+    )
+
+    # Environment settings
+    ENVIRONMENT: Literal['development', 'production', 'staging', 'test'] = 'development'
+
+    # Authentication settings
+    BYPASS_AUTH: bool = False
+
+    # Basic settings
+    APP_NAME: str = 'spending-monitor'
+    DEBUG: bool = False
+
+    # CORS settings
+    ALLOWED_HOSTS: list[str] = ['http://localhost:5173']
+
+    # Database settings
+    DATABASE_URL: str = (
+        'postgresql+asyncpg://user:password@localhost:5432/spending-monitor'
+    )
+
+    # LLM settings
+    LLM_PROVIDER: str = 'openai'
+    NODE_ENV: str = 'development'
+    BASE_URL: str = ''
+    API_KEY: str = ''
+    MODEL: str = 'gpt-3.5-turbo'
+
+    # Keycloak settings
+    KEYCLOAK_URL: str = 'http://localhost:8080'
+    KEYCLOAK_REALM: str = 'spending-monitor'
+    KEYCLOAK_CLIENT_ID: str = 'spending-monitor'
+
+    def model_post_init(self, __context):
+        """Set derived values based on environment"""
+        # Auto-enable auth bypass in development if not explicitly set
+        if (
+            self.ENVIRONMENT == 'development'
+            and not hasattr(self, '_bypass_auth_explicitly_set')
+            and 'BYPASS_AUTH' not in os.environ
+        ):
+            self.BYPASS_AUTH = True
+
+        # Set DEBUG based on environment if not explicitly set
+        if not hasattr(self, '_debug_explicitly_set') and 'DEBUG' not in os.environ:
+            self.DEBUG = self.ENVIRONMENT == 'development'
 
 
 class TestAuthBypass:
@@ -56,7 +109,7 @@ class TestAuthBypass:
         """Test that BYPASS_AUTH is auto-enabled in development mode"""
         # Test with development environment and no explicit BYPASS_AUTH
         with patch.dict(os.environ, {'ENVIRONMENT': 'development'}, clear=True):
-            settings = Settings()
+            settings = IsolatedSettings()
 
             assert settings.ENVIRONMENT == 'development'
             assert settings.BYPASS_AUTH is True
@@ -69,7 +122,7 @@ class TestAuthBypass:
             {'ENVIRONMENT': 'development', 'BYPASS_AUTH': 'false'},
             clear=True,
         ):
-            settings = Settings()
+            settings = IsolatedSettings()
 
             assert settings.ENVIRONMENT == 'development'
             assert settings.BYPASS_AUTH is False
@@ -77,7 +130,7 @@ class TestAuthBypass:
     def test_config_production_mode_no_auto_bypass(self):
         """Test that production mode doesn't auto-enable bypass"""
         with patch.dict(os.environ, {'ENVIRONMENT': 'production'}, clear=True):
-            settings = Settings()
+            settings = IsolatedSettings()
 
             assert settings.ENVIRONMENT == 'production'
             assert settings.BYPASS_AUTH is False
