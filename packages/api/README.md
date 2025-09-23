@@ -64,7 +64,7 @@ uv sync
    **PostgreSQL Database**:
    ```bash
    cd ../db
-   docker-compose up -d
+   podman compose up -d
    cd ../api
    ```
 
@@ -296,16 +296,16 @@ uv run pytest tests/ -k "integration" # Run integration tests
 ### Common Issues
 
 **1. Kafka Consumer Not Connected**
-- Check Kafka is running: `docker ps | grep kafka`
+- Check Kafka is running: `podman ps | grep kafka`
 - Verify Kafka port: `telnet localhost 9092`
 - Check consumer logs in API output
-- Restart Kafka: `cd ../ingestion-service/deploy/kafka && docker-compose restart`
+- Restart Kafka: `cd ../ingestion-service/deploy/kafka && podman compose restart`
 
 **2. Database Connection Issues**
-- Check PostgreSQL is running: `docker ps | grep postgres`
+- Check PostgreSQL is running: `podman ps | grep postgres`
 - Verify database port: `telnet localhost 5432`
 - Check connection string in config
-- Restart database: `cd ../db && docker-compose restart`
+- Restart database: `cd ../db && podman compose restart`
 
 **3. Transaction Processing Failures**
 - Verify user and credit card IDs exist in database
@@ -315,8 +315,8 @@ uv run pytest tests/ -k "integration" # Run integration tests
 
 **4. Port Conflicts**
 - API (8000): Change in uvicorn command
-- PostgreSQL (5432): Modify docker-compose.yml port mapping
-- Kafka (9092): Modify kafka docker-compose.yml
+- PostgreSQL (5432): Modify podman-compose.yml port mapping  
+- Kafka (9092): Modify kafka podman-compose.yml
 
 ### Getting User/Card IDs for Testing
 ```bash
