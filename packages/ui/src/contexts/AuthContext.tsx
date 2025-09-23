@@ -12,6 +12,7 @@ import {
 import { authConfig } from '../config/auth';
 import type { User, AuthContextType } from '../types/auth';
 import { DEV_USER } from '../constants/auth';
+import { apiClient } from '../services/apiClient';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -22,21 +23,15 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
   const [user] = useState<User>(DEV_USER);
 
   const login = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Dev mode: login() called - already authenticated');
-    }
+    // No-op in dev mode since user is always authenticated
   }, []);
 
   const logout = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Dev mode: logout() called - staying authenticated');
-    }
+    // No-op in dev mode since user stays authenticated
   }, []);
 
   const signinRedirect = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Dev mode: signinRedirect() called - already authenticated');
-    }
+    // No-op in dev mode since user is already authenticated
   }, []);
 
   const contextValue: AuthContextType = useMemo(
@@ -53,9 +48,7 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
   );
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Development auth provider initialized');
-    }
+    // Development auth provider initialized
   }, []);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
@@ -75,20 +68,20 @@ const ProductionAuthProvider = React.memo(
         post_logout_redirect_uri: authConfig.keycloak.postLogoutRedirectUri,
         response_type: 'code',
         scope: 'openid profile email',
-        automaticSilentRenew: true,
-        includeIdTokenInSilentRenew: true,
+        automaticSilentRenew: false, // Disable for debugging
+        includeIdTokenInSilentRenew: false, // Disable for debugging
+        // Ensure localStorage persistence
+        storeUser: true, // Explicitly enable user storage
+        userStore: undefined, // Use default WebStorageStateStore (localStorage)
+        // Remove problematic config
+        loadUserInfo: false,
+        monitorSession: false,
       }),
       [],
     );
 
     useEffect(() => {
-      if (import.meta.env.DEV) {
-        console.log('🔒 Production OIDC config:', {
-          authority: oidcConfig.authority,
-          client_id: oidcConfig.client_id,
-          redirect_uri: oidcConfig.redirect_uri,
-        });
-      }
+      // OIDC config initialized
     }, [oidcConfig]);
 
     return (
@@ -108,6 +101,10 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    if (oidcAuth.error) {
+      console.error('OIDC Authentication Error:', oidcAuth.error);
+    }
+
     if (oidcAuth.user) {
       const newUser: User = {
         id: oidcAuth.user.profile.sub!,
@@ -120,23 +117,33 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       };
       setUser(newUser);
 
-      if (import.meta.env.DEV) {
-        console.log('🔒 User authenticated via OIDC:', {
-          id: oidcAuth.user.profile.sub,
-          email: oidcAuth.user.profile.email,
-        });
+      // User authenticated via OIDC
+
+      // Pass token to ApiClient
+      if (oidcAuth.user.access_token) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (apiClient as any).constructor.setToken(oidcAuth.user.access_token);
       }
     } else {
       setUser(null);
+      // Clear token from ApiClient
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (apiClient as any).constructor.setToken(null);
     }
-  }, [oidcAuth.user]);
+  }, [
+    oidcAuth.user,
+    oidcAuth.isLoading,
+    oidcAuth.error,
+    oidcAuth.activeNavigator,
+    oidcAuth.isAuthenticated,
+  ]);
 
   const login = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
   const logout = useCallback(() => oidcAuth.signoutRedirect(), [oidcAuth]);
   const signinRedirect = useCallback(() => oidcAuth.signinRedirect(), [oidcAuth]);
 
-  const contextValue: AuthContextType = useMemo(
-    () => ({
+  const contextValue: AuthContextType = useMemo(() => {
+    const authState = {
       user,
       isAuthenticated: !!oidcAuth.user,
       isLoading: oidcAuth.isLoading,
@@ -144,17 +151,20 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       logout,
       signinRedirect,
       error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
-    }),
-    [
-      user,
-      oidcAuth.user,
-      oidcAuth.isLoading,
-      oidcAuth.error,
-      login,
-      logout,
-      signinRedirect,
-    ],
-  );
+    };
+
+    // Auth context state updated
+
+    return authState;
+  }, [
+    user,
+    oidcAuth.user,
+    oidcAuth.isLoading,
+    oidcAuth.error,
+    login,
+    logout,
+    signinRedirect,
+  ]);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 });

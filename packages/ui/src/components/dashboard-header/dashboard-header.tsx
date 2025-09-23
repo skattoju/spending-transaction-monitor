@@ -3,7 +3,7 @@ import { Button } from '../atoms/button/button';
 import { UserAvatar } from '../user-avatar/user-avatar';
 import { cn } from '../../lib/utils';
 import { Link } from '@tanstack/react-router';
-import { useCurrentUser } from '../../hooks/user';
+import { useAuth } from '../../hooks/useAuth';
 
 export interface DashboardHeaderProps {
   className?: string;
@@ -11,7 +11,7 @@ export interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ className, onMenuClick }: DashboardHeaderProps) {
-  const { user, logout } = useCurrentUser();
+  const { user, logout } = useAuth();
 
   return (
     <header className={cn('border-b border-border bg-card', className)}>
@@ -72,7 +72,7 @@ export function DashboardHeader({ className, onMenuClick }: DashboardHeaderProps
             </Button>
 
             <UserAvatar
-              userName={user?.fullName}
+              userName={user?.name}
               userEmail={user?.email}
               onSettingsClick={() => {
                 // TODO: Navigate to settings page

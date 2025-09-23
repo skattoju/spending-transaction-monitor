@@ -199,7 +199,7 @@ alembic upgrade head
 
 **Connection refused**:
 - Ensure Docker is running
-- Check if database container is started: `docker ps`
+- Check if database container is started: `podman ps`
 - Verify connection string in environment variables
 
 ### Database Reset

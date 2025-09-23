@@ -44,17 +44,4 @@ export const authConfig: AuthConfig = {
   },
 };
 
-// Log configuration for debugging (only in development)
-if (import.meta.env.DEV) {
-  console.log('🔐 Auth Configuration:', {
-    environment: authConfig.environment,
-    bypassAuth: authConfig.bypassAuth,
-    keycloakConfigured: !!authConfig.keycloak.authority,
-  });
-
-  if (authConfig.bypassAuth) {
-    console.log('🔓 Development Mode: Authentication bypassed');
-  } else {
-    console.log('🔒 Production Mode: OIDC authentication enabled');
-  }
-}
+// Auth configuration loaded

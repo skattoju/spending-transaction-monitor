@@ -72,7 +72,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:8000/users/profile  # â
 
 ## Integration
 
-See [`docs/auth/INTEGRATION.md`](../../docs/auth/INTEGRATION.md) for detailed integration instructions.
+All authentication integration details are now included in this README above. The auth system provides complete JWT middleware, OIDC client setup, and database user mapping.
 
 ## Commands
 
