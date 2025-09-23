@@ -28,7 +28,7 @@ export class ApiClient {
   private timeout: number;
   private includeLocation: boolean;
   private defaultHeaders: Record<string, string>;
-  
+
   // Static method to set token from auth context
   private static currentToken: string | null = null;
 
