@@ -1,22 +1,27 @@
 # 🚀 Developer Guide
 
-Complete development guide for the Spending Transaction Monitor - a real-time credit card transaction alerting system.
+Complete development guide for the Spending Transaction Monitor - a real-time credit card transaction alerting system with AI-powered natural language rule processing.
 
 ## 📋 Quick Navigation
 
 - [🏗️ Architecture Overview](#️-architecture-overview)
 - [🛠️ Development Setup](#️-development-setup)
+- [🧪 Testing & Development](#-testing--development)
 - [📦 Service Documentation](#-service-documentation)
 - [🔐 Authentication & Security](#-authentication--security)
-- [🧪 Testing](#-testing)
 - [📊 Data Flow](#-data-flow)
 - [🚀 Deployment](#-deployment)
+- [🔧 Environment Configuration](#-environment-configuration)
+- [📋 Common Development Tasks](#-common-development-tasks)
+- [🆘 Troubleshooting](#-troubleshooting)
+- [🔗 Additional Resources](#-additional-resources)
+- [🤝 Getting Help](#-getting-help)
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The system consists of several microservices that work together to provide real-time transaction monitoring and alerting:
+The system is a modern microservices architecture built for real-time transaction monitoring and AI-powered alerting:
 
 ```mermaid
 graph TD
@@ -45,17 +50,26 @@ graph TD
         ROUTES["API Routes"]
     end
 
+    %% AI/NLP Layer
+    subgraph AI["🤖 AI/NLP Layer"]
+        VALIDATE["Rule Validation"]
+        SIMILARITY["Similarity Check"]
+        PARSER["Natural Language Parser"]
+        LLM["LLM Integration"]
+    end
+
     %% Business Logic Layer
     subgraph BIZ["💼 Business Logic"]
         RULES["Alert Rules Engine"]
         EVAL["Rule Evaluation"]
         ALERTS["Alert Processing"]
-        AI["AI/NLP Features"]
+        QUEUE["Background Jobs"]
     end
 
     %% Data Layer
     subgraph DATA["💾 Data Layer"]
         POSTGRES["PostgreSQL Database<br/>Port: 5432"]
+        VECTOR["pgvector Extension"]
         MODELS["SQLAlchemy Models"]
         MIGRATIONS["Alembic Migrations"]
     end
@@ -63,13 +77,13 @@ graph TD
     %% Frontend Layer
     subgraph UI["🖥️ Frontend"]
         REACT["React App<br/>Port: 3000"]
-        COMP["Components"]
-        CHARTS["Charts & Analytics"]
+        COMP["UI Components"]
+        CHARTS["Analytics & Charts"]
     end
 
     %% External Services
     subgraph NOTIFY["📧 Notifications"]
-        EMAIL["Email"]
+        EMAIL["Email (SMTP)"]
         SMS["SMS"] 
         PUSH["Push Notifications"]
         WEBHOOK["Webhooks"]
@@ -85,30 +99,35 @@ graph TD
     JWT --> MIDDLEWARE
     MIDDLEWARE --> ROUTES
     
-    FASTAPI --> RULES
+    FASTAPI --> AI
+    AI --> RULES
     RULES --> EVAL
     EVAL --> ALERTS
-    ALERTS --> NOTIFY
+    ALERTS --> QUEUE
+    QUEUE --> NOTIFY
     
     FASTAPI <--> MODELS
     MODELS <--> POSTGRES
+    POSTGRES <--> VECTOR
     
     REACT <--> FASTAPI
     
     %% AI Integration
-    FASTAPI --> AI
-    AI --> EVAL
+    AI --> LLM
+    LLM --> VALIDATE
+    VALIDATE --> SIMILARITY
 ```
 
 ### 🏛️ Service Architecture
 
 | Service | Technology | Port | Purpose |
 |---------|------------|------|---------|
-| **UI** | React + Vite | 3000 | Frontend web application |
+| **UI** | React + Vite + TypeScript | 3000 | Frontend web application |
 | **API** | FastAPI + SQLAlchemy | 8000 | Core business logic & REST API |
 | **Ingestion** | FastAPI | 8001 | Transaction data ingestion & transformation |
-| **Database** | PostgreSQL | 5432 | Data persistence |
+| **Database** | PostgreSQL + pgvector | 5432 | Data persistence with vector embeddings |
 | **Auth** | Keycloak | 8080 | OAuth2/OIDC authentication |
+| **SMTP** | smtp4dev | 3002 | Local email testing |
 
 ---
 
@@ -120,124 +139,240 @@ graph TD
 - **Python** 3.11+ & **uv** package manager
 - **Podman** (preferred) or **Docker**
 - **Git**
+- **jq** (for JSON processing in scripts)
 
-### Quick Start (All Services)
+### Quick Start (Recommended)
 
 ```bash
 # 1. Clone and install dependencies
-git clone <repo-url>
+git clone https://github.com/rh-ai-quickstart/spending-transaction-monitor
 cd spending-transaction-monitor
 pnpm setup
 
-# 2. Start all services (DB + API + UI)
+# 2. Create environment file
+cp env.example .env
+# Edit .env with your configuration (see Environment Configuration section)
+
+# 3. Start all services with containers (DB + API + UI + nginx + SMTP)
+make run-local
+```
+
+This will automatically:
+
+- Start PostgreSQL database with pgvector extension
+- Run database migrations and seed test data
+- Start all services in containers
+- Set up nginx proxy
+
+**Services will be available at:**
+
+- Frontend: <http://localhost:3000>
+- API (proxied): <http://localhost:3000/api/*>
+- API (direct): <http://localhost:8000>
+- API Docs: <http://localhost:8000/docs>
+- SMTP Web UI: <http://localhost:3002>
+- Database: localhost:5432
+
+### Alternative: Local Development Mode
+
+For active development without containers:
+
+```bash
+# Start all services locally (DB via container, API + UI locally)
 pnpm dev
 ```
+
+**Development URLs:**
+
+- Web UI: <http://localhost:5173> (shows dev mode banner)
+- API: <http://localhost:8000> (auth bypass enabled)
+- API Docs: <http://localhost:8000/docs>
+- Component Storybook: <http://localhost:6006>
 
 ### Individual Service Setup
 
 #### 🗄️ Database
+
 ```bash
-cd packages/db
-pnpm db:start      # Start PostgreSQL
-pnpm db:upgrade    # Run migrations  
-pnpm db:seed       # Seed test data
+# Start PostgreSQL with pgvector
+pnpm db:start
+
+# Run migrations
+pnpm db:upgrade
+
+# Seed test data
+pnpm db:seed
+
+# Verify setup
+pnpm db:verify
 ```
 
-#### 🔧 API Server  
+#### 🔧 API Server
+
 ```bash
 cd packages/api
-uv sync            # Install Python dependencies
+uv sync                    # Install Python dependencies
 uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-#### 📥 Ingestion Service
-```bash
-cd packages/ingestion-service
-uv sync            # Install dependencies
-uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8001
-```
-
 #### 🖥️ Frontend
+
 ```bash
 cd packages/ui
-pnpm install       # Install dependencies
-pnpm dev           # Start development server
+pnpm install               # Install dependencies
+pnpm dev                   # Start development server
 ```
 
-#### 🔐 Authentication (Keycloak)
+---
+
+## 🧪 Testing & Development
+
+### Interactive Alert Rule Testing
+
+**After starting with `make run-local`, test alert rules interactively:**
+
+#### List Available Test Scenarios
+
 ```bash
-# Use our setup script
-python scripts/setup_keycloak.py
-
-# Or use auth development helper script
-./scripts/auth-dev.sh setup            # Automated setup
-./scripts/auth-dev.sh help              # See all auth commands
+make list-alert-samples
 ```
 
-### 📍 Development URLs
+Shows all available test scenarios with descriptions:
 
-- **Web UI**: http://localhost:3000
-- **API**: http://localhost:8000  
-- **API Docs**: http://localhost:8000/docs
-- **Ingestion Service**: http://localhost:8001
-- **Keycloak Admin**: http://localhost:8080
-- **Storybook**: http://localhost:6006
+- "Alert when spending more than $500 in one transaction"
+- "Alert me if my dining expense exceeds the average of the last 30 days by more than 40%"
+- "Alert me if a transaction happens outside my home state"
+- And 13 more realistic scenarios...
+
+#### Interactive Testing Menu
+
+```bash
+make test-alert-rules
+```
+
+**Features:**
+
+- 📋 **Clean menu** - Shows only alert descriptions (no technical filenames)
+- 📊 **Data preview** - Shows realistic transaction data adjusted to current time
+- 🔍 **User context** - Displays test user profile and transaction history
+- ✅ **Confirmation** - Preview data before running the test
+- 🤖 **Full validation** - Complete NLP validation and rule creation process
+
+**Example Workflow:**
+
+1. Select an alert rule by number (1-16)
+2. Review the data preview showing exactly what will be tested
+3. Confirm to proceed with the test
+4. Watch the complete validation and creation process
+
+#### What the Test Does
+
+1. **Seeds database** with realistic user and transaction data
+2. **Validates the alert rule** using the NLP validation API
+3. **Checks for similar rules** to prevent duplicates
+4. **Creates the alert rule** if validation passes
+5. **Shows step-by-step results** including SQL queries and processing
+
+### Automated Testing
+
+#### Run All Tests
+
+```bash
+pnpm test                  # All packages
+```
+
+#### Package-Specific Tests
+
+```bash
+# API tests (comprehensive test suite)
+cd packages/api
+uv run pytest -v
+
+# Database tests
+cd packages/db
+uv run pytest -v
+
+# Frontend tests
+cd packages/ui
+pnpm test
+```
+
+#### Test Coverage
+
+- **API**: 40+ tests (auth, transactions, alerts, validation)
+- **Database**: Integration and model tests
+- **Frontend**: Component and hook tests
+- **Integration**: End-to-end API tests
 
 ---
 
 ## 📦 Service Documentation
 
 ### 🔧 API Service
+
 **Location**: `packages/api/`  
 **Documentation**: [API README](../packages/api/README.md)
 
-**Key Features**:
+**Key Features:**
+
 - User management & authentication
 - Transaction CRUD operations
-- Alert rules management  
+- AI-powered alert rule validation
+- Natural language processing for rules
+- Similarity checking for duplicate rules
 - Real-time rule evaluation
+- Background job processing
 - Analytics & reporting endpoints
-- AI-powered natural language processing
 
-**Important Endpoints**:
+**Critical Endpoints:**
+
 - `GET /health` - Health check
 - `POST /transactions` - Create transaction
-- `GET /transactions` - List/filter transactions  
-- `POST /users/{id}/alert-rules` - Create alert rule
 - `GET /users/{id}/transactions` - User transactions
-
-### 📥 Ingestion Service
-**Location**: `packages/ingestion-service/`  
-**Documentation**: [Ingestion README](../packages/ingestion-service/README.md)
-
-**Key Features**:
-- Raw transaction data ingestion
-- Data validation & transformation
-- Bulk processing capabilities
-- API forwarding to main server
-
-**Data Flow**: `Raw Data → Validation → Transformation → API Server`
+- `POST /users/{id}/alert-rules/validate` - Validate alert rule with NLP
+- `POST /users/{id}/alert-rules` - Create alert rule
+- `GET /users/{id}/alert-rules` - List user alert rules
 
 ### 🖥️ Frontend (UI)
+
 **Location**: `packages/ui/`  
 **Documentation**: [UI README](../packages/ui/README.md)
 
-**Key Features**:
-- React with TypeScript
+**Technology Stack:**
+
+- React 18 with TypeScript
 - TanStack Router for routing
-- Recharts for data visualization  
+- TanStack Query for data fetching
+- Recharts for data visualization
 - Shadcn/ui component library
+- Tailwind CSS for styling
 - Dark/light theme support
 
+**Key Features:**
+
+- Transaction dashboard with analytics
+- Interactive alert rule creation
+- Real-time validation feedback
+- Responsive design
+- Component library with Storybook
+
 ### 💾 Database
+
 **Location**: `packages/db/`  
 **Documentation**: [Database README](../packages/db/README.md)
 
-**Key Features**:
-- PostgreSQL with async SQLAlchemy
-- Alembic migrations
-- Database models & relationships
-- Seed data for development
+**Technology:**
+
+- PostgreSQL 15+ with pgvector extension
+- Async SQLAlchemy with Pydantic models
+- Alembic for schema migrations
+- Vector embeddings for similarity search
+
+**Key Models:**
+
+- Users, Transactions, Alert Rules
+- Alert Notifications, Credit Cards
+- Vector embeddings for rule similarity
 
 ---
 
@@ -246,71 +381,38 @@ python scripts/setup_keycloak.py
 **Complete Documentation**: [Authentication Guide](auth/README.md)
 
 ### Overview
+
 - **OAuth2/OIDC** with Keycloak
 - **JWT tokens** for API authentication
 - **Role-based access control**
 - **Development bypass mode** for local development
 
-### Setup Keycloak Locally
+### Development Mode (Default)
+
+The system includes authentication bypass for faster development:
+
+- **Auto-enabled**: When `BYPASS_AUTH=true` (default in development)
+- **Visual indicator**: 🔓 Yellow banner in UI
+- **Mock user**: Automatically signed in as "John Doe"
+- **Security**: Only works in development builds
+
+### Setup Keycloak (Optional for Development)
+
 ```bash
 # Use our automated setup script
 python scripts/setup_keycloak.py
 
-# Or manually:
-# 1. Start Keycloak container
-# 2. Create realm: spending-monitor  
-# 3. Create client: spending-monitor
-# 4. Configure users and roles
+# Or use development helper
+./scripts/auth-dev.sh setup
+./scripts/auth-dev.sh help
 ```
 
-### Development Mode
-The API includes authentication bypass for local development:
-- Set `BYPASS_AUTH=True` in environment
-- Returns mock user data for testing
-- Automatically enabled in development mode
-
 ### Testing Authentication
-**Documentation**: [Auth Testing Guide](auth/TESTING.md)
 
 ```bash
-# Run auth tests
 cd packages/api
 uv run pytest tests/test_auth* -v
 ```
-
----
-
-## 🧪 Testing
-
-### Run All Tests
-```bash
-pnpm test    # All packages
-```
-
-### Package-Specific Tests
-```bash
-# API tests
-cd packages/api
-uv run pytest -v
-
-# Ingestion service tests  
-cd packages/ingestion-service
-uv run pytest -v
-
-# Database tests
-cd packages/db
-uv run pytest -v
-
-# Frontend tests (when available)
-cd packages/ui
-pnpm test
-```
-
-### Test Coverage
-- **API**: 22 tests (auth, transactions, health)
-- **Ingestion**: 5 tests (transformation, integration)
-- **Database**: 1 test (connectivity)
-- **Frontend**: Test framework configured with vitest
 
 ---
 
@@ -323,6 +425,7 @@ sequenceDiagram
     participant Bank as Credit Card Provider
     participant Ingest as Ingestion Service  
     participant API as API Server
+    participant AI as AI/NLP Service
     participant DB as PostgreSQL
     participant Rules as Rules Engine
     participant Alerts as Alert Service
@@ -334,7 +437,7 @@ sequenceDiagram
     API->>DB: Store Transaction
     API->>Rules: Evaluate Against Rules
     Rules->>DB: Fetch User Alert Rules
-    Rules->>Rules: Process Rules
+    Rules->>Rules: Process Rules with Context
     
     alt Alert Triggered
         Rules->>Alerts: Create Alert
@@ -349,71 +452,178 @@ sequenceDiagram
     API-->>User: Display Transactions
 ```
 
-### Authentication Flow
+### Alert Rule Validation Flow
 
 ```mermaid
 sequenceDiagram
-    participant FE as Frontend
-    participant KC as Keycloak
+    participant User as Frontend
     participant API as API Server
-    participant JWT as JWT Middleware
+    participant AI as AI/NLP Service
+    participant Vector as Vector DB
+    participant LLM as LLM Service
+    participant DB as PostgreSQL
 
-    FE->>KC: 1. Redirect to login
-    KC->>FE: 2. Authorization code
-    FE->>KC: 3. Exchange for JWT
-    KC->>FE: 4. JWT access token
-    FE->>API: 5. API request with JWT
-    API->>JWT: 6. Validate token
-    JWT->>KC: 7. Verify signature
-    KC-->>JWT: 8. Token valid
-    JWT-->>API: 9. User context
-    API-->>FE: 10. Protected resource
+    User->>API: Create Alert Rule (Natural Language)
+    API->>AI: Validate Rule
+    AI->>LLM: Parse Natural Language
+    LLM-->>AI: Structured Rule
+    AI->>Vector: Generate Embedding
+    AI->>Vector: Search Similar Rules
+    Vector-->>AI: Similar Rules Found
+    AI->>DB: Check User's Existing Rules
+    DB-->>AI: User Rules
+    AI-->>API: Validation Result + Warnings
+    API-->>User: Show Results & Confirmation
+    
+    alt User Confirms
+        User->>API: Confirm Rule Creation
+        API->>DB: Store Alert Rule
+        DB-->>API: Rule Created
+        API-->>User: Success Response
+    end
 ```
 
 ---
 
 ## 🚀 Deployment
 
-### Local Development
+### Local Container Deployment (Recommended)
+
+#### Quick Start
+
 ```bash
-pnpm dev          # All services
-pnpm db:start     # Just database
-pnpm build        # Build all packages
+# Start with pre-built images
+make run-local
+
+# Build and run from source
+make build-run-local
+
+# Reset with fresh data
+make reset-local
 ```
 
-### Production Deployment
-- **Kubernetes** manifests available
-- **Helm** charts for ingestion service
-- **Docker** containers for all services
-- **Environment** configuration via env vars
+#### Container Management
 
-### Environment Variables
-
-#### Service Ports (for development conflicts)
 ```bash
-# Service-specific ports - override defaults when needed
-API_PORT=8000       # API service port (default: 8000)
-UI_PORT=3000        # UI service port (default: 3000)  
-DB_PORT=5432        # Database external port (default: 5432)
-KEYCLOAK_PORT=8080  # Keycloak port (default: 8080)
-
-# Example: Run API on different port
-API_PORT=8002 pnpm --filter @spending-monitor/api dev
+make run-local              # Start all services
+make build-local           # Build images from source
+make stop-local           # Stop all services
+make logs-local           # View service logs
+make reset-local          # Reset with fresh data
 ```
 
-#### Core Configuration
+#### Environment File Setup
+
 ```bash
-# Database
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost/spending_monitor
+# Check if .env file exists
+make check-env-file
 
-# Authentication  
-KEYCLOAK_SERVER_URL=http://localhost:8080
-KEYCLOAK_REALM=spending-monitor
-KEYCLOAK_CLIENT_ID=spending-monitor
-BYPASS_AUTH=false  # Set to true for development
+# Create from template if needed
+make create-env-file
+```
 
-# API Configuration  
-API_HOST=localhost
+### OpenShift Deployment
+
+#### Quick Deploy
+
+```bash
+make full-deploy
+```
+
+#### Step-by-step
+
+```bash
+# Login and setup
+make login
+make create-project
+
+# Build and push images
+make build-all
+make push-all
+
+# Deploy
+make deploy
+```
+
+#### OpenShift Management
+
+```bash
+make deploy              # Deploy to OpenShift
+make deploy-dev         # Deploy in development mode
+make undeploy           # Remove deployment
+make status             # Check deployment status
+make logs-api           # View API logs
+make logs-ui            # View UI logs
+```
+
+---
+
+## 🔧 Environment Configuration
+
+### Environment File
+
+The application uses a `.env` file in the root directory for configuration:
+
+```bash
+# Create from template
+cp env.example .env
+```
+
+### Required Variables
+
+#### Database Configuration
+
+```bash
+DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/spending-monitor
+```
+
+#### SMTP Configuration (for email alerts)
+
+```bash
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=your-username
+SMTP_PASSWORD=your-password
+SMTP_FROM_EMAIL=alerts@spending-monitor.com
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+```
+
+#### API Configuration
+
+```bash
+ENVIRONMENT=development
+BYPASS_AUTH=true
+API_PORT=8000
+CORS_ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+ALLOWED_HOSTS=["http://localhost:3000","http://localhost:5173"]
+```
+
+#### LLM Configuration
+
+```bash
+LLM_PROVIDER=openai          # openai | vertexai
+BASE_URL=https://api.openai.com/v1
+API_KEY=sk-your-openai-api-key-here
+MODEL=gpt-4o-mini
+```
+
+### Container Environment
+
+Environment variables are automatically loaded from `.env` in container deployments.
+
+### Production Configuration
+
+For production deployments, use OpenShift secrets:
+
+```yaml
+api:
+  envFrom:
+    - secretRef:
+        name: spending-monitor-secrets
+  env:
+    ENVIRONMENT: "production"
+    BYPASS_AUTH: "false"
 ```
 
 ---
@@ -421,35 +631,52 @@ API_HOST=localhost
 ## 📋 Common Development Tasks
 
 ### Database Operations
+
 ```bash
-pnpm db:revision   # Create new migration
-pnpm db:upgrade    # Apply migrations  
-pnpm db:seed       # Add sample data
-pnpm db:verify     # Verify setup
+pnpm db:start              # Start PostgreSQL container
+pnpm db:upgrade            # Apply migrations  
+pnpm db:seed               # Add sample data
+pnpm db:verify             # Verify setup
+pnpm db:revision           # Create new migration
+pnpm db:stop               # Stop database
 ```
 
 ### Code Quality
+
 ```bash
-pnpm lint          # Lint all packages
-pnpm format        # Format all code
-pnpm type-check    # TypeScript checking
+pnpm lint                  # Lint all packages
+pnpm format                # Format all code
+pnpm type-check            # TypeScript checking
+pnpm test                  # Run all tests
+```
+
+### Container Operations
+
+```bash
+make run-local             # Start all services
+make build-run-local       # Build and start
+make stop-local            # Stop services
+make logs-local            # View logs
+make reset-local           # Reset with fresh data
+```
+
+### Alert Rule Testing
+
+```bash
+make list-alert-samples    # List available test scenarios
+make test-alert-rules      # Interactive testing menu
 ```
 
 ### Package Management
+
 ```bash
+# Install Python dependencies
 pnpm --filter @spending-monitor/api install:deps
+pnpm --filter @spending-monitor/db install:deps
+
+# Build specific package
 pnpm --filter @spending-monitor/ui build
 ```
-
----
-
-## 🔗 Additional Resources
-
-- [Main README](../README.md) - Project overview
-- [Contributing Guidelines](../CONTRIBUTING.md) - Development standards
-- [Auth Integration Guide](auth/INTEGRATION.md) - Detailed auth setup
-- [API Documentation](../packages/api/README.md) - API service details
-- [Ingestion Service Docs](../packages/ingestion-service/README.md) - Data ingestion
 
 ---
 
@@ -457,43 +684,127 @@ pnpm --filter @spending-monitor/ui build
 
 ### Common Issues
 
-**Database Connection Errors**:
+#### Environment File Not Found
+
+```bash
+# Create environment file
+make create-env-file
+# Edit .env with your configuration
+```
+
+#### Database Connection Errors
+
 ```bash
 # Check if PostgreSQL is running
 pnpm db:start
-# Verify connection settings in DATABASE_URL
+
+# Verify connection settings
+echo $DATABASE_URL
+
+# Reset database
+make reset-local
 ```
 
-**Authentication Issues**:
+#### Authentication Issues
+
 ```bash
-# Enable development bypass
-export BYPASS_AUTH=True
-# Or restart Keycloak
-python scripts/setup_keycloak.py
+# Enable development bypass (default)
+export BYPASS_AUTH=true
+
+# Check auth configuration
+grep -i auth .env
+
+# Restart services
+make stop-local && make run-local
 ```
 
-**Port Conflicts**:
-- API: 8000
-- Frontend: 3000  
-- Ingestion: 8001
-- Database: 5432
-- Keycloak: 8080
+#### Python Environment Issues
 
-**Python Environment Issues**:
 ```bash
 # Recreate virtual environment
 cd packages/api
 rm -rf .venv
 uv sync
+
+# Check Python version
+python --version  # Should be 3.11+
 ```
+
+#### Port Conflicts
+
+Default ports used:
+
+- Frontend: 3000 (container) / 5173 (dev)
+- API: 8000
+- Database: 5432
+- SMTP: 3002
+- Keycloak: 8080
+
+#### Vector Database Issues
+
+```bash
+# Check pgvector extension
+pnpm db:start
+# Connect to database and run: CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+### Development Tips
+
+#### Faster Development
+
+```bash
+# Use development mode for faster iteration
+pnpm dev
+
+# Use container mode for full environment testing
+make run-local
+
+# Use interactive testing for alert rules
+make test-alert-rules
+```
+
+#### Debugging
+
+```bash
+# View API logs in development
+cd packages/api && uv run uvicorn src.main:app --reload --log-level debug
+
+# View container logs
+make logs-local
+
+# Test API endpoints directly
+curl http://localhost:8000/health
+```
+
+#### Performance
+
+```bash
+# Profile database queries
+export DATABASE_ECHO=true
+
+# Monitor container resources
+podman stats
+```
+
+---
+
+## 🔗 Additional Resources
+
+- [Main README](../README.md) - Project overview and quick start
+- [Contributing Guidelines](../CONTRIBUTING.md) - Development standards and workflow
+- [Auth Integration Guide](auth/INTEGRATION.md) - Detailed authentication setup
+- [API Documentation](../packages/api/README.md) - API service details
+- [UI Documentation](../packages/ui/README.md) - Frontend development guide
+- [Database Documentation](../packages/db/README.md) - Database schema and migrations
 
 ---
 
 ## 🤝 Getting Help
 
-1. Check this developer guide
-2. Review service-specific READMEs
-3. Check existing GitHub issues
-4. Create new issue with detailed description
+1. **Check this developer guide** for comprehensive information
+2. **Review service-specific READMEs** in each package directory
+3. **Run interactive tests** with `make test-alert-rules` to understand the system
+4. **Check existing GitHub issues** for known problems
+5. **Create new issue** with detailed description and reproduction steps
 
 Happy developing! 🎉
