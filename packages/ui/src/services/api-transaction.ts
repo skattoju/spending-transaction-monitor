@@ -286,7 +286,6 @@ export const realAlertService = {
     valid_sql?: boolean;
   }> {
     try {
-
       const response = await fetch('/api/alerts/rules/validate', {
         method: 'POST',
         headers: {
