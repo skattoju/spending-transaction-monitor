@@ -126,6 +126,116 @@ except:
     fi
 }
 
+# Function to display test data preview with adjusted dates
+display_test_data_preview() {
+    local json_file="$1"
+    
+    if [[ ! -f "$json_file" ]]; then
+        echo -e "${RED}❌ JSON file not found: $json_file${NC}"
+        return
+    fi
+    
+    echo -e "${BLUE}📊 Test Data Preview:${NC}"
+    echo ""
+    
+    # Display User Data
+    echo -e "${YELLOW}👤 USER DATA:${NC}"
+    echo "┌─────────────────┬─────────────────────────────────────────────────────────┐"
+    echo "│ Field           │ Value                                                   │"
+    echo "├─────────────────┼─────────────────────────────────────────────────────────┤"
+    
+    if command -v jq >/dev/null 2>&1; then
+        local user_id=$(jq -r '.user.id // "N/A"' "$json_file")
+        local user_email=$(jq -r '.user.email // "N/A"' "$json_file")
+        local user_name=$(jq -r '(.user.first_name // "") + " " + (.user.last_name // "")' "$json_file" | sed 's/^ *//;s/ *$//')
+        local user_city=$(jq -r '.user.address_city // "N/A"' "$json_file")
+        local user_state=$(jq -r '.user.address_state // "N/A"' "$json_file")
+        
+        printf "│ %-15s │ %-55s │\n" "ID" "$user_id"
+        printf "│ %-15s │ %-55s │\n" "Email" "$user_email"
+        printf "│ %-15s │ %-55s │\n" "Name" "$user_name"
+        printf "│ %-15s │ %-55s │\n" "City" "$user_city"
+        printf "│ %-15s │ %-55s │\n" "State" "$user_state"
+    else
+        printf "│ %-15s │ %-55s │\n" "Error" "jq not available for data preview"
+    fi
+    
+    echo "└─────────────────┴─────────────────────────────────────────────────────────┘"
+    echo ""
+    
+    # Display Transaction Data with adjusted dates
+    echo -e "${YELLOW}💳 TRANSACTION DATA (Adjusted to Current Time):${NC}"
+    echo "┌────┬─────────────────┬────────┬──────────────────────────┬─────────────────┬────────────┐"
+    echo "│ #  │ Date            │ Amount │ Description              │ Merchant        │ Category   │"
+    echo "├────┼─────────────────┼────────┼──────────────────────────┼─────────────────┼────────────┤"
+    
+    if command -v jq >/dev/null 2>&1; then
+        # Get current time and latest transaction time
+        local current_time=$(date +%s)
+        local latest_txn_time=$(jq -r '.transactions | max_by(.transaction_date) | .transaction_date' "$json_file")
+        
+        # Convert latest transaction time to epoch
+        local latest_epoch=0
+        if [[ -n "$latest_txn_time" && "$latest_txn_time" != "null" ]]; then
+            # Try to parse the date - handle different formats
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                # macOS date command
+                latest_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$latest_txn_time" +%s 2>/dev/null || echo "$current_time")
+            else
+                # Linux date command
+                latest_epoch=$(date -d "$latest_txn_time" +%s 2>/dev/null || echo "$current_time")
+            fi
+        else
+            latest_epoch=$current_time
+        fi
+        
+        local time_diff=$((current_time - latest_epoch))
+        
+        # Sort transactions by date and display with adjusted dates
+        local counter=1
+        jq -r '.transactions | sort_by(.transaction_date) | .[] | [.transaction_date, .amount, .description, .merchant_name, .merchant_category] | @tsv' "$json_file" | while IFS=$'\t' read -r orig_date amount desc merchant category; do
+            # Convert original date to epoch
+            local orig_epoch=0
+            if [[ -n "$orig_date" && "$orig_date" != "null" ]]; then
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    # macOS date command
+                    orig_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$orig_date" +%s 2>/dev/null || echo "$current_time")
+                else
+                    # Linux date command
+                    orig_epoch=$(date -d "$orig_date" +%s 2>/dev/null || echo "$current_time")
+                fi
+            else
+                orig_epoch=$current_time
+            fi
+            
+            # Calculate adjusted date
+            local new_timestamp=$((orig_epoch + time_diff))
+            local adjusted_date=""
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                # macOS date command
+                adjusted_date=$(date -r "$new_timestamp" "+%Y-%m-%d %H:%M" 2>/dev/null || echo "Invalid Date")
+            else
+                # Linux date command
+                adjusted_date=$(date -d "@$new_timestamp" "+%Y-%m-%d %H:%M" 2>/dev/null || echo "Invalid Date")
+            fi
+            
+            # Format and display
+            local formatted_amount=$(printf "$%.2f" "$amount")
+            local truncated_desc=$(printf "%.24s" "$desc")
+            local truncated_merchant=$(printf "%.15s" "$merchant")
+            local truncated_category=$(printf "%.10s" "$category")
+            
+            printf "│ %-2d │ %-15s │ %6s │ %-24s │ %-15s │ %-10s │\n" "$counter" "$adjusted_date" "$formatted_amount" "$truncated_desc" "$truncated_merchant" "$truncated_category"
+            counter=$((counter + 1))
+        done
+    else
+        printf "│ %-2s │ %-15s │ %-6s │ %-24s │ %-15s │ %-10s │\n" "??" "jq not available" "N/A" "Cannot preview data" "N/A" "N/A"
+    fi
+    
+    echo "└────┴─────────────────┴────────┴──────────────────────────┴─────────────────┴────────────┘"
+    echo ""
+}
+
 # Function to test a single alert rule file
 test_alert_rule() {
     local json_file="$1"
@@ -185,6 +295,9 @@ test_alert_rule() {
     fi
     
     echo -e "${YELLOW}📝 Alert Text: ${alert_text}${NC}"
+    
+    # Display test data preview with adjusted dates
+    display_test_data_preview "$json_file"
     
     # Step 1: Seed the data
     echo -e "${YELLOW}🌱 Seeding data with: pnpm ${seed_command} --force${NC}"
