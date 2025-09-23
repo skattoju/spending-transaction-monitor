@@ -13,11 +13,7 @@ import { authConfig } from '../config/auth';
 import type { User, AuthContextType } from '../types/auth';
 import { DEV_USER } from '../constants/auth';
 import { apiClient } from '../services/apiClient';
-import {
-  useLocationOnMount,
-  storeLocation,
-  clearStoredLocation,
-} from '../hooks/useLocation';
+import { clearStoredLocation } from '../hooks/useLocation';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -129,12 +125,6 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       };
       setUser(newUser);
 
-      // Request location on successful login (only once per session)
-      if (!hasRequestedLocation) {
-        requestLocation();
-        setHasRequestedLocation(true);
-      }
-
       // Pass token to ApiClient
       if (oidcAuth.user.access_token) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -149,14 +139,13 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       }
     } else {
       setUser(null);
-      setHasRequestedLocation(false);
       clearStoredLocation(); // Clear location data on logout (frontend cleanup)
       // Clear token from ApiClient
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (apiClient as any).constructor.setToken(null);
       // Note: Location clearing also handled by backend on logout
     }
-  }, [oidcAuth.user]);
+  }, [oidcAuth.user, oidcAuth.error]);
 
   // Location is now handled by LocationCapture component
 
