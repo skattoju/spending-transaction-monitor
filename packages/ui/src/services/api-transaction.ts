@@ -286,7 +286,6 @@ export const realAlertService = {
     valid_sql?: boolean;
   }> {
     try {
-      console.log('Validating alert rule:', rule);
 
       const response = await fetch('/api/alerts/rules/validate', {
         method: 'POST',
@@ -305,7 +304,6 @@ export const realAlertService = {
       }
 
       const validationResult = await response.json();
-      console.log('Alert rule validation result:', validationResult);
       return validationResult;
     } catch (error) {
       console.error('Error validating alert rule:', error);

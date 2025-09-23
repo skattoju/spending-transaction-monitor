@@ -23,21 +23,15 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
   const [user] = useState<User>(DEV_USER);
 
   const login = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Dev mode: login() called - already authenticated');
-    }
+    // No-op in dev mode since user is always authenticated
   }, []);
 
   const logout = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Dev mode: logout() called - staying authenticated');
-    }
+    // No-op in dev mode since user stays authenticated
   }, []);
 
   const signinRedirect = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Dev mode: signinRedirect() called - already authenticated');
-    }
+    // No-op in dev mode since user is already authenticated
   }, []);
 
   const contextValue: AuthContextType = useMemo(
@@ -54,9 +48,7 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
   );
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔓 Development auth provider initialized');
-    }
+    // Development auth provider initialized
   }, []);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
@@ -89,13 +81,7 @@ const ProductionAuthProvider = React.memo(
     );
 
     useEffect(() => {
-      if (import.meta.env.DEV) {
-        console.log('🔒 Production OIDC config:', {
-          authority: oidcConfig.authority,
-          client_id: oidcConfig.client_id,
-          redirect_uri: oidcConfig.redirect_uri,
-        });
-      }
+      // OIDC config initialized
     }, [oidcConfig]);
 
     return (
@@ -115,18 +101,8 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Debug OIDC state changes
-    console.log('🔒 OIDC State Update:', {
-      isLoading: oidcAuth.isLoading,
-      hasUser: !!oidcAuth.user,
-      hasError: !!oidcAuth.error,
-      errorMessage: oidcAuth.error?.message,
-      activeNavigator: oidcAuth.activeNavigator,
-      isAuthenticated: oidcAuth.isAuthenticated,
-    });
-
     if (oidcAuth.error) {
-      console.error('🚫 OIDC Error:', oidcAuth.error);
+      console.error('OIDC Authentication Error:', oidcAuth.error);
     }
 
     if (oidcAuth.user) {
@@ -141,11 +117,7 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       };
       setUser(newUser);
 
-      console.log('✅ User authenticated via OIDC:', {
-        id: oidcAuth.user.profile.sub,
-        email: oidcAuth.user.profile.email,
-        accessToken: oidcAuth.user.access_token ? 'Present' : 'Missing',
-      });
+      // User authenticated via OIDC
 
       // Pass token to ApiClient
       if (oidcAuth.user.access_token) {
@@ -181,14 +153,7 @@ const OIDCAuthWrapper = React.memo(({ children }: { children: React.ReactNode })
       error: oidcAuth.error ? new Error(oidcAuth.error.message) : null,
     };
 
-    console.log('🔒 AuthContext: OIDC state update', {
-      isLoading: oidcAuth.isLoading,
-      hasOidcUser: !!oidcAuth.user,
-      isAuthenticated: !!oidcAuth.user,
-      hasError: !!oidcAuth.error,
-      errorMessage: oidcAuth.error?.message,
-      userEmail: user?.email,
-    });
+    // Auth context state updated
 
     return authState;
   }, [
