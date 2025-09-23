@@ -15,6 +15,9 @@ DB_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-db:$(IMAGE_TAG)
 # Environment file path
 ENV_FILE = .env
 
+# Default target when running 'make' without arguments
+.DEFAULT_GOAL := help
+
 # Check if environment file exists
 .PHONY: check-env-file
 check-env-file:
@@ -51,6 +54,76 @@ create-env-file:
 	@echo "  - API_KEY: Your OpenAI API key"
 	@echo "  - POSTGRES_PASSWORD: Your desired database password"
 	@echo "  - Other values as needed for your environment"
+
+# List available alert rule samples
+.PHONY: list-alert-samples
+list-alert-samples:
+	@echo "📋 Available Alert Rule Sample Files:"
+	@echo "============================================"
+	@echo ""
+	@for file in packages/db/src/db/scripts/json/*.json; do \
+		if [ -f "$$file" ]; then \
+			filename=$$(basename "$$file"); \
+			alert_text=$$(jq -r '.alert_text // "No alert_text found"' "$$file" 2>/dev/null || echo "Invalid JSON"); \
+			printf "🔹 %-45s\n" "$$filename"; \
+			printf "   %s\n\n" "$$alert_text"; \
+		fi; \
+	done
+
+# Interactive alert rule testing menu
+.PHONY: test-alert-rules
+test-alert-rules:
+	@echo "🧪 Alert Rule Testing Menu"
+	@echo "============================================"
+	@echo ""
+	@echo "Select an alert rule to test:"
+	@echo ""
+	@i=1; \
+	declare -a files; \
+	declare -a alert_texts; \
+	for file in packages/db/src/db/scripts/json/*.json; do \
+		if [ -f "$$file" ]; then \
+			filename=$$(basename "$$file"); \
+			alert_text=$$(jq -r '.alert_text // "No alert_text found"' "$$file" 2>/dev/null || echo "Invalid JSON"); \
+			files[$$i]="$$filename"; \
+			alert_texts[$$i]="$$alert_text"; \
+			printf "%-3s %s\n" "$$i)" "$$alert_text"; \
+			i=$$((i + 1)); \
+		fi; \
+	done; \
+	echo ""; \
+	printf "Enter your choice (1-$$((i-1))) or 'q' to quit: "; \
+	read choice; \
+	if [ "$$choice" = "q" ] || [ "$$choice" = "Q" ]; then \
+		echo "👋 Exiting..."; \
+		exit 0; \
+	fi; \
+	if [ "$$choice" -ge 1 ] && [ "$$choice" -le $$((i-1)) ] 2>/dev/null; then \
+		selected_file="$${files[$$choice]}"; \
+		selected_alert_text="$${alert_texts[$$choice]}"; \
+		echo ""; \
+		echo "📋 Selected Alert Rule: $$selected_alert_text"; \
+		echo "============================================"; \
+		echo ""; \
+		echo "📊 Data Preview will be shown by the test script..."; \
+		echo ""; \
+		printf "🤔 Do you want to proceed with this test? (y/N): "; \
+		read confirm; \
+		if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ] || [ "$$confirm" = "yes" ] || [ "$$confirm" = "Yes" ]; then \
+			echo ""; \
+			echo "🚀 Running test for: $$selected_alert_text"; \
+			echo "============================================"; \
+			cd packages/db/src/db/scripts && ./test_alert_rules.sh "$$selected_file"; \
+		else \
+			echo ""; \
+			echo "❌ Test cancelled. Returning to main menu..."; \
+			echo ""; \
+			make test-alert-rules; \
+		fi; \
+	else \
+		echo "❌ Invalid choice. Please enter a number between 1 and $$((i-1)), or 'q' to quit."; \
+		exit 1; \
+	fi
 
 # Default target
 .PHONY: help
@@ -98,6 +171,10 @@ help:
 	@echo "    helm-template      Render Helm templates"
 	@echo "    helm-debug         Debug Helm deployment"
 	@echo ""
+	@echo "  Testing:"
+	@echo "    test-alert-rules   Interactive menu to test alert rules"
+	@echo "    list-alert-samples List available sample alert rule files"
+	@echo ""
 	@echo "  Utilities:"
 	@echo "    login              Login to OpenShift registry"
 	@echo "    create-project     Create OpenShift project"
@@ -111,6 +188,13 @@ help:
 	@echo "    Before running local development commands, create your environment file:"
 	@echo "      make create-env-file"
 	@echo "    Then edit .env with your settings."
+	@echo ""
+	@echo "Examples:"
+	@echo "  make setup-local                    # Complete local setup"
+	@echo "  make run-local                      # Start all services"
+	@echo "  make test-alert-rules               # Interactive alert rule testing"
+	@echo "  make list-alert-samples             # List available alert samples"
+	@echo "  make NAMESPACE=my-app deploy        # Deploy to custom namespace"
 
 # Login to OpenShift registry
 .PHONY: login

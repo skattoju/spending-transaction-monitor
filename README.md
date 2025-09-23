@@ -12,6 +12,10 @@ For contribution guidelines and repo conventions, see [CONTRIBUTING.md](CONTRIBU
 - [Getting started](#getting-started)
 - [🐳 Container Deployment (Recommended)](#-container-deployment-recommended)
   - [🚀 Quick Start with Podman Compose](#-quick-start-with-podman-compose)
+- [🧪 Testing Alert Rules](#-testing-alert-rules)
+  - [**Interactive Alert Rule Testing**](#interactive-alert-rule-testing)
+  - [**Example Workflow**](#example-workflow)
+  - [**What the Test Does**](#what-the-test-does)
   - [☁️ OpenShift Deployment](#️-openshift-deployment)
 - [🔧 Local Development Mode](#-local-development-mode)
   - [🔧 Development Mode (Authentication Bypass)](#-development-mode-authentication-bypass)
@@ -162,6 +166,73 @@ make logs-local     # View service logs
 make reset-local    # Reset with fresh data
 ```
 
+## 🧪 Testing Alert Rules
+
+After starting the application with `make run-local`, you can test alert rules interactively:
+
+### **Interactive Alert Rule Testing**
+
+**List available sample alert rules:**
+
+```bash
+make list-alert-samples
+```
+
+Shows all available test scenarios with their descriptions, such as:
+
+- "Alert when spending more than $500 in one transaction"
+- "Alert me if my dining expense exceeds the average of the last 30 days by more than 40%"
+- "Alert me if a transaction happens outside my home state"
+
+**Interactive testing menu:**
+
+```bash
+make test-alert-rules
+```
+
+This command provides:
+
+- 📋 **Clean menu** showing only alert rule descriptions (no technical filenames)
+- 📊 **Data preview** with realistic transaction data adjusted to current time
+- 🔍 **User context** showing the test user profile and transaction history
+- ✅ **Confirmation prompt** before running the actual test
+
+### **Example Workflow**
+
+1. **Start the application:**
+
+   ```bash
+   make run-local
+   ```
+
+2. **Browse available test scenarios:**
+
+   ```bash
+   make list-alert-samples
+   ```
+
+3. **Run interactive testing:**
+
+   ```bash
+   make test-alert-rules
+   ```
+
+   - Select an alert rule by number (1-16)
+   - Review the data preview showing exactly what will be tested
+   - Confirm to proceed with the test
+   - Watch the complete validation and creation process
+
+### **What the Test Does**
+
+The test process:
+
+1. **Seeds database** with realistic user and transaction data
+2. **Validates the alert rule** using the NLP validation API
+3. **Creates the alert rule** if validation passes
+4. **Shows step-by-step results** including SQL queries and processing steps
+
+**Note:** Make sure the API server is running (`make run-local`) before testing alert rules.
+
 ### ☁️ OpenShift Deployment
 
 **Quick Deploy:**
@@ -224,6 +295,7 @@ pnpm backend:stop    # Stop database
 ```
 
 Common tasks
+
 ```bash
 pnpm build
 pnpm test
@@ -231,6 +303,8 @@ pnpm lint
 pnpm format
 pnpm db:revision
 pnpm db:verify
+make test-alert-rules    # Interactive alert rule testing  
+make list-alert-samples  # List available test scenarios
 ```
 
 **Local Dev URLs:**
