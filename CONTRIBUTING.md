@@ -1,84 +1,133 @@
-# Contributing
+# Contributing to Spending Transaction Monitor
 
-Thank you for contributing! This monorepo uses a few conventions and guardrails to keep quality high and changes easy to review.
+Thank you for your interest in contributing! Your help keeps this project strong, usable, and evolving.
 
-## Branching
+This document outlines how to prepare your contributions, what conventions to follow, and how to get your changes merged.
 
-- Use conventional branch names:
-  - Allowed prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`, `ci/`, `build/`, `perf/`
-  - Examples: `feat/user-endpoints`, `fix/health-timeout`
-- Branch name is enforced in hooks (prepare-commit-msg and pre-push).
+---
 
-## Commit messages
+## 🧰 Branching Strategy
 
-- Follow Conventional Commits. Examples:
-  - `feat(api): add transactions POST`
-  - `fix(db): correct Alembic URL driver`
-  - `chore(ui): update deps`
-- Constraints:
-  - Subject header max length: 100 characters
-- Enforced by commitlint (commit-msg hook) and also re-checked on pre-push for all commits since upstream.
+- Use one of the allowed prefixes for branch names:  
+  `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`, `ci/`, `build/`, `perf/`
+- Examples:  
+  `feat/user‑endpoints`  
+  `fix/health‑timeout`
+- Branch naming is enforced via Git hooks (`prepare-commit-msg` and `pre-push`).
 
-## Pre-commit and pre-push hooks
+---
 
-- pre-commit (only runs on staged changes):
-  - UI: Prettier write and ESLint on changed files
-  - API: Ruff format and Ruff check on changed Python files
-- pre-push (repo-wide checks and policy checks):
-  - Rejects non-conventional branch names
-  - Runs commitlint over commit range since upstream
-  - Runs `pnpm format:check`, `pnpm lint`, and `pnpm test`
+## 📝 Commit Message Guidelines
 
-## Local setup
+- Follow **Conventional Commits** format.  
+- Some examples:  
+  - `feat(api): add transactions POST`  
+  - `fix(db): correct alembic URL driver`  
+  - `chore(ui): update dependencies`  
+- Constraints:  
+  - Subject header must be ≤ 100 characters.  
+  - Commit linting is enforced via hook (commit-msg) and also on pre-push for all commits since upstream.
 
-- Requirements: Node 18+, pnpm 9+, Python 3.11+, uv, Docker
-- Install everything:
-```bash
-pnpm setup
-```
+---
 
-## Running the stack
+## 🔍 Pre‑commit and Pre‑push Hooks
 
-- Database
-```bash
-pnpm db:start
-pnpm db:upgrade
-pnpm db:seed
-```
-- API
-```bash
-pnpm --filter @spending-monitor/api dev
-```
-- UI
-```bash
-pnpm --filter @spending-monitor/ui dev
-```
+- **pre-commit** (runs on staged changes only):  
+  - UI: `Prettier --write` and `ESLint` on changed JavaScript/TypeScript/React files  
+  - API: `ruff format` and `ruff check` for changed Python files
+- **pre-push** (runs more extensive checks across the repo):  
+  - Rejects non-conventional branch names  
+  - Runs `commitlint` on all commits since upstream  
+  - Runs formatting, linting, and tests via e.g.  
+    ```bash
+    pnpm format:check
+    pnpm lint
+    pnpm test
+    ```
 
-## Tests
+---
 
-- Run all tests:
-```bash
-pnpm test
-```
+## 🛠 Local Setup
 
-## Migrations
+1. Requirements:  
+   - Node.js (v18+)  
+   - pnpm (v9+)  
+   - Python 3.11+  
+   - [Any other prerequisites: Docker, etc.]  
+2. Install dependencies and prepare local dev environment:  
+   ```bash
+   pnpm setup
+   ```
 
-- Create a migration:
-```bash
-pnpm db:revision -m "add table xyz"
-pnpm db:upgrade
-```
+---
 
-## Releases
+## ▶️ Running the Stack Locally
 
-- Releases are automated with semantic-release in CI based on commit messages.
-- Branches: `main` (stable), `next` (pre-release).
+- Start the database & apply migrations / seed data:  
+  ```bash
+  pnpm db:start
+  pnpm db:upgrade
+  pnpm db:seed
+  ```
+- Run the API:  
+  ```bash
+  pnpm --filter @spending-monitor/api dev
+  ```
+- Run the UI:  
+  ```bash
+  pnpm --filter @spending-monitor/ui dev
+  ```
 
-## Pull Requests
+---
 
-- Keep PRs scoped and small where possible
-- Ensure CI checks pass
-- Include context in the description (what/why)
-- If UI changes, include screenshots
+## 🧪 Testing
 
-Thanks again for helping improve the project!
+- To run all tests:  
+  ```bash
+  pnpm test
+  ```
+
+---
+
+## 🧮 Database Migrations
+
+- To create a new migration:  
+  ```bash
+  pnpm db:revision -m "add table xyz"
+  ```
+- To apply migrations:  
+  ```bash
+  pnpm db:upgrade
+  ```
+
+---
+
+## 🔄 Releases
+
+- Releases are automated via `semantic-release` in CI, driven by commit messages.  
+- Branches used:  
+  - `main` (for stable / production releases)  
+  - `next` (for pre‑release or upcoming changes)
+
+---
+
+## 🤝 Pull Requests
+
+When submitting a PR, please:
+
+- Keep PRs scoped and focused (small where possible).  
+- Ensure all CI checks pass.  
+- Provide context in the description: **What** you changed and **why**.  
+- If your change affects the UI, include screenshots or screen recordings.  
+- Reference related issues (if any), using `#<issue-number>`.
+
+---
+
+## 📜 Code of Conduct & Licensing
+
+- Please follow the project’s **Code of Conduct** (if one exists).  
+- Contributions are under the same license as this project. By submitting a contribution, you agree to license it under the project’s **Apache License 2.0** (or your relevant license).
+
+---
+
+Again, thanks for wanting to contribute—your work helps the project improve!  
