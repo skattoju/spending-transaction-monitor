@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -9,8 +10,8 @@ from alembic import context
 config = context.config
 
 # Ensure Alembic uses a sync driver for migrations when the app uses asyncpg
-if config.get_main_option('sqlalchemy.url'):
-    url = config.get_main_option('sqlalchemy.url')
+if os.environ.get('DATABASE_URL') or config.get_main_option('sqlalchemy.url'):
+    url = os.environ.get('DATABASE_URL') or config.get_main_option('sqlalchemy.url')
     if '+asyncpg' in url:
         config.set_main_option('sqlalchemy.url', url.replace('+asyncpg', '+psycopg2'))
 
@@ -36,7 +37,12 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option('sqlalchemy.url')
+    # Get database URL from environment variable first, then fall back to config
+    url = os.environ.get('DATABASE_URL') or config.get_main_option('sqlalchemy.url')
+    # Convert asyncpg URLs to psycopg2 for Alembic compatibility
+    if url and 'postgresql+asyncpg://' in url:
+        url = url.replace('postgresql+asyncpg://', 'postgresql+psycopg2://')
+    
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -50,8 +56,19 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    # Get database URL from environment variable first, then fall back to config
+    database_url = os.environ.get('DATABASE_URL') or config.get_main_option('sqlalchemy.url')
+    # Convert asyncpg URLs to psycopg2 for Alembic compatibility
+    if database_url and 'postgresql+asyncpg://' in database_url:
+        database_url = database_url.replace('postgresql+asyncpg://', 'postgresql+psycopg2://')
+    
+    # Create a copy of the config section and update the URL
+    configuration = config.get_section(config.config_ini_section, {})
+    if database_url:
+        configuration['sqlalchemy.url'] = database_url
+    
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
