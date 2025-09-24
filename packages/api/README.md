@@ -1,11 +1,15 @@
 # spending-monitor API
 
-FastAPI backend application with Kafka consumer for real-time transaction processing.
+FastAPI backend application with AI-powered transaction monitoring and alerting.
 
 ## Features
 
 - **FastAPI** - Modern, fast web framework for building APIs
-- **Kafka Consumer** - Real-time transaction message processing from ingestion service
+- **AI-Powered Alerts** - Natural language alert rule creation with LLM integration
+- **Transaction Management** - Comprehensive transaction CRUD operations with filtering
+- **User Management** - User and credit card management endpoints
+- **Background Processing** - Async alert monitoring and notification system
+- **Authentication** - Keycloak integration with development bypass mode
 - **Async/Await** - Fully asynchronous request handling
 - **Pydantic** - Data validation using Python type annotations
 - **CORS** - Cross-Origin Resource Sharing support
@@ -34,13 +38,13 @@ This single command will:
 1. 🗄️ Start PostgreSQL database  
 2. ⬆️ Run database migrations
 3. 🌱 Seed with test data
-4. 🚀 Start FastAPI server on port 8002
+4. 🚀 Start FastAPI server on port 8000
 5. 🔓 Enable auth bypass for development
 
 **Individual Commands**:
 ```bash
 pnpm backend:setup    # Setup only (DB + migrations + seed)
-pnpm backend:start    # Start API only (port 8002)
+pnpm backend:start    # Start API only (port 8000)
 pnpm backend:stop     # Stop database
 ```
 
@@ -85,31 +89,38 @@ cd ../api
 6. **Start the API server**:
 ```bash
 # With auth bypass (development)
-ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002 uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8002
+ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8000 uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # Production mode  
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8002
+uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
 The services will be available at:
-- **API**: http://localhost:8002
-- **Interactive Docs**: http://localhost:8002/docs  
-- **ReDoc**: http://localhost:8002/redoc
-- **Health Check**: http://localhost:8002/health
+- **API**: http://localhost:8000
+- **Interactive Docs**: http://localhost:8000/docs  
+- **ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
 - **PostgreSQL**: localhost:5432
 
 ### Quick Test
 
-Test the Kafka consumer by sending a transaction:
+Test the API health check:
 ```bash
-curl -X POST http://localhost:8000/kafka/send-test-transaction \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": "582ae68d-59ce-4185-a2e8-868b561d363e", "credit_card_num": "a6e4a5de-d1a7-4c16-a37c-3d0d7f669abf"}'
+curl http://localhost:8000/health
 ```
 
-Or run the automated test script:
+Test transaction endpoints:
 ```bash
-python tests/test_kafka_setup.py
+# Get transactions (requires auth in production)
+curl http://localhost:8000/transactions
+
+# Health check with all services
+curl http://localhost:8000/health/
+```
+
+Run the test suite:
+```bash
+uv run pytest tests/
 ```
 
 ## Available Scripts
@@ -142,48 +153,81 @@ uv run alembic history               # Show migration history
 
 ```
 src/
-├── main.py              # FastAPI application entry point with Kafka consumer lifecycle
+├── main.py              # FastAPI application entry point with alert service lifecycle
+├── auth/
+│   └── middleware.py    # Authentication middleware with Keycloak integration
 ├── core/
-│   └── config.py        # Application configuration including Kafka settings
+│   └── config.py        # Application configuration and settings
 ├── routes/
 │   ├── health.py        # Health check endpoints
-│   ├── kafka.py         # Kafka testing and monitoring endpoints
 │   ├── transactions.py  # Transaction management endpoints
 │   ├── users.py         # User management endpoints
-│   └── alerts.py        # Alert rule endpoints
+│   └── alerts.py        # Alert rule and notification endpoints
 ├── services/
-│   ├── __init__.py      # Service exports
-│   └── kafka_consumer.py # Kafka consumer implementation
-├── models/              # Database models (SQLAlchemy)
+│   ├── alert_job_queue.py       # Background alert processing queue
+│   ├── alert_rule_service.py    # Alert rule creation and management
+│   ├── background_alert_service.py # Alert monitoring service
+│   ├── notification_service.py  # Notification delivery service
+│   ├── transaction_service.py   # Transaction business logic
+│   ├── user_service.py         # User management service
+│   └── alerts/                 # AI-powered alert processing
+│       ├── agents/             # LLM agents for rule generation
+│       ├── generate_alert_graph.py
+│       ├── parse_alert_graph.py
+│       └── validate_rule_graph.py
+├── models/              # Database models (imported from db package)
 ├── schemas/             # Pydantic schemas for request/response
 └── __init__.py
 
 tests/
-├── test_health.py       # Health endpoint tests
-├── test_kafka_setup.py  # Kafka connectivity and consumer tests
-├── test_transactions.py # Transaction endpoint tests
-├── test_users.py        # User endpoint tests
-├── test_alerts.py       # Alert endpoint tests
-└── __init__.py
+├── integration/         # Integration tests for API endpoints
+├── test_*.py           # Unit tests for services and components
+└── conftest.py         # Test configuration and fixtures
 ```
 
 ## API Endpoints
 
 ### Health Check
-- **GET** `/health` - Basic health check
+- **GET** `/health/` - Database and API health status
 - **GET** `/` - Root endpoint with welcome message
 
-### Kafka
-- **GET** `/kafka/health` - Kafka consumer and connection health status
-- **POST** `/kafka/send-test-transaction` - Send test transaction message to Kafka
+### Users
+- **GET** `/users/` - List users (with pagination and filtering)
+- **POST** `/users/` - Create new user
+- **GET** `/users/{user_id}` - Get user details
+- **PUT** `/users/{user_id}` - Update user
+- **DELETE** `/users/{user_id}` - Delete user
 
-### Users, Transactions, Alerts
-- **GET** `/users` - User management endpoints
-- **GET** `/transactions` - Transaction endpoints  
-- **GET** `/alerts` - Alert rule endpoints
+### Transactions
+- **GET** `/transactions/` - List transactions (with filtering by user, card, amount, date range)
+- **POST** `/transactions/` - Create new transaction
+- **GET** `/transactions/{transaction_id}` - Get transaction details
+- **PUT** `/transactions/{transaction_id}` - Update transaction
+- **DELETE** `/transactions/{transaction_id}` - Delete transaction
+- **GET** `/transactions/summary` - Transaction analytics and summaries
+- **GET** `/transactions/categories` - Spending by category analysis
+
+### Credit Cards
+- **GET** `/transactions/credit-cards/` - List credit cards
+- **POST** `/transactions/credit-cards/` - Create new credit card
+- **GET** `/transactions/credit-cards/{card_id}` - Get credit card details
+- **PUT** `/transactions/credit-cards/{card_id}` - Update credit card
+- **DELETE** `/transactions/credit-cards/{card_id}` - Delete credit card
+
+### Alerts
+- **POST** `/alerts/validate-rule` - Validate natural language alert rule using AI
+- **POST** `/alerts/create-rule` - Create new alert rule from validated rule
+- **GET** `/alerts/rules` - List user's alert rules
+- **GET** `/alerts/rules/{rule_id}` - Get alert rule details
+- **PUT** `/alerts/rules/{rule_id}` - Update alert rule
+- **DELETE** `/alerts/rules/{rule_id}` - Delete alert rule
+- **POST** `/alerts/rules/{rule_id}/pause` - Pause/unpause alert rule
+- **GET** `/alerts/notifications` - List alert notifications
+- **POST** `/alerts/notifications` - Create notification method
+- **PUT** `/alerts/notifications/{notification_id}` - Update notification method
 
 ### Database
-All endpoints support async database operations with connection pooling.
+All endpoints support async database operations with connection pooling and proper authentication.
 
 ## Configuration
 
@@ -192,24 +236,33 @@ All endpoints support async database operations with connection pooling.
 **Core Settings:**
 - `ENVIRONMENT` - Environment mode: `development`, `production`, `staging`, `test` (default: `development`)
 - `DEBUG` - Enable debug logging (auto-enabled in development)
-- `ALLOWED_HOSTS` - Comma-separated list of allowed hosts (default: "localhost,127.0.0.1")
+- `APP_NAME` - Application name (default: "spending-monitor")
 
-**Authentication (NEW):**
+**CORS Settings:**
+- `ALLOWED_HOSTS` - List of allowed hosts (default: "http://localhost:5173")
+
+**Authentication:**
 - `BYPASS_AUTH` - Bypass authentication in development (auto-enabled if `ENVIRONMENT=development`)
 - `KEYCLOAK_URL` - Keycloak server URL (default: "http://localhost:8080")
 - `KEYCLOAK_REALM` - Keycloak realm name (default: "spending-monitor")
-- `KEYCLOAK_CLIENT_ID` - Keycloak client ID (default: "spending-monitor-api")
+- `KEYCLOAK_CLIENT_ID` - Keycloak client ID (default: "spending-monitor")
 
 **Database:**
-- `DATABASE_URL` - PostgreSQL connection string
-- `DB_ECHO` - Enable SQL query logging (default: false)
+- `DATABASE_URL` - PostgreSQL connection string (default: postgresql+asyncpg://user:password@localhost:5432/spending-monitor)
+
+**LLM Integration:**
+- `LLM_PROVIDER` - LLM provider (default: "openai")
+- `API_KEY` - LLM API key for alert rule generation
+- `MODEL` - LLM model name (default: "gpt-3.5-turbo")
+- `BASE_URL` - Custom LLM API base URL (optional)
+- `NODE_ENV` - Node environment setting (default: "development")
 
 ### Authentication Modes
 
 **Development Mode (Default with `pnpm dev:backend`):**
 ```bash
 # Authentication automatically bypassed - no Keycloak required
-ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002
+ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8000
 # ✅ Enabled automatically by our backend setup commands
 ```
 
@@ -232,19 +285,17 @@ KEYCLOAK_CLIENT_ID=your-client
 
 > **📝 Note**: The `pnpm dev:backend` command automatically configures development mode with auth bypass for immediate testing.
 
-### Kafka Configuration
-- `KAFKA_BOOTSTRAP_SERVERS` - Kafka broker addresses (default: "localhost:9092")
-- `KAFKA_TRANSACTIONS_TOPIC` - Topic for transaction messages (default: "transactions")
-- `KAFKA_GROUP_ID` - Consumer group ID (default: "transaction-processor")
-- `KAFKA_AUTO_OFFSET_RESET` - Offset reset strategy (default: "earliest")
 
 ## Development Tips
 
-1. **API Documentation**: Visit `/docs` for interactive Swagger UI
-2. **Schema Validation**: Pydantic automatically validates request/response data
-3. **Async Operations**: Use `async def` for all route handlers
-4. **Type Hints**: Add type annotations for better IDE support and mypy validation
-5. **Database Sessions**: Use dependency injection for database sessions
+1. **API Documentation**: Visit `/docs` for interactive Swagger UI with all available endpoints
+2. **Alert Rule Testing**: Use `/alerts/validate-rule` to test natural language alert rules before creating them
+3. **Authentication**: Set `BYPASS_AUTH=true` in development to skip authentication for faster testing
+4. **Background Jobs**: Alert monitoring runs automatically in the background when the API starts
+5. **Schema Validation**: Pydantic automatically validates request/response data
+6. **Async Operations**: Use `async def` for all route handlers
+7. **Type Hints**: Add type annotations for better IDE support and mypy validation
+8. **Database Sessions**: Use dependency injection for database sessions
 
 ## Testing
 
@@ -260,63 +311,58 @@ uv run pytest tests/ -k "health"     # Run health-related tests
 uv run pytest tests/ -k "integration" # Run integration tests
 ```
 
-## Kafka Consumer Details
+## AI Alert System Details
 
-### Message Processing Flow
-1. **Message Reception**: Consumer subscribes to `transactions` topic
-2. **Format Transformation**: Converts ingestion service format to internal database format
-3. **Validation**: Validates user and credit card existence
-4. **Duplicate Check**: Prevents processing duplicate transactions
-5. **Database Storage**: Stores transaction with proper relationships
-6. **Offset Commit**: Commits Kafka offset only after successful database commit
+### Alert Rule Creation Flow
+1. **Natural Language Input**: Users provide alert rules in plain English
+2. **LLM Processing**: AI agents parse and validate the rule logic
+3. **SQL Generation**: Converts natural language to executable SQL queries
+4. **Rule Validation**: Tests the generated SQL against sample transaction data
+5. **Similarity Check**: Prevents duplicate rules using embedding similarity
+6. **Background Monitoring**: Continuously monitors transactions against active rules
+7. **Notification Delivery**: Sends alerts via configured notification methods
 
-### Supported Message Format (Ingestion Service)
-```json
-{
-  "user": "user-uuid-string",
-  "card": "card-uuid-string", 
-  "year": 2025,
-  "month": 8,
-  "day": 27,
-  "time": "16:24:00",
-  "amount": 150.0,
-  "use_chip": "Chip Transaction",
-  "merchant_id": '12345',
-  "merchant_city": "Test City",
-  "merchant_state": "CA",
-  "zip": "12345",
-  "mcc": 5411,
-  "errors": null,
-  "is_fraud": false
-}
+### Natural Language Alert Examples
+```
+"Alert me when I spend more than $500 in a single transaction"
+"Notify me if I have more than 3 transactions per day at restaurants"
+"Send an alert when my monthly spending on groceries exceeds $800"
+"Alert me for any transaction over $100 at gas stations on weekends"
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-**1. Kafka Consumer Not Connected**
-- Check Kafka is running: `podman ps | grep kafka`
-- Verify Kafka port: `telnet localhost 9092`
-- Check consumer logs in API output
-- Restart Kafka: `cd ../ingestion-service/deploy/kafka && podman compose restart`
-
-**2. Database Connection Issues**
+**1. Database Connection Issues**
 - Check PostgreSQL is running: `podman ps | grep postgres`
 - Verify database port: `telnet localhost 5432`
-- Check connection string in config
+- Check connection string in `DATABASE_URL` environment variable
 - Restart database: `cd ../db && podman compose restart`
+- Verify database migrations are up to date: `cd ../db && uv run alembic upgrade head`
 
-**3. Transaction Processing Failures**
-- Verify user and credit card IDs exist in database
-- Check API logs for detailed error messages
-- Use real UUIDs from seeded data for testing
-- Check `/kafka/health` endpoint for consumer status
+**2. Authentication Issues**
+- **Development**: Set `BYPASS_AUTH=true` or `ENVIRONMENT=development` to bypass authentication
+- **Production**: Ensure Keycloak is running and properly configured
+- Check Keycloak settings: `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`
+- Verify JWT tokens are valid and not expired
 
-**4. Port Conflicts**
-- API (8000): Change in uvicorn command
-- PostgreSQL (5432): Modify podman-compose.yml port mapping  
-- Kafka (9092): Modify kafka podman-compose.yml
+**3. Alert Rule Creation Failures**
+- Check LLM API credentials: `API_KEY` environment variable must be set
+- Verify LLM provider settings: `LLM_PROVIDER`, `MODEL`, `BASE_URL`
+- Check API quota limits for your LLM provider
+- Review natural language input for clarity and specificity
+- Check alert rule logs for detailed error messages
+
+**4. Background Alert Processing Issues**
+- Check that alert job queue started successfully in API logs
+- Verify alert rules are active (not paused)
+- Check notification settings are properly configured
+- Review transaction data matches alert rule criteria
+
+**5. Port Conflicts**
+- API (8000): Change port in uvicorn command or `API_PORT` environment variable
+- PostgreSQL (5432): Modify podman-compose.yml port mapping
 
 ### Getting User/Card IDs for Testing
 ```bash
@@ -342,10 +388,11 @@ asyncio.run(get_ids())
 ```
 
 ### Logs and Monitoring
-- **API Logs**: Console output from uvicorn command
-- **Kafka Consumer Logs**: Look for `INFO:src.services.kafka_consumer` messages
-- **Database Logs**: SQLAlchemy query logs (set `DB_ECHO=true`)
-- **Health Check**: `curl http://localhost:8000/kafka/health`
+- **API Logs**: Console output from uvicorn command shows all request/response activity
+- **Alert Processing Logs**: Look for `INFO:src.services.alert_job_queue` and background service messages
+- **Database Logs**: SQLAlchemy query logs (enable via configuration if needed)
+- **Health Check**: `curl http://localhost:8000/health/` - shows API and database status
+- **LLM Integration Logs**: Check for AI agent processing logs during alert rule creation
 
 ---
 
