@@ -43,6 +43,8 @@ def run_migrations_offline() -> None:
     if url and 'postgresql+asyncpg://' in url:
         url = url.replace('postgresql+asyncpg://', 'postgresql+psycopg2://')
     
+    print(f'url in env.py: {url}')
+    
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -62,6 +64,7 @@ def run_migrations_online() -> None:
     if database_url and 'postgresql+asyncpg://' in database_url:
         database_url = database_url.replace('postgresql+asyncpg://', 'postgresql+psycopg2://')
     
+    print(f'database_url in env.py: {database_url}')
     # Create a copy of the config section and update the URL
     configuration = config.get_section(config.config_ini_section, {})
     if database_url:

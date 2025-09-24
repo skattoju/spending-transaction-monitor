@@ -26,10 +26,11 @@ RUN uv pip install -e .
 RUN echo '#!/bin/bash' > /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo 'set -e' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo '' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
+    echo 'env' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo '# Wait for postgres to be ready' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo 'until pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo '  echo "Waiting for postgres..."' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
-    echo '  sleep 2' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
+    echo '  sleep 10' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo 'done' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo '' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
     echo '# Run alembic migrations' >> /docker-entrypoint-initdb.d/99-run-migrations.sh && \
