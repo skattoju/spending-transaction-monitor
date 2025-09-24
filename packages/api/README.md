@@ -38,13 +38,13 @@ This single command will:
 1. 🗄️ Start PostgreSQL database  
 2. ⬆️ Run database migrations
 3. 🌱 Seed with test data
-4. 🚀 Start FastAPI server on port 8002
+4. 🚀 Start FastAPI server on port 8000
 5. 🔓 Enable auth bypass for development
 
 **Individual Commands**:
 ```bash
 pnpm backend:setup    # Setup only (DB + migrations + seed)
-pnpm backend:start    # Start API only (port 8002)
+pnpm backend:start    # Start API only (port 8000)
 pnpm backend:stop     # Stop database
 ```
 
@@ -89,33 +89,33 @@ cd ../api
 6. **Start the API server**:
 ```bash
 # With auth bypass (development)
-ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002 uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8002
+ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8000 uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # Production mode  
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8002
+uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
 The services will be available at:
-- **API**: http://localhost:8002
-- **Interactive Docs**: http://localhost:8002/docs  
-- **ReDoc**: http://localhost:8002/redoc
-- **Health Check**: http://localhost:8002/health
+- **API**: http://localhost:8000
+- **Interactive Docs**: http://localhost:8000/docs  
+- **ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
 - **PostgreSQL**: localhost:5432
 
 ### Quick Test
 
 Test the API health check:
 ```bash
-curl http://localhost:8002/health
+curl http://localhost:8000/health
 ```
 
 Test transaction endpoints:
 ```bash
 # Get transactions (requires auth in production)
-curl http://localhost:8002/transactions
+curl http://localhost:8000/transactions
 
 # Health check with all services
-curl http://localhost:8002/health/
+curl http://localhost:8000/health/
 ```
 
 Run the test suite:
@@ -262,7 +262,7 @@ All endpoints support async database operations with connection pooling and prop
 **Development Mode (Default with `pnpm dev:backend`):**
 ```bash
 # Authentication automatically bypassed - no Keycloak required
-ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8002
+ENVIRONMENT=development BYPASS_AUTH=true API_PORT=8000
 # ✅ Enabled automatically by our backend setup commands
 ```
 
@@ -361,7 +361,7 @@ uv run pytest tests/ -k "integration" # Run integration tests
 - Review transaction data matches alert rule criteria
 
 **5. Port Conflicts**
-- API (8002): Change port in uvicorn command or `API_PORT` environment variable
+- API (8000): Change port in uvicorn command or `API_PORT` environment variable
 - PostgreSQL (5432): Modify podman-compose.yml port mapping
 
 ### Getting User/Card IDs for Testing
@@ -391,7 +391,7 @@ asyncio.run(get_ids())
 - **API Logs**: Console output from uvicorn command shows all request/response activity
 - **Alert Processing Logs**: Look for `INFO:src.services.alert_job_queue` and background service messages
 - **Database Logs**: SQLAlchemy query logs (enable via configuration if needed)
-- **Health Check**: `curl http://localhost:8002/health/` - shows API and database status
+- **Health Check**: `curl http://localhost:8000/health/` - shows API and database status
 - **LLM Integration Logs**: Check for AI agent processing logs during alert rule creation
 
 ---
