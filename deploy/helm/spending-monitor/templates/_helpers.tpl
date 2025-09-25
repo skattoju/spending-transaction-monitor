@@ -143,3 +143,19 @@ Nginx selector labels
 {{ include "spending-monitor.selectorLabels" . }}
 app.kubernetes.io/component: nginx
 {{- end }}
+
+{{/*
+Migration labels
+*/}}
+{{- define "spending-monitor.migration.labels" -}}
+{{ include "spending-monitor.labels" . }}
+app.kubernetes.io/component: migration
+{{- end }}
+
+{{/*
+Migration selector labels
+*/}}
+{{- define "spending-monitor.migration.selectorLabels" -}}
+{{ include "spending-monitor.selectorLabels" . }}
+app.kubernetes.io/component: migration
+{{- end }}

@@ -12,8 +12,37 @@ UI_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-ui:$(IMAGE_TAG)
 API_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-api:$(IMAGE_TAG)
 DB_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-db:$(IMAGE_TAG)
 
-# Environment file path
-ENV_FILE = .env
+# Environment file paths
+ENV_FILE_DEV = .env.development
+ENV_FILE_PROD = .env.production
+ENV_FILE = $(ENV_FILE_DEV)  # Default to development for backwards compatibility
+
+# Helper function to generate helm parameters from environment variables
+define HELM_ENV_PARAMS
+--set database.env.POSTGRES_DB="$$POSTGRES_DB" \
+--set database.env.POSTGRES_USER="$$POSTGRES_USER" \
+--set database.env.POSTGRES_PASSWORD="$$POSTGRES_PASSWORD" \
+--set-string api.env.DATABASE_URL="$$DATABASE_URL" \
+--set-string api.env.API_KEY="$$API_KEY" \
+--set-string api.env.BASE_URL="$$BASE_URL" \
+--set api.env.LLM_PROVIDER="$$LLM_PROVIDER" \
+--set api.env.MODEL="$$MODEL" \
+--set api.env.ENVIRONMENT="$$ENVIRONMENT" \
+--set api.env.DEBUG="$$DEBUG" \
+--set api.env.BYPASS_AUTH="$$BYPASS_AUTH" \
+--set-string api.env.CORS_ALLOWED_ORIGINS="$$CORS_ALLOWED_ORIGINS" \
+--set-string api.env.ALLOWED_ORIGINS="$$ALLOWED_ORIGINS" \
+--set-string api.env.ALLOWED_HOSTS="$$ALLOWED_HOSTS" \
+--set-string api.env.SMTP_HOST="$$SMTP_HOST" \
+--set api.env.SMTP_PORT="$$SMTP_PORT" \
+--set-string api.env.SMTP_FROM_EMAIL="$$SMTP_FROM_EMAIL" \
+--set api.env.SMTP_USE_TLS="$$SMTP_USE_TLS" \
+--set api.env.SMTP_USE_SSL="$$SMTP_USE_SSL" \
+--set-string api.env.KEYCLOAK_URL="$$KEYCLOAK_URL" \
+--set api.env.KEYCLOAK_REALM="$$KEYCLOAK_REALM" \
+--set api.env.KEYCLOAK_CLIENT_ID="$$KEYCLOAK_CLIENT_ID" \
+--set-string ui.env.VITE_API_BASE_URL="$$VITE_API_BASE_URL"
+endef
 
 # Default target when running 'make' without arguments
 .DEFAULT_GOAL := help
@@ -25,7 +54,7 @@ check-env-file:
 		echo "❌ Error: Environment file not found at $(ENV_FILE)"; \
 		echo ""; \
 		echo "Please create the environment file by copying the example:"; \
-		echo "  cp env.example .env"; \
+		echo "  cp env.example $(ENV_FILE)"; \
 		echo ""; \
 		echo "Then edit $(ENV_FILE) and update the values for your environment."; \
 		echo ""; \
@@ -37,6 +66,49 @@ check-env-file:
 		exit 1; \
 	fi
 	@echo "✅ Environment file found at $(ENV_FILE)"
+
+# Check if development environment file exists
+.PHONY: check-env-dev
+check-env-dev:
+	@if [ ! -f "$(ENV_FILE_DEV)" ]; then \
+		echo "❌ Error: Development environment file not found at $(ENV_FILE_DEV)"; \
+		echo ""; \
+		echo "Please create the development environment file by copying the example:"; \
+		echo "  cp env.example $(ENV_FILE_DEV)"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "✅ Development environment file found at $(ENV_FILE_DEV)"
+
+# Check if production environment file exists  
+.PHONY: check-env-prod
+check-env-prod:
+	@if [ ! -f "$(ENV_FILE_PROD)" ]; then \
+		echo "❌ Error: Production environment file not found at $(ENV_FILE_PROD)"; \
+		echo ""; \
+		echo "Please create the production environment file by copying the example:"; \
+		echo "  cp env.example $(ENV_FILE_PROD)"; \
+		echo ""; \
+		echo "Remember to update production values:"; \
+		echo "  - Set ENVIRONMENT=production"; \
+		echo "  - Set BYPASS_AUTH=false"; \
+		echo "  - Use strong production passwords"; \
+		echo "  - Update DATABASE_URL to use Kubernetes service names"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "✅ Production environment file found at $(ENV_FILE_PROD)"
+
+# Set up environment file for local development
+.PHONY: setup-dev-env
+setup-dev-env: check-env-dev
+	@echo "Setting up development environment file for local services..."
+	@if [ ! -f ".env" ] || [ "$(ENV_FILE_DEV)" -nt ".env" ]; then \
+		echo "Copying $(ENV_FILE_DEV) to .env for podman-compose..."; \
+		cp $(ENV_FILE_DEV) .env; \
+	else \
+		echo ".env is already up to date"; \
+	fi
 
 # Create environment file from example
 .PHONY: create-env-file
@@ -133,13 +205,13 @@ help:
 	@echo "    build-all          Build all Podman images"
 	@echo "    build-ui           Build UI image"
 	@echo "    build-api          Build API image"
-	@echo "    build-db           Build database image"
+	@echo "    build-db           Build database migration image (includes CSV data loading)"
 	@echo ""
 	@echo "  Pushing:"
 	@echo "    push-all           Push all images to registry"
 	@echo "    push-ui            Push UI image to registry"
 	@echo "    push-api           Push API image to registry"
-	@echo "    push-db            Push database image to registry"
+	@echo "    push-db            Push database migration image to registry"
 	@echo ""
 	@echo "  Deploying:"
 	@echo "    deploy             Deploy application using Helm"
@@ -185,9 +257,14 @@ help:
 	@echo "    create-env-file    Create environment file from example"
 	@echo ""
 	@echo "  Environment Setup:"
-	@echo "    Before running local development commands, create your environment file:"
-	@echo "      make create-env-file"
-	@echo "    Then edit .env with your settings."
+	@echo "    This project uses separate environment files for different scenarios:"
+	@echo "      .env.development  - For local development (run-local, build-run-local, etc.)"
+	@echo "      .env.production   - For OpenShift deployment (deploy, deploy-dev, etc.)"
+	@echo ""
+	@echo "    Environment file checks:"
+	@echo "      make check-env-dev    # Check development environment file"
+	@echo "      make check-env-prod   # Check production environment file"
+	@echo "      make setup-dev-env    # Set up .env from .env.development for local use"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make setup-local                    # Complete local setup"
@@ -250,17 +327,25 @@ push-all: push-ui push-api push-db
 
 # Deploy targets
 .PHONY: deploy
-deploy: create-project
-	@echo "Deploying application using Helm..."
+deploy: create-project check-env-prod
+	@echo "Deploying application using Helm with production environment variables..."
+	@echo "Using production environment file: $(ENV_FILE_PROD)"
+	@set -a; source $(ENV_FILE_PROD); set +a; \
+	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
 		--set global.imageTag=$(IMAGE_TAG) \
+		$(HELM_ENV_PARAMS)
 
 .PHONY: deploy-dev
-deploy-dev: create-project
-	@echo "Deploying application in development mode..."
+deploy-dev: create-project check-env-prod
+	@echo "Deploying application in development mode with production environment variables..."
+	@echo "Using production environment file: $(ENV_FILE_PROD)"
+	@echo "Note: This is still a production deployment with reduced resources for development/testing"
+	@set -a; source $(ENV_FILE_PROD); set +a; \
+	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
@@ -269,6 +354,7 @@ deploy-dev: create-project
 		--set database.persistence.enabled=false \
 		--set api.replicas=1 \
 		--set ui.replicas=1 \
+		$(HELM_ENV_PARAMS)
 
 .PHONY: deploy-all
 deploy-all: build-all push-all deploy
@@ -313,21 +399,29 @@ helm-lint:
 	helm lint ./deploy/helm/spending-monitor
 
 .PHONY: helm-template
-helm-template:
-	@echo "Rendering Helm templates..."
+helm-template: check-env-prod
+	@echo "Rendering Helm templates with production environment variables..."
+	@echo "Using production environment file: $(ENV_FILE_PROD)"
+	@set -a; source $(ENV_FILE_PROD); set +a; \
+	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm template $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
-		--set global.imageTag=$(IMAGE_TAG)
+		--set global.imageTag=$(IMAGE_TAG) \
+		$(HELM_ENV_PARAMS)
 
 .PHONY: helm-debug
-helm-debug:
-	@echo "Debugging Helm deployment..."
+helm-debug: check-env-prod
+	@echo "Debugging Helm deployment with production environment variables..."
+	@echo "Using production environment file: $(ENV_FILE_PROD)"
+	@set -a; source $(ENV_FILE_PROD); set +a; \
+	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
 		--set global.imageTag=$(IMAGE_TAG) \
+		$(HELM_ENV_PARAMS) \
 		--dry-run --debug
 
 # Clean up targets
@@ -376,8 +470,9 @@ logs-db:
 
 # Local development targets using Podman Compose
 .PHONY: run-local
-run-local: check-env-file
-	@echo "Starting all services locally with Podman Compose..."
+run-local: setup-dev-env
+	@echo "Starting all services locally with Podman Compose using development environment..."
+	@echo "Using development environment file: $(ENV_FILE_DEV)"
 	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
 	@echo "Services will be available at:"
 	@echo "  - Frontend: http://localhost:3000"
@@ -393,10 +488,6 @@ run-local: check-env-file
 	@echo ""
 	@echo "Waiting for database to be ready..."
 	@sleep 15
-	@echo "Running database migrations..."
-	@pnpm db:upgrade || (echo "❌ Database upgrade failed. Check if database is running." && exit 1)
-	@echo "Seeding database with test data..."
-	@pnpm db:seed || (echo "❌ Database seeding failed. Check migration status." && exit 1)
 	@echo ""
 	@echo "✅ All services started and database is ready!"
 	@echo ""
@@ -428,7 +519,7 @@ logs-local:
 	podman-compose -f podman-compose.yml logs -f
 
 .PHONY: reset-local
-reset-local: check-env-file
+reset-local: setup-dev-env
 	@echo "Resetting local environment..."
 	@echo "This will stop services, remove containers and volumes, pull latest images, and restart"
 	podman-compose -f podman-compose.yml down -v
@@ -446,7 +537,7 @@ reset-local: check-env-file
 	@echo "✅ Local environment has been reset and database is ready!"
 
 .PHONY: build-run-local
-build-run-local: check-env-file build-local
+build-run-local: setup-dev-env build-local
 	@echo "Starting all services locally with freshly built images..."
 	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
 	@echo "Services will be available at:"
@@ -476,6 +567,6 @@ build-run-local: check-env-file build-local
 	@echo "To stop services: make stop-local"
 
 .PHONY: setup-local
-setup-local: check-env-file pull-local run-local
+setup-local: check-env-dev pull-local run-local
 	@echo "✅ Local development environment is fully set up and ready!"
 	@echo "Database has been migrated and seeded with test data."

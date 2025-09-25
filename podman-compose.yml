@@ -32,14 +32,6 @@ services:
         condition: service_healthy
     networks:
       - spending-monitor
-    command: >
-      sh -c "
-        echo 'Waiting for postgres...' &&
-        until pg_isready -h postgres -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-spending-monitor}; do
-          sleep 5;
-        done &&
-        alembic upgrade head
-      "
 
   # SMTP Server for testing (smtp4dev)
   smtp4dev:
