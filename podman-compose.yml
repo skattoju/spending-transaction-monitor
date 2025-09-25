@@ -1,11 +1,8 @@
 services:
-  # PostgreSQL Database
   postgres:
-    image: quay.io/rh-ai-quickstart/spending-monitor-db:latest
-    # build:
-    #   context: .
-    #   dockerfile: packages/db/Containerfile
-    container_name: spending-monitor-db
+    image: postgres:16-alpine
+    platform: linux/amd64
+    container_name: postgres
     env_file:
       - .env
     environment:
@@ -24,9 +21,30 @@ services:
     networks:
       - spending-monitor
 
+  migrations:
+    image: quay.io/rh-ai-quickstart/spending-monitor-db:latest
+    platform: linux/amd64
+    container_name: spending-monitor-migrations
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - spending-monitor
+    command: >
+      sh -c "
+        echo 'Waiting for postgres...' &&
+        until pg_isready -h postgres -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-spending-monitor}; do
+          sleep 5;
+        done &&
+        alembic upgrade head
+      "
+
   # SMTP Server for testing (smtp4dev)
   smtp4dev:
     image: rnwood/smtp4dev:latest
+    platform: linux/amd64
     container_name: spending-monitor-smtp
     ports:
       - "3002:80"   # Web UI
@@ -39,6 +57,7 @@ services:
   # FastAPI Backend
   api:
     image: quay.io/rh-ai-quickstart/spending-monitor-api:latest
+    platform: linux/amd64
     # build:
     #   context: .
     #   dockerfile: packages/api/Containerfile
@@ -81,6 +100,7 @@ services:
   # React Frontend
   ui:
     image: quay.io/rh-ai-quickstart/spending-monitor-ui:latest
+    platform: linux/amd64
     # build:
     #   context: .
     #   dockerfile: packages/ui/Containerfile
@@ -97,6 +117,7 @@ services:
   # Nginx reverse proxy to serve UI and proxy API
   nginx:
     image: nginx:alpine
+    platform: linux/amd64
     container_name: spending-monitor-nginx
     ports:
       - "3000:80"
@@ -111,6 +132,7 @@ services:
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
+    platform: linux/amd64
     container_name: spending-monitor-pgadmin
     env_file:
       - .env

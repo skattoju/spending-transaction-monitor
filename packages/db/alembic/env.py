@@ -2,12 +2,14 @@ import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+Base = declarative_base()
 
 # Ensure Alembic uses a sync driver for migrations when the app uses asyncpg
 if os.environ.get('DATABASE_URL') or config.get_main_option('sqlalchemy.url'):
@@ -23,7 +25,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
-from db.database import Base
+
 from db.models import *  # noqa: F401,F403 ensure models are imported for autogenerate
 
 # target metadata for autogenerate

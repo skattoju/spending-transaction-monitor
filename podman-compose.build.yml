@@ -1,6 +1,6 @@
 services:
   # PostgreSQL Database - Build Override
-  postgres:
+  migrations:
     build:
       context: .
       dockerfile: packages/db/Containerfile
@@ -16,3 +16,5 @@ services:
     build:
       context: .
       dockerfile: packages/ui/Containerfile
+
+  
