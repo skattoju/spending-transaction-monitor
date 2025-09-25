@@ -1,0 +1,18 @@
+services:
+  # PostgreSQL Database - Build Override
+  postgres:
+    build:
+      context: .
+      dockerfile: packages/db/Containerfile
+
+  # FastAPI Backend - Build Override
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Containerfile
+
+  # React Frontend - Build Override
+  ui:
+    build:
+      context: .
+      dockerfile: packages/ui/Containerfile
