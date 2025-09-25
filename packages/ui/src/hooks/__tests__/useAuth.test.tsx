@@ -32,18 +32,21 @@ vi.mock('react-oidc-context', () => ({
 }));
 
 // Mock fetch for DevAuthProvider API call
-vi.stubGlobal('fetch', vi.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () =>
-      Promise.resolve({
-        id: '1',
-        email: 'john.doe@example.com',
-        first_name: 'John',
-        last_name: 'Doe',
-      }),
-  }),
-));
+vi.stubGlobal(
+  'fetch',
+  vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          id: '1',
+          email: 'john.doe@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
+        }),
+    }),
+  ),
+);
 
 describe('useAuth', () => {
   it('should return dev user in development mode', async () => {
