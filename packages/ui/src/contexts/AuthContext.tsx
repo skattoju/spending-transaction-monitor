@@ -48,7 +48,7 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const response = await fetch('/api/users/profile');
         if (response.ok) {
           const apiUser = await response.json();
@@ -61,7 +61,7 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
             isDevMode: true,
           };
           setUser(devUser);
-          
+
           if (import.meta.env.DEV) {
             console.log('🔓 Dev mode: Loaded user from API:', {
               id: devUser.id,

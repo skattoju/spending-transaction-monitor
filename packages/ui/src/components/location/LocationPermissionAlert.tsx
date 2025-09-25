@@ -18,7 +18,9 @@ interface LocationPermissionAlertProps {
  * Only displays on alert rules page to inform about location-based alerts
  */
 export function LocationPermissionAlert({ className }: LocationPermissionAlertProps) {
-  const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | null>(null);
+  const [permissionState, setPermissionState] = useState<
+    'granted' | 'denied' | 'prompt' | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -52,12 +54,10 @@ export function LocationPermissionAlert({ className }: LocationPermissionAlertPr
       <MapPinOff className="h-4 w-4" />
       <AlertDescription>
         <div className="flex items-center justify-between">
-          <span className="font-medium">
-            Location-based alerts unavailable
-          </span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <span className="font-medium">Location-based alerts unavailable</span>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={toggleExpanded}
             className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-auto"
           >
@@ -69,16 +69,15 @@ export function LocationPermissionAlert({ className }: LocationPermissionAlertPr
             )}
           </Button>
         </div>
-        
+
         {isExpanded && (
           <div className="mt-3 text-sm border-t pt-3 border-red-200">
             <p className="mb-2">
-              Location permissions haven't been granted. Rules that depend on location data 
-              (like "transactions outside usual area") won't work properly.
-              {permissionState === 'prompt' 
+              Location permissions haven't been granted. Rules that depend on location
+              data (like "transactions outside usual area") won't work properly.
+              {permissionState === 'prompt'
                 ? ' Your browser will ask for permission when needed.'
-                : ' You can enable location access in your browser settings.'
-              }
+                : ' You can enable location access in your browser settings.'}
             </p>
           </div>
         )}

@@ -61,7 +61,6 @@ app.include_router(
 app.include_router(alerts_routes.router, prefix='/api/alerts', tags=['alerts'])
 
 
-
 @app.get('/')
 async def root() -> dict[str, str]:
     """Root endpoint"""

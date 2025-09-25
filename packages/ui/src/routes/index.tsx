@@ -256,7 +256,6 @@ function Index() {
       {/* Transaction Statistics */}
       <StatsList stats={transactionStats} variant="default" columns={4} />
 
-
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Chart and Transactions */}
