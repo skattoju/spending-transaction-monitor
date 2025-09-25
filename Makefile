@@ -157,12 +157,12 @@ help:
 	@echo "    port-forward-db    Forward database to localhost:5432"
 	@echo ""
 	@echo   "  Local Development:"
-	@echo "    run-local          Start all services (pull from registry) - fast startup"
+	@echo "    run-local          Start all services (always pull latest from registry)"
 	@echo "    build-local        Build local Podman images"
 	@echo "    build-run-local    Build and run all services locally - for development"
 	@echo "    stop-local         Stop local Podman Compose services"
 	@echo "    logs-local         Show logs from local services"
-	@echo "    reset-local        Reset local environment (restart with fresh data)"
+	@echo "    reset-local        Reset environment (pull latest, restart with fresh data)"
 	@echo "    pull-local         Pull latest images from registry"
 	@echo "    setup-local        Complete local setup (pull, run, migrate, seed)"
 	@echo ""
@@ -387,6 +387,8 @@ run-local: check-env-file
 	@echo "  - SMTP Web UI: http://localhost:3002"
 	@echo "  - Database: localhost:5432"
 	@echo ""
+	@echo "Pulling latest images from registry..."
+	podman-compose -f podman-compose.yml pull
 	podman-compose -f podman-compose.yml up -d
 	@echo ""
 	@echo "Waiting for database to be ready..."
@@ -430,6 +432,7 @@ reset-local: check-env-file
 	@echo "Resetting local environment..."
 	@echo "This will stop services, remove containers and volumes, pull latest images, and restart"
 	podman-compose -f podman-compose.yml down -v
+	@echo "Pulling latest images from registry..."
 	podman-compose -f podman-compose.yml pull
 	podman-compose -f podman-compose.yml up -d
 	@echo ""
