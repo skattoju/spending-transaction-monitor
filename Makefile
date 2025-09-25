@@ -157,9 +157,9 @@ help:
 	@echo "    port-forward-db    Forward database to localhost:5432"
 	@echo ""
 	@echo   "  Local Development:"
-	@echo "    run-local          Start all services, run migrations, and seed database"
+	@echo "    run-local          Start all services (pull from registry) - fast startup"
 	@echo "    build-local        Build local Podman images"
-	@echo "    build-run-local    Build and run all services with database setup"
+	@echo "    build-run-local    Build and run all services locally - for development"
 	@echo "    stop-local         Stop local Podman Compose services"
 	@echo "    logs-local         Show logs from local services"
 	@echo "    reset-local        Reset local environment (restart with fresh data)"
@@ -413,7 +413,7 @@ stop-local:
 .PHONY: build-local
 build-local:
 	@echo "Building local Podman images..."
-	podman-compose -f podman-compose.yml build
+	podman-compose -f podman-compose.yml -f podman-compose.build.yml build
 
 .PHONY: pull-local
 pull-local:
@@ -454,7 +454,7 @@ build-run-local: check-env-file build-local
 	@echo "  - SMTP Web UI: http://localhost:3002"
 	@echo "  - Database: localhost:5432"
 	@echo ""
-	podman-compose -f podman-compose.yml up -d
+	podman-compose -f podman-compose.yml -f podman-compose.build.yml up -d
 	@echo ""
 	@echo "Waiting for database to be ready..."
 	@sleep 15

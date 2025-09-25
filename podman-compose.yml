@@ -2,9 +2,9 @@ services:
   # PostgreSQL Database
   postgres:
     image: quay.io/rh-ai-quickstart/spending-monitor-db:latest
-    build:
-      context: .
-      dockerfile: packages/db/Containerfile
+    # build:
+    #   context: .
+    #   dockerfile: packages/db/Containerfile
     container_name: spending-monitor-db
     env_file:
       - .env
@@ -39,9 +39,9 @@ services:
   # FastAPI Backend
   api:
     image: quay.io/rh-ai-quickstart/spending-monitor-api:latest
-    build:
-      context: .
-      dockerfile: packages/api/Containerfile
+    # build:
+    #   context: .
+    #   dockerfile: packages/api/Containerfile
     container_name: spending-monitor-api
     env_file:
       - .env
@@ -81,9 +81,9 @@ services:
   # React Frontend
   ui:
     image: quay.io/rh-ai-quickstart/spending-monitor-ui:latest
-    build:
-      context: .
-      dockerfile: packages/ui/Containerfile
+    # build:
+    #   context: .
+    #   dockerfile: packages/ui/Containerfile
     container_name: spending-monitor-ui
     env_file:
       - .env
