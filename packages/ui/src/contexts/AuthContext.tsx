@@ -21,8 +21,9 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
  * Development Auth Provider - bypasses OIDC
  */
 const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode }) => {
-  const [user] = useState<User>(DEV_USER);
-  // Note: Location is now handled by LocationCapture component on user interaction
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const login = useCallback(() => {
     // No-op in dev mode since user is always authenticated
@@ -41,22 +42,62 @@ const DevAuthProvider = React.memo(({ children }: { children: React.ReactNode })
     // No-op in dev mode since user is already authenticated
   }, []);
 
+  // Fetch user from backend on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/users/profile');
+        if (response.ok) {
+          const apiUser = await response.json();
+          const devUser: User = {
+            id: apiUser.id,
+            email: apiUser.email,
+            username: apiUser.email.split('@')[0],
+            name: `${apiUser.first_name} ${apiUser.last_name}`,
+            roles: ['user', 'admin'], // Dev mode gets all roles
+            isDevMode: true,
+          };
+          setUser(devUser);
+          
+          if (import.meta.env.DEV) {
+            console.log('🔓 Dev mode: Loaded user from API:', {
+              id: devUser.id,
+              email: devUser.email,
+            });
+          }
+        } else {
+          // Fallback to hardcoded DEV_USER if API fails
+          console.warn('Failed to fetch user from API, using fallback DEV_USER');
+          setUser(DEV_USER);
+        }
+      } catch (err) {
+        console.error('Error fetching dev user:', err);
+        setError(new Error('Failed to load user'));
+        // Fallback to hardcoded DEV_USER
+        setUser(DEV_USER);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const contextValue: AuthContextType = useMemo(
     () => ({
       user,
-      isAuthenticated: true,
-      isLoading: false,
+      isAuthenticated: !!user,
+      isLoading,
       login,
       logout,
       signinRedirect,
-      error: null,
+      error,
     }),
-    [user, login, logout, signinRedirect],
+    [user, isLoading, login, logout, signinRedirect, error],
   );
-
-  useEffect(() => {
-    // Development auth provider initialized
-  }, []);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 });

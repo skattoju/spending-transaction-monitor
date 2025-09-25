@@ -145,6 +145,22 @@ async def get_current_user_profile(
         'updated_at': user.updated_at.isoformat() if user.updated_at else None,
         'credit_cards_count': credit_cards_count,
         'transactions_count': transactions_count,
+        # Location fields
+        'location_consent_given': user.location_consent_given,
+        'last_app_location_latitude': user.last_app_location_latitude,
+        'last_app_location_longitude': user.last_app_location_longitude,
+        'last_app_location_timestamp': user.last_app_location_timestamp.isoformat()
+        if user.last_app_location_timestamp
+        else None,
+        'last_app_location_accuracy': user.last_app_location_accuracy,
+        'last_transaction_latitude': user.last_transaction_latitude,
+        'last_transaction_longitude': user.last_transaction_longitude,
+        'last_transaction_timestamp': user.last_transaction_timestamp.isoformat()
+        if user.last_transaction_timestamp
+        else None,
+        'last_transaction_city': user.last_transaction_city,
+        'last_transaction_state': user.last_transaction_state,
+        'last_transaction_country': user.last_transaction_country,
     }
 
 

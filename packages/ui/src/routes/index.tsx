@@ -5,7 +5,6 @@ import { AlertsPanel } from '../components/alerts-panel/alerts-panel';
 import { StatsList } from '../components/stats-list/stats-list';
 import { Card } from '../components/atoms/card/card';
 import { Button } from '../components/atoms/button/button';
-import { LocationCapture } from '../components/location/LocationCapture';
 import { useHealth } from '../hooks/health';
 import { useTransactionStats } from '../hooks/transactions';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
@@ -257,19 +256,6 @@ function Index() {
       {/* Transaction Statistics */}
       <StatsList stats={transactionStats} variant="default" columns={4} />
 
-      {/* Location-Based Fraud Detection */}
-      <LocationCapture
-        onLocationCaptured={(location) => {
-          console.log('Location captured for fraud detection:', location);
-        }}
-        onLocationDenied={() => {
-          console.log('Location access denied - fraud detection limited');
-        }}
-        onLocationError={(error) => {
-          console.error('Location capture error:', error);
-        }}
-        autoRequest={false}
-      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

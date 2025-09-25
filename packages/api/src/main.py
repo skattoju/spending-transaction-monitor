@@ -54,11 +54,12 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, prefix='/health', tags=['health'])
-app.include_router(users_routes.router, prefix='/users', tags=['users'])
+app.include_router(users_routes.router, prefix='/api/users', tags=['users'])
 app.include_router(
-    transactions_routes.router, prefix='/transactions', tags=['transactions']
+    transactions_routes.router, prefix='/api/transactions', tags=['transactions']
 )
-app.include_router(alerts_routes.router, prefix='/alerts', tags=['alerts'])
+app.include_router(alerts_routes.router, prefix='/api/alerts', tags=['alerts'])
+
 
 
 @app.get('/')
