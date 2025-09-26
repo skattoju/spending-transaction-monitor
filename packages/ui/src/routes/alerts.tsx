@@ -9,6 +9,7 @@ import {
   type ValidationResult,
 } from '../components/alert-rule-validation/alert-rule-validation';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { LocationPermissionAlert } from '../components/location/LocationPermissionAlert';
 import {
   Dialog,
   DialogContent,
@@ -220,6 +221,9 @@ function AlertsPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-foreground">Active Rules</h2>
         </div>
+
+        {/* Location Permission Alert - positioned under Active Rules with matching width */}
+        <LocationPermissionAlert />
 
         {isLoading ? (
           <div className="space-y-3">
