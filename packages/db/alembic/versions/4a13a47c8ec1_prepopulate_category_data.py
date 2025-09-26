@@ -108,34 +108,10 @@ CATEGORY_SYNONYMS = {
 
 
 def upgrade() -> None:
-    """Populate merchant category synonym table"""
-    # Create connection
-    connection = op.get_bind()
-    
-    # Create metadata and table reflection
-    from sqlalchemy import MetaData, Table
-    metadata = MetaData()
-    metadata.reflect(bind=connection)
-    
-    # Get table reference
-    synonyms_table = metadata.tables['merchant_category_synonyms']
-    
-    # Clear existing data (in case migration is re-run)
-    connection.execute(synonyms_table.delete())
-    
-    # Insert synonym data
-    synonym_data = []
-    for canonical_category, synonyms in CATEGORY_SYNONYMS.items():
-        for synonym in synonyms:
-            synonym_data.append({
-                'synonym': synonym.lower(),
-                'canonical_category': canonical_category
-            })
-    
-    # Batch insert all synonyms
-    connection.execute(synonyms_table.insert(), synonym_data)
-    
-    print(f"✅ Inserted {len(synonym_data)} category synonyms for {len(CATEGORY_SYNONYMS)} canonical categories")
+    """Populate merchant category synonym table - moved to script"""
+    # Data population moved to seed_category_data.py script
+    print("✅ Category data should be populated using: pnpm seed:categories")
+    pass
 
 
 def downgrade() -> None:

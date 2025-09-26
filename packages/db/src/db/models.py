@@ -345,6 +345,14 @@ class MerchantCategorySynonym(Base):
 class MerchantCategoryEmbedding(Base):
     __tablename__ = 'merchant_category_embeddings'
 
-    category: Mapped[str] = mapped_column(String, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    category: Mapped[str] = mapped_column(String, nullable=False, index=True)  # Canonical category
+    synonym: Mapped[str] = mapped_column(String, nullable=False, index=True)   # Which synonym this embedding represents
     embedding: Mapped[list[float]] = mapped_column(Vector(384))  # 384 for all-MiniLM via Ollama
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    # Ensure each synonym only has one embedding
+    __table_args__ = (
+        Index('idx_category_synonym_unique', 'synonym', unique=True),
+        Index('idx_category_lookup', 'category'),
+    )

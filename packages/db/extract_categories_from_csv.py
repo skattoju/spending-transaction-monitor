@@ -12,7 +12,7 @@ import re
 def extract_categories_from_chunks():
     """Extract and analyze categories from all CSV chunks"""
     all_categories = []
-    chunk_files = glob.glob('cc_chunk_*')
+    chunk_files = glob.glob('../../data/cc_chunk_*')
     
     print(f"🔍 Processing {len(chunk_files)} chunks...")
     
