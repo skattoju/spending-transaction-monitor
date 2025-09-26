@@ -182,10 +182,16 @@ async def main():
     print(f"📊 Will create {sum(len(synonyms) for synonyms in CATEGORY_SYNONYMS.values())} synonym mappings")
     print(f"📂 Across {len(CATEGORY_SYNONYMS)} canonical categories")
     
-    async with get_db() as session:
+    # Get async database session  
+    db_gen = get_db()
+    session = await db_gen.__anext__()
+    
+    try:
         await clear_existing_data(session)
         await seed_synonyms(session) 
         await validate_seed_data(session)
+    finally:
+        await session.close()
     
     print("🎉 Category seeding completed successfully!")
     print()

@@ -68,6 +68,13 @@ class Settings(BaseSettings):
     MODEL: str = 'gpt-3.5-turbo'
     LLAMASTACK_BASE_URL: str = 'http://localhost:8321'
     LLAMASTACK_MODEL: str = 'meta-llama/Llama-3.2-3B-Instruct'
+    
+    # Embedding settings (for category normalization)
+    EMBEDDING_PROVIDER: str = 'ollama'  # ollama, openai, llamastack
+    EMBEDDING_MODEL: str = 'all-minilm'
+    EMBEDDING_DIMENSIONS: int = 384
+    OLLAMA_BASE_URL: str = 'http://localhost:11434'
+    # Note: Using same LLAMASTACK_BASE_URL as LLM settings above
 
     # Keycloak settings
     KEYCLOAK_URL: str = 'http://localhost:8080'
