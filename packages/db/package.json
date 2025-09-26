@@ -16,6 +16,8 @@
     "current": "PYTHONPATH=src uv run alembic current",
     "install:deps": "uv sync --extra dev",
     "seed": "uv run python -m db.scripts.seed",
+    "seed:categories": "uv run python -m db.scripts.seed_category_data",
+    "populate:embeddings": "uv run python -m db.scripts.populate_embeddings",
     "seed:dining": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_spending_amount_dining.json",
     "seed:last-hour": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_transaction_last_hour.json",
     "seed:dining-30d-avg-40pct": "uv run python -m db.scripts.seed_alert_rules json/alert_rule_dining_30d_avg_40pct.json",
