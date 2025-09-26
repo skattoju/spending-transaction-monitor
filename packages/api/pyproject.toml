@@ -21,7 +21,7 @@ dependencies = [
     "asyncpg>=0.29.0",
     "greenlet>=3.2.3",
     "langchain>=0.1.0",
-    "langchain-core>=0.1.0", 
+    "langchain-core>=0.1.0",
     "langchain-openai>=0.1.0",
     "langgraph>=0.2.0",
     "cryptography>=3.0.0",
@@ -29,8 +29,8 @@ dependencies = [
     "kafka-python>=2.0.0",
     "python-jose[cryptography]>=3.3.0",
     "requests>=2.31.0",
-    
     "spending-monitor-db",
+    "llama-stack-client>=0.2.12",
 ]
 
 [project.optional-dependencies]
