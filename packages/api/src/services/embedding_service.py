@@ -3,10 +3,9 @@ Embedding Service - Provides a unified interface for different embedding provide
 Follows the same pattern as LLM service in the llamastack implementation
 """
 
+from abc import ABC, abstractmethod
 import logging
 import os
-from abc import ABC, abstractmethod
-from typing import List
 
 import httpx
 from openai import OpenAI
@@ -21,7 +20,7 @@ class EmbeddingProvider(ABC):
     """Abstract base class for embedding providers"""
     
     @abstractmethod
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         """Generate embedding for the given text"""
         pass
     
@@ -43,7 +42,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self.model = 'text-embedding-3-small' if settings.EMBEDDING_PROVIDER == 'openai' else settings.EMBEDDING_MODEL
         self.dimensions = 1536 if settings.EMBEDDING_PROVIDER == 'openai' else settings.EMBEDDING_DIMENSIONS
     
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         try:
             response = self.client.embeddings.create(
                 input=text.lower(),
@@ -68,7 +67,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.model = settings.EMBEDDING_MODEL
         self.dimensions = settings.EMBEDDING_DIMENSIONS
         
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
@@ -112,7 +111,7 @@ class LlamaStackEmbeddingProvider(EmbeddingProvider):
             self.model = settings.EMBEDDING_MODEL
             self.dimensions = settings.EMBEDDING_DIMENSIONS
         
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         """
         Generate embeddings using LlamaStack API
         Follows same pattern as LlamastackClient but for embeddings
@@ -138,10 +137,10 @@ class LlamaStackEmbeddingProvider(EmbeddingProvider):
             # Fallback to httpx if client doesn't have embeddings endpoint
             try:
                 return await self._fallback_http_request(text)
-            except:
-                raise e
+            except Exception:
+                raise e from None
     
-    async def _fallback_http_request(self, text: str) -> List[float]:
+    async def _fallback_http_request(self, text: str) -> list[float]:
         """Fallback HTTP implementation if client doesn't support embeddings"""
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
@@ -189,7 +188,7 @@ class EmbeddingService:
         self.provider = get_embedding_client()
         logger.info(f"Initialized embedding service with provider: {type(self.provider).__name__}")
     
-    async def get_embedding(self, text: str) -> List[float]:
+    async def get_embedding(self, text: str) -> list[float]:
         """Generate embedding for text using configured provider"""
         return await self.provider.get_embedding(text)
     
