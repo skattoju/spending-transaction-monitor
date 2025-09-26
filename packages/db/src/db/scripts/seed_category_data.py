@@ -12,7 +12,7 @@ from db.models import MerchantCategorySynonym, MerchantCategoryEmbedding
 
 
 # Enhanced category synonym mapping based on:
-# 1. REAL transaction data from credit_card_transactions.csv
+# 1. REAL transaction data from data/credit_card_transactions.csv
 # 2. Extended with natural language synonyms and MCC codes
 # 3. User-friendly variations for semantic search
 CATEGORY_SYNONYMS = {
@@ -29,7 +29,7 @@ CATEGORY_SYNONYMS = {
     # === GROCERY & FOOD RETAIL === (from real data: grocery_pos, grocery_net)
     "grocery": [
         "grocery_pos", "grocery_net", "grocery", "groceries", "supermarket", 
-        "food store", "market", "whole foods", "safeway", "kroger", "walmart", 
+        "food store", "market", "whole foods", "safeway", "kroger", 
         "costco", "food shopping", "provisions", "5411", "5499"  # MCC codes
     ],
     
@@ -95,7 +95,7 @@ CATEGORY_SYNONYMS = {
     
     # === MISCELLANEOUS ONLINE === (from real data: misc_net)
     "misc_net": [
-        "misc_net", "online", "internet", "digital", "software", "cloud services", 
+        "misc_net", "online", "digital", "software", "cloud services", 
         "saas", "subscription", "netflix", "spotify", "adobe", "microsoft", 
         "google", "aws", "azure", "github", "slack", "zoom", "dropbox", 
         "app store", "digital services", "5815", "7372"

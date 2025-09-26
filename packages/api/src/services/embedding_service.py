@@ -32,15 +32,16 @@ class EmbeddingProvider(ABC):
 
 
 class OpenAIEmbeddingProvider(EmbeddingProvider):
-    """OpenAI embedding provider"""
+    """OpenAI embedding provider - shares API_KEY and BASE_URL with LLM config"""
     
     def __init__(self):
         self.client = OpenAI(
             api_key=settings.API_KEY,
             base_url=settings.BASE_URL
         )
-        self.model = settings.EMBEDDING_MODEL
-        self.dimensions = settings.EMBEDDING_DIMENSIONS
+        # Use OpenAI-specific defaults if embedding provider is OpenAI
+        self.model = 'text-embedding-3-small' if settings.EMBEDDING_PROVIDER == 'openai' else settings.EMBEDDING_MODEL
+        self.dimensions = 1536 if settings.EMBEDDING_PROVIDER == 'openai' else settings.EMBEDDING_DIMENSIONS
     
     async def get_embedding(self, text: str) -> List[float]:
         try:
@@ -96,38 +97,65 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
 
 class LlamaStackEmbeddingProvider(EmbeddingProvider):
-    """LlamaStack embedding provider - for future implementation"""
+    """LlamaStack embedding provider - shares LLAMASTACK_BASE_URL with LLM config"""
     
     def __init__(self):
-        self.base_url = settings.LLAMASTACK_BASE_URL
-        self.model = settings.EMBEDDING_MODEL
-        self.dimensions = settings.EMBEDDING_DIMENSIONS
+        # Following same pattern as LlamastackClient in llamastack.py
+        try:
+            from llama_stack_client import LlamaStackClient
+            self.client = LlamaStackClient(base_url=settings.LLAMASTACK_BASE_URL)
+            self.model = settings.EMBEDDING_MODEL  
+            self.dimensions = settings.EMBEDDING_DIMENSIONS
+        except ImportError:
+            logger.warning("llama_stack_client not installed, LlamaStack embedding provider unavailable")
+            self.client = None
+            self.model = settings.EMBEDDING_MODEL
+            self.dimensions = settings.EMBEDDING_DIMENSIONS
         
     async def get_embedding(self, text: str) -> List[float]:
         """
-        TODO: Implement LlamaStack embedding API calls
-        This will be implemented when the LlamaStack PR merges
+        Generate embeddings using LlamaStack API
+        Follows same pattern as LlamastackClient but for embeddings
         """
+        if self.client is None:
+            raise RuntimeError("LlamaStack client not available - install llama_stack_client")
+            
         try:
-            # Future LlamaStack API implementation
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    f"{self.base_url}/embeddings",  # TBD: actual endpoint
-                    json={
-                        "model": self.model,
-                        "input": text.lower()
-                    }
-                )
-                response.raise_for_status()
-                result = response.json()
-                
-                embedding = result.get("embedding", [])
-                logger.info(f"Generated {len(embedding)}-dim embedding via LlamaStack")
-                return embedding
-                
+            # Using LlamaStack client - API structure may vary
+            # This is a placeholder implementation that should be updated 
+            # when LlamaStack embeddings API is confirmed
+            response = self.client.embeddings.create(
+                input=text.lower(),
+                model=self.model
+            )
+            
+            embedding = response.data[0].embedding
+            logger.info(f"Generated {len(embedding)}-dim embedding via LlamaStack")
+            return embedding
+            
         except Exception as e:
             logger.error(f"Error generating LlamaStack embedding: {e}")
-            raise
+            # Fallback to httpx if client doesn't have embeddings endpoint
+            try:
+                return await self._fallback_http_request(text)
+            except:
+                raise e
+    
+    async def _fallback_http_request(self, text: str) -> List[float]:
+        """Fallback HTTP implementation if client doesn't support embeddings"""
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{settings.LLAMASTACK_BASE_URL}/embeddings",
+                json={
+                    "model": self.model,
+                    "input": text.lower()
+                }
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            embedding = result.get("data", [{}])[0].get("embedding", [])
+            return embedding
     
     def get_dimensions(self) -> int:
         return self.dimensions

@@ -71,10 +71,9 @@ class Settings(BaseSettings):
     
     # Embedding settings (for category normalization)
     EMBEDDING_PROVIDER: str = 'ollama'  # ollama, openai, llamastack
-    EMBEDDING_MODEL: str = 'all-minilm'
-    EMBEDDING_DIMENSIONS: int = 384
+    EMBEDDING_MODEL: str = 'all-minilm:l6-v2'  # or text-embedding-3-small for openai
+    EMBEDDING_DIMENSIONS: int = 384  # 384 for ollama/all-minilm, 1536 for openai
     OLLAMA_BASE_URL: str = 'http://localhost:11434'
-    # Note: Using same LLAMASTACK_BASE_URL as LLM settings above
 
     # Keycloak settings
     KEYCLOAK_URL: str = 'http://localhost:8080'

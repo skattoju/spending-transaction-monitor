@@ -27,7 +27,7 @@ Raw Category → Synonym Lookup → Vector Search → Canonical Category
 ### **Data Sources & Generation**
 
 #### 1. **Real Transaction Data Foundation**
-- **Source**: `credit_card_transactions.csv` (354MB, ~1.5M transactions)
+- **Source**: `data/credit_card_transactions.csv` (354MB, ~1.5M transactions)
 - **Extraction**: Processed in 100MB chunks to handle large dataset
 - **Categories Found**: 14 unique real-world categories
 
