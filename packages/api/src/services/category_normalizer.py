@@ -31,10 +31,10 @@ class CategoryNormalizer:
         try:
             emb = await embedding_service.get_embedding(raw_lower)
             logger.info(f"Generated {len(emb)}-dim embedding for '{raw_lower}'")
-            
+
             # Use direct string formatting for pgvector compatibility (same as populate script)
             vector_str = '[' + ','.join(map(str, emb)) + ']'
-            
+
             result = await session.execute(
                 text(f"""
                     SELECT category

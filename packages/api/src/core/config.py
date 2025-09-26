@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     MODEL: str = 'gpt-3.5-turbo'
     LLAMASTACK_BASE_URL: str = 'http://localhost:8321'
     LLAMASTACK_MODEL: str = 'meta-llama/Llama-3.2-3B-Instruct'
-    
+
     # Embedding settings (for category normalization)
     EMBEDDING_PROVIDER: str = 'ollama'  # ollama, openai, llamastack
     EMBEDDING_MODEL: str = 'all-minilm:l6-v2'  # or text-embedding-3-small for openai
