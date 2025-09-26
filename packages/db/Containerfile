@@ -2,11 +2,14 @@
 FROM python:3.12-alpine
 
 # Install deps
-RUN apk add --no-cache gcc musl-dev libpq-dev
+RUN apk add --no-cache gcc musl-dev libpq-dev postgresql-client bash
 
 # Copy db package
 WORKDIR /app
 COPY packages/db /app/packages/db
+
+# Copy sample data files
+COPY data/ /app/data/
 
 # Install uv + deps
 RUN pip install uv
@@ -14,5 +17,9 @@ RUN uv venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 RUN uv pip install -e ./packages/db
 
-# Default command will be overridden by docker-compose
-CMD ["alembic", "upgrade", "head"]
+# Copy and setup startup script
+COPY packages/db/startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
+
+# Run startup script which handles migrations and data loading
+CMD ["/app/startup.sh"]

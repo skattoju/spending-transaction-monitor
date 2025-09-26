@@ -1,0 +1,66 @@
+{{- if and .Values.migration.enabled .Values.database.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.migration.name }}
+  labels:
+    {{- include "spending-monitor.migration.labels" . | nindent 4 }}
+  annotations:
+    # This ensures the job runs after database is deployed
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: {{ .Values.migration.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migration.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "spending-monitor.migration.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: {{ .Values.migration.restartPolicy }}
+      serviceAccountName: {{ include "spending-monitor.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-database
+          image: postgres:16-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for database to be ready..."
+              until pg_isready -h {{ .Values.database.name }} -U {{ .Values.database.env.POSTGRES_USER }} -d {{ .Values.database.env.POSTGRES_DB }}; do
+                echo "Database not ready, waiting..."
+                sleep 5
+              done
+              echo "Database is ready!"
+          env:
+            - name: PGPASSWORD
+              value: {{ .Values.database.env.POSTGRES_PASSWORD | quote }}
+      containers:
+        - name: migration
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.global.imageRepository }}/{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            # Database connection environment variables
+            - name: POSTGRES_HOST
+              value: {{ .Values.database.name | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.database.env.POSTGRES_DB | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.database.env.POSTGRES_USER | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.database.env.POSTGRES_PASSWORD | quote }}
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://{{ .Values.database.env.POSTGRES_USER }}:{{ .Values.database.env.POSTGRES_PASSWORD }}@{{ .Values.database.name }}:5432/{{ .Values.database.env.POSTGRES_DB }}"
+            # Python path for module imports
+            - name: PYTHONPATH
+              value: "/app/packages/db/src:/app/packages/api/src"
+          resources:
+            {{- toYaml .Values.migration.resources | nindent 12 }}
+          command:
+            - /app/startup.sh
+{{- end }}
