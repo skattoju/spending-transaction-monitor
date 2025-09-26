@@ -1,12 +1,13 @@
 # category_normalizer.py
 
-from openai import OpenAI
-from sqlalchemy import select
+import logging
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import MerchantCategorySynonym
+from db.models import MerchantCategorySynonym, MerchantCategoryEmbedding
+from .embedding_service import embedding_service
 
-client = OpenAI()
+logger = logging.getLogger(__name__)
 
 
 class CategoryNormalizer:
@@ -25,21 +26,25 @@ class CategoryNormalizer:
             return synonym_match
 
         # 2. Fall back to embeddings
-        emb = (
-            client.embeddings.create(input=raw_lower, model='text-embedding-3-small')
-            .data[0]
-            .embedding
-        )
-
-        result = await session.execute(
-            """
-            SELECT category
-            FROM merchant_category_embeddings
-            ORDER BY embedding <-> :vector
-            LIMIT 1
-            """,
-            {'vector': emb},
-        )
+        try:
+            emb = await embedding_service.get_embedding(raw_lower)
+            logger.info(f"Generated {len(emb)}-dim embedding for '{raw_lower}'")
+            
+            # Use direct string formatting for pgvector compatibility (same as populate script)
+            vector_str = '[' + ','.join(map(str, emb)) + ']'
+            
+            result = await session.execute(
+                text(f"""
+                    SELECT category
+                    FROM merchant_category_embeddings
+                    ORDER BY embedding <-> '{vector_str}'::vector
+                    LIMIT 1
+                """)
+            )
+        except Exception as e:
+            logger.error(f"Error generating embedding for '{raw_lower}': {e}")
+            # Fall back to raw term if embedding fails
+            return raw_lower
         embedding_match = result.scalar()
         if embedding_match:
             return embedding_match

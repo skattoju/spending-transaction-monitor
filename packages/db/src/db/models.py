@@ -346,5 +346,5 @@ class MerchantCategoryEmbedding(Base):
     __tablename__ = 'merchant_category_embeddings'
 
     category: Mapped[str] = mapped_column(String, primary_key=True)
-    embedding: Mapped[list[float]] = mapped_column(Vector(1536))  # 1536 for OpenAI text-embedding-3-small
+    embedding: Mapped[list[float]] = mapped_column(Vector(384))  # 384 for all-MiniLM via Ollama
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

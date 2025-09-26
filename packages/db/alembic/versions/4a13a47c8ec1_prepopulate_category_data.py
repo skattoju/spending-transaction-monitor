@@ -14,7 +14,7 @@ from pgvector.sqlalchemy import Vector
 
 # revision identifiers, used by Alembic.
 revision = '4a13a47c8ec1'
-down_revision = 'eb7dc605eb0f'
+down_revision = 'merge_all_heads_final'
 branch_labels = None
 depends_on = None
 
