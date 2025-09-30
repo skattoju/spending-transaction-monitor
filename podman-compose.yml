@@ -109,6 +109,10 @@ services:
       - spending-monitor
     environment:
       - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+      - VITE_BYPASS_AUTH=${VITE_BYPASS_AUTH:-${BYPASS_AUTH:-false}}
+      - VITE_ENVIRONMENT=${ENVIRONMENT:-development}
+      - VITE_KEYCLOAK_URL=${KEYCLOAK_URL:-http://localhost:8080}/realms/spending-monitor
+      - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-spending-monitor}
 
   # Nginx reverse proxy to serve UI and proxy API
   nginx:

@@ -20,8 +20,7 @@ const environment = (import.meta.env.VITE_ENVIRONMENT ||
 
 // Bypass detection - auto-enable in development unless explicitly disabled
 const bypassAuth =
-  import.meta.env.VITE_BYPASS_AUTH === 'true' ||
-  (environment === 'development' && import.meta.env.VITE_BYPASS_AUTH !== 'false');
+  import.meta.env.VITE_BYPASS_AUTH === 'true';
 
 export const authConfig: AuthConfig = {
   environment,
