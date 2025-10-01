@@ -51,6 +51,11 @@ endef
 # Default target when running 'make' without arguments
 .DEFAULT_GOAL := help
 
+# Quick start target for seamless development
+.PHONY: start
+start: run-local
+	@echo "✅ System started! All services are now running."
+
 # Check if environment file exists
 .PHONY: check-env-file
 check-env-file:
@@ -228,10 +233,11 @@ help:
 	@echo "    port-forward-db    Forward database to localhost:5432"
 	@echo ""
 	@echo   "  Local Development:"
+	@echo "    start              🚀 Complete setup with containers (alias for run-local)"
 	@echo "    run-local          Start all services (always pull latest from quay.io registry)"
+	@echo "    build-run-local    Build and run all services locally using 'local' tagged images"
 	@echo "    run-local-with-auth Start all services including Keycloak with user setup"
 	@echo "    build-local        Build local Podman images and tag them as 'local'"
-	@echo "    build-run-local    Build and run all services locally using 'local' tagged images"
 	@echo "    stop-local         Stop local Podman Compose services"
 	@echo "    logs-local         Show logs from local services"
 	@echo "    reset-local        Reset environment (pull latest, restart with fresh data)"

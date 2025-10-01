@@ -4,10 +4,16 @@
   "description": "Keycloak authentication setup and management for spending monitor",
   "main": "index.js",
   "scripts": {
+    "dev": "echo 'Auth development - use start/setup commands'",
+    "start": "cd ../.. && podman-compose -f podman-compose.yml up -d keycloak",
+    "start-and-setup": "pnpm start && sleep 30 && pnpm setup-keycloak-with-users",
+    "stop": "cd ../.. && podman-compose -f podman-compose.yml stop keycloak",
+    "logs": "cd ../.. && podman-compose -f podman-compose.yml logs -f keycloak",
     "setup-keycloak": "uv run python scripts/setup_keycloak.py",
     "setup-keycloak-with-users": "uv run python scripts/setup_keycloak_with_db_users.py",
     "test": "uv run pytest tests/ -v",
-    "dev": "echo 'Auth package - use setup-keycloak or setup-keycloak-with-users'"
+    "test:watch": "uv run pytest tests/ -v -f",
+    "test:coverage": "uv run pytest tests/ -v --cov=. --cov-report=html"
   },
   "dependencies": {},
   "devDependencies": {},
