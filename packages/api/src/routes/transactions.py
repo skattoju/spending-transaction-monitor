@@ -212,18 +212,24 @@ async def create_transaction(
             status_code=400,
             detail="Invalid transaction date format. Use ISO format (e.g., '2024-01-16T14:45:00Z')",
         ) from e
-    
+
     # Normalize merchant category using CategoryNormalizer
     normalized_category = payload.merchant_category
     if payload.merchant_category:
         try:
-            normalized_category = await CategoryNormalizer.normalize(session, payload.merchant_category)
-            logger.info(f"Category normalized: '{payload.merchant_category}' -> '{normalized_category}'")
+            normalized_category = await CategoryNormalizer.normalize(
+                session, payload.merchant_category
+            )
+            logger.info(
+                f"Category normalized: '{payload.merchant_category}' -> '{normalized_category}'"
+            )
         except Exception as e:
-            logger.warning(f"Category normalization failed for '{payload.merchant_category}': {e}")
+            logger.warning(
+                f"Category normalization failed for '{payload.merchant_category}': {e}"
+            )
             # Continue with original category if normalization fails
             normalized_category = payload.merchant_category
-    
+
     # Generate a transaction id
     transaction_id = str(uuid.uuid4())
     tx = Transaction(

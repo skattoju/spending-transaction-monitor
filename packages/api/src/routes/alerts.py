@@ -74,7 +74,9 @@ async def validate_alert_rule(
 ):
     """Validate an alert rule with similarity checking and detailed analysis"""
     logger.debug('Current user: %s', current_user)
-    logger.debug('Validating alert rule for user: %s, payload: %s', current_user['id'], payload)
+    logger.debug(
+        'Validating alert rule for user: %s, payload: %s', current_user['id'], payload
+    )
 
     validation_result = await alert_rule_service.validate_alert_rule(
         payload.natural_language_query, current_user['id'], session
@@ -182,7 +184,11 @@ async def create_alert_rule(
     current_user: dict = Depends(require_authentication),
 ):
     """Create a new alert rule from pre-validated data"""
-    logger.debug('Creating alert rule from validation for user: %s, payload: %s', current_user['id'], payload)
+    logger.debug(
+        'Creating alert rule from validation for user: %s, payload: %s',
+        current_user['id'],
+        payload,
+    )
 
     # Extract alert rule data from payload
     alert_rule_data = payload.alert_rule
@@ -192,13 +198,19 @@ async def create_alert_rule(
     # Normalize merchant category if present
     normalized_merchant_category = alert_rule_data.get('merchant_category')
     if normalized_merchant_category:
-            try:
-                normalized_merchant_category = await CategoryNormalizer.normalize(session, normalized_merchant_category)
-                logger.info(f"Alert rule category normalized: '{alert_rule_data.get('merchant_category')}' -> '{normalized_merchant_category}'")
-            except Exception as e:
-                logger.warning(f"Alert rule category normalization failed for '{alert_rule_data.get('merchant_category')}': {e}")
-                # Continue with original category if normalization fails
-                normalized_merchant_category = alert_rule_data.get('merchant_category')
+        try:
+            normalized_merchant_category = await CategoryNormalizer.normalize(
+                session, normalized_merchant_category
+            )
+            logger.info(
+                f"Alert rule category normalized: '{alert_rule_data.get('merchant_category')}' -> '{normalized_merchant_category}'"
+            )
+        except Exception as e:
+            logger.warning(
+                f"Alert rule category normalization failed for '{alert_rule_data.get('merchant_category')}': {e}"
+            )
+            # Continue with original category if normalization fails
+            normalized_merchant_category = alert_rule_data.get('merchant_category')
 
     rule = AlertRule(
         id=str(uuid.uuid4()),

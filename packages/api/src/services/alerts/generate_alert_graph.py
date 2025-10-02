@@ -67,6 +67,7 @@ graph.add_node(
 # Step 2: Create Alert
 graph.add_node('create_alert', RunnableLambda(generate_alert))
 
+
 async def create_alert_rule_node(state):
     """Create alert rule object from natural language text"""
     return {
@@ -75,6 +76,7 @@ async def create_alert_rule_node(state):
             state['alert_text'], state['transaction']['user_id'], state['session']
         ),
     }
+
 
 graph.add_node('create_alert_rule', create_alert_rule_node)
 

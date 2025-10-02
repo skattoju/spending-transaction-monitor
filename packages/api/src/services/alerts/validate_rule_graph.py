@@ -35,7 +35,9 @@ async def create_alert_rule_node(state):
     """Create alert rule object from natural language text"""
     return {
         **state,
-        'alert_rule': await create_alert_rule(state['alert_text'], state['user_id'], state['session']),
+        'alert_rule': await create_alert_rule(
+            state['alert_text'], state['user_id'], state['session']
+        ),
     }
 
 
