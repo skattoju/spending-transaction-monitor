@@ -80,8 +80,9 @@ For each real category, synonyms generated from:
 
 ### **Service Integration**
 - `CategoryNormalizer` - Two-tier lookup service (synonym → embedding → fallback)
-- Transaction creation pipeline integration (planned)
-- Query endpoint semantic search (planned)
+- Transaction creation pipeline integration ✅ **COMPLETED**
+- Alert rule creation integration ✅ **COMPLETED**
+- Alert rule validation integration ✅ **COMPLETED**
 
 ## 🔍 Category Mappings Generated
 
@@ -258,19 +259,26 @@ pnpm upgrade
 
 ## 🏗️ Integration Points
 
-### **Phase 2: Transaction Creation** 
-- Integrate `CategoryNormalizer` in transaction POST endpoint
-- Normalize `merchant_category` before database storage
+### **Phase 2: Transaction Creation** ✅ **COMPLETED**
+- ✅ Integrated `CategoryNormalizer` in transaction POST endpoint (`packages/api/src/routes/transactions.py`)
+- ✅ Normalize `merchant_category` before database storage
+- ✅ Error handling with fallback to original category
 
-### **Phase 3: Query Enhancement**
+### **Phase 3: Alert Rule Integration** ✅ **COMPLETED**
+- ✅ Integrated `CategoryNormalizer` in alert rule creation (`packages/api/src/routes/alerts.py`)
+- ✅ Integrated `CategoryNormalizer` in alert rule validation (`packages/api/src/services/alerts/agents/create_alert_rule.py`)
+- ✅ Updated all LangGraph state classes to include session parameter
+- ✅ Made alert rule validation functions async to support database operations
+
+### **Phase 4: Query Enhancement** (Future)
 - Add semantic search to transaction filtering
 - Support natural language category queries  
 
-### **Phase 4: Management Tools**
+### **Phase 5: Management Tools** (Future)
 - Admin interface for synonym management
 - Category mapping analytics and monitoring
 
 ---
 
 *Generated: September 26, 2025*  
-*Last Updated: Phase 1 Complete*
+*Last Updated: Integration Complete - All Phases Implemented*
