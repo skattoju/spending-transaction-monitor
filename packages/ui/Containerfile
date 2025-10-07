@@ -1,6 +1,10 @@
 # Multi-stage build for React application
 FROM node:20-alpine AS builder
 
+# Accept build arguments
+ARG VITE_BYPASS_AUTH=false
+ARG VITE_ENVIRONMENT=production
+
 WORKDIR /app
 
 # Install pnpm
@@ -19,8 +23,8 @@ WORKDIR /app/packages/ui
 # Install dependencies using workspace
 RUN pnpm install --no-frozen-lockfile
 
-# Build the application
-RUN pnpm run build:vite
+# Build the application with environment variables
+RUN VITE_BYPASS_AUTH=$VITE_BYPASS_AUTH VITE_ENVIRONMENT=$VITE_ENVIRONMENT pnpm run build:vite
 
 # Production stage - use Node.js to serve static files
 FROM node:20-alpine
