@@ -424,10 +424,10 @@ deploy-all: build-all push-all deploy
 openshift-create-builds:
 	@echo "Creating OpenShift BuildConfigs and ImageStreams..."
 	@cat deploy/openshift-builds-template.yaml | \
-		sed 's/$${GIT_URI}/https:\/\/github.com\/rh-ai-quickstart\/spending-transaction-monitor.git/g' | \
-		sed 's/$${GIT_REF}/$(GIT_BRANCH)/g' | \
-		sed 's/$${VITE_BYPASS_AUTH}/false/g' | \
-		sed 's/$${VITE_ENVIRONMENT}/staging/g' | \
+		sed 's|$${GIT_URI}|https://github.com/rh-ai-quickstart/spending-transaction-monitor.git|g' | \
+		sed 's|$${GIT_REF}|$(GIT_BRANCH)|g' | \
+		sed 's|$${VITE_BYPASS_AUTH}|false|g' | \
+		sed 's|$${VITE_ENVIRONMENT}|staging|g' | \
 		oc apply -f - -n $(NAMESPACE)
 	@echo "✅ BuildConfigs and ImageStreams created!"
 	@echo "To start builds, run: make openshift-build-all"
