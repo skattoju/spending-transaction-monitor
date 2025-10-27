@@ -346,13 +346,17 @@ def upgrade() -> None:
     # Clear existing data (in case migration is re-run)
     connection.execute(synonyms_table.delete())
 
-    # Insert synonym data
+    # Insert synonym data (deduplicate by keeping first occurrence)
+    seen_synonyms = set()
     synonym_data = []
     for canonical_category, synonyms in CATEGORY_SYNONYMS.items():
         for synonym in synonyms:
-            synonym_data.append(
-                {'synonym': synonym.lower(), 'canonical_category': canonical_category}
-            )
+            synonym_lower = synonym.lower()
+            if synonym_lower not in seen_synonyms:
+                seen_synonyms.add(synonym_lower)
+                synonym_data.append(
+                    {'synonym': synonym_lower, 'canonical_category': canonical_category}
+                )
 
     # Batch insert all synonyms
     connection.execute(synonyms_table.insert(), synonym_data)
