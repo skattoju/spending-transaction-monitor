@@ -45,38 +45,9 @@ else
     exit 1
 fi
 
-# Check if CSV data files exist and load them
-USERS_CSV="/app/data/sample_users.csv"
-TRANSACTIONS_CSV="/app/data/sample_transactions.csv"
-
-if [ -f "$USERS_CSV" ] && [ -f "$TRANSACTIONS_CSV" ]; then
-    echo "📋 Found CSV data files, loading sample data..."
-    echo "   Users CSV: $USERS_CSV ($(wc -l < "$USERS_CSV") lines)"
-    echo "   Transactions CSV: $TRANSACTIONS_CSV ($(wc -l < "$TRANSACTIONS_CSV") lines)"
-    
-    # Set PYTHONPATH to ensure imports work correctly
-    export PYTHONPATH="/app/packages/db/src:/app/packages/api/src:$PYTHONPATH"
-    
-    # Load CSV data
-    python3 -m db.scripts.load_csv_data
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Sample data loaded successfully"
-    else
-        echo "❌ Sample data loading failed"
-        echo "Check the logs above for details"
-        exit 1
-    fi
-else
-    echo "⚠️  CSV data files not found:"
-    echo "   Expected users file: $USERS_CSV"
-    echo "   Expected transactions file: $TRANSACTIONS_CSV"
-    echo ""
-    echo "Available files in /app/data/:"
-    ls -la /app/data/ || echo "   /app/data/ directory not found"
-    echo ""
-    echo "Skipping sample data loading"
-fi
+# Skip CSV data loading in migration container (sample data is optional)
+echo "ℹ️  Skipping optional CSV sample data loading in migration job"
+echo "   Sample data can be loaded separately if needed"
 
 echo "🎉 Database initialization completed!"
 
