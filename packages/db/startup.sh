@@ -60,8 +60,8 @@ if [ -f "$USERS_CSV" ] && [ -f "$TRANSACTIONS_CSV" ]; then
     # Use sync DATABASE_URL for CSV loading (avoid async driver issues)
     export DATABASE_URL="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST:-spending-monitor-db}:5432/${POSTGRES_DB}"
     
-    # Load CSV data using the venv python
-    python -m db.scripts.load_csv_data
+    # Load CSV data using the venv python explicitly
+    /app/venv/bin/python -m db.scripts.load_csv_data
     
     if [ $? -eq 0 ]; then
         echo "✅ Sample data loaded successfully"
