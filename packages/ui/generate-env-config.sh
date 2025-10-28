@@ -6,11 +6,12 @@ cat > /app/dist/env-config/env-config.js << EOF
 // Runtime Environment Configuration
 // This file is generated at container startup based on environment variables
 window.ENV = {
-  BYPASS_AUTH: ${VITE_BYPASS_AUTH:-false},
+  BYPASS_AUTH: ${BYPASS_AUTH:-false},
   API_BASE_URL: '${VITE_API_BASE_URL:-/api}',
-  ENVIRONMENT: '${VITE_ENVIRONMENT:-production}',
-  KEYCLOAK_URL: '${VITE_KEYCLOAK_URL:-http://localhost:8080/realms/spending-monitor}',
-  KEYCLOAK_CLIENT_ID: '${VITE_KEYCLOAK_CLIENT_ID:-spending-monitor}',
+  ENVIRONMENT: '${ENVIRONMENT:-production}',
+  KEYCLOAK_URL: '${KEYCLOAK_URL:-http://localhost:8080/realms/spending-monitor}',
+  KEYCLOAK_CLIENT_ID: '${KEYCLOAK_CLIENT_ID:-spending-monitor}',
+  KEYCLOAK_REALM: '${KEYCLOAK_REALM:-spending-monitor}',
   DEV: true  // Force dev logging for debugging
 };
 
@@ -18,7 +19,10 @@ console.log('🔧 Runtime config loaded:', window.ENV);
 EOF
 
 echo "✅ Generated env-config.js with:"
-echo "   BYPASS_AUTH: ${VITE_BYPASS_AUTH:-false}"
+echo "   BYPASS_AUTH: ${BYPASS_AUTH:-false}"
 echo "   API_BASE_URL: ${VITE_API_BASE_URL:-/api}"
-echo "   ENVIRONMENT: ${VITE_ENVIRONMENT:-production}"
+echo "   ENVIRONMENT: ${ENVIRONMENT:-production}"
+echo "   KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080/realms/spending-monitor}"
+echo "   KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-spending-monitor}"
+echo "   KEYCLOAK_REALM: ${KEYCLOAK_REALM:-spending-monitor}"
 
