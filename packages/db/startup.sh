@@ -61,14 +61,20 @@ if [ -f "$USERS_CSV" ] && [ -f "$TRANSACTIONS_CSV" ]; then
     # No need to override DATABASE_URL, just use the one from environment
     
     # Load CSV data using the venv python explicitly
+    # Note: This may fail due to async/sync engine conflicts. Non-fatal.
+    # Temporarily disable exit-on-error for this section
+    set +e
     /app/venv/bin/python -m db.scripts.load_csv_data
+    CSV_LOAD_EXIT_CODE=$?
+    set -e
     
-    if [ $? -eq 0 ]; then
+    if [ $CSV_LOAD_EXIT_CODE -eq 0 ]; then
         echo "✅ Sample data loaded successfully"
     else
-        echo "⚠️  Sample data loading failed (non-fatal)"
-        echo "Check the logs above for details"
-        echo "Continuing anyway..."
+        echo "⚠️  Sample data loading failed (non-fatal, exit code: $CSV_LOAD_EXIT_CODE)"
+        echo "   This is expected if there's an async/sync driver conflict"
+        echo "   Sample data can be added via API or direct SQL inserts"
+        echo "   Continuing with deployment..."
     fi
 else
     echo "⚠️  CSV data files not found:"
