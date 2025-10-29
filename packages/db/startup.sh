@@ -61,6 +61,14 @@ if [ -f "$USERS_CSV" ] && [ -f "$TRANSACTIONS_CSV" ]; then
     export DATABASE_URL="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST:-spending-monitor-db}:5432/${POSTGRES_DB}"
     
     # Load CSV data using the venv python explicitly
+    # First, verify asyncpg is importable
+    echo "🔍 Verifying asyncpg installation..."
+    if /app/venv/bin/python -c "import asyncpg; print(f'✅ asyncpg {asyncpg.__version__} is available')" 2>&1; then
+        echo "✅ asyncpg is properly installed"
+    else
+        echo "⚠️  asyncpg import failed - CSV loading will fail"
+    fi
+    
     # Note: This may fail due to async/sync engine conflicts. Non-fatal.
     # Temporarily disable exit-on-error for this section
     set +e
