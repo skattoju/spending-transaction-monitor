@@ -50,7 +50,7 @@ oc new-project sid-test-1
 # Deploy application
 helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
   -n sid-test-1 \
-  -f deploy/helm/sid-test-1-values.yaml
+  -f deploy/helm/keycloak-auth-values.yaml
 
 # Sync users to Keycloak
 # After deployment, sync database users to Keycloak:
@@ -73,7 +73,7 @@ oc new-project sid-test-2
 # Deploy application
 helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
   -n sid-test-2 \
-  -f deploy/helm/sid-test-2-values.yaml
+  -f deploy/helm/no-auth-values.yaml
 ```
 
 **Test URL**: https://spending-monitor-nginx-route-sid-test-2.apps.ai-dev02.kni.syseng.devcluster.openshift.com/
@@ -81,8 +81,8 @@ helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
 ## Configuration Files
 
 - `values.yaml` - Default values with placeholders
-- `sid-test-1-values.yaml` - Override for auth-enabled deployment
-- `sid-test-2-values.yaml` - Override for no-auth deployment
+- `keycloak-auth-values.yaml` - Override for auth-enabled deployment
+- `no-auth-values.yaml` - Override for no-auth deployment
 
 ### Key Configuration Parameters
 

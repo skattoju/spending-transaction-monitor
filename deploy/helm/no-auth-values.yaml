@@ -1,5 +1,6 @@
-# Helm values override for sid-test-2 (no auth/bypass mode)
-# Usage: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n sid-test-2 -f deploy/helm/sid-test-2-values.yaml
+# Helm values override for no-auth deployment
+# Usage: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n NAMESPACE -f deploy/helm/no-auth-values.yaml
+# Example: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n sid-test-2 -f deploy/helm/no-auth-values.yaml
 
 global:
   imageRegistry: quay.io

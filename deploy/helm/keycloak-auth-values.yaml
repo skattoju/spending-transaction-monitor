@@ -1,5 +1,6 @@
-# Helm values override for sid-test-1 (with Keycloak auth)
-# Usage: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n sid-test-1 -f deploy/helm/sid-test-1-values.yaml
+# Helm values override for Keycloak auth deployment
+# Usage: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n NAMESPACE -f deploy/helm/keycloak-auth-values.yaml
+# Example: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n sid-test-1 -f deploy/helm/keycloak-auth-values.yaml
 
 global:
   imageRegistry: quay.io
