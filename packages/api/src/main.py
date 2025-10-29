@@ -73,13 +73,13 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-# Include all routers
+# Include all routers (nginx forwards /api/ to here, so no /api prefix needed)
 app.include_router(health.router, prefix='/health', tags=['health'])
-app.include_router(users_routes.router, prefix='/api/users', tags=['users'])
+app.include_router(users_routes.router, prefix='/users', tags=['users'])
 app.include_router(
-    transactions_routes.router, prefix='/api/transactions', tags=['transactions']
+    transactions_routes.router, prefix='/transactions', tags=['transactions']
 )
-app.include_router(alerts_routes.router, prefix='/api/alerts', tags=['alerts'])
+app.include_router(alerts_routes.router, prefix='/alerts', tags=['alerts'])
 app.include_router(websocket.router, tags=['websocket'])
 
 
