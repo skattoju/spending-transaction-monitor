@@ -6,12 +6,13 @@ USER 0
 # Build argument to control PyTorch variant (cpu or cuda)
 ARG TORCH_VARIANT=cpu
 
-# Install system dependencies
+# Install system dependencies including python dev headers for asyncpg
 RUN dnf install -y \
     gcc \
     gcc-c++ \
     libpq-devel \
     postgresql \
+    python3-devel \
     && dnf clean all
 
 # Copy db package
