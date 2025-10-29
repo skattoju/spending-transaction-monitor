@@ -57,8 +57,8 @@ if [ -f "$USERS_CSV" ] && [ -f "$TRANSACTIONS_CSV" ]; then
     # Set PYTHONPATH to ensure imports work correctly
     export PYTHONPATH="/app/packages/db/src:/app/packages/api/src:$PYTHONPATH"
     
-    # Use sync DATABASE_URL for CSV loading (avoid async driver issues)
-    export DATABASE_URL="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST:-spending-monitor-db}:5432/${POSTGRES_DB}"
+    # Use async DATABASE_URL (asyncpg driver) - this is the default and works with db.database
+    # No need to override DATABASE_URL, just use the one from environment
     
     # Load CSV data using the venv python explicitly
     /app/venv/bin/python -m db.scripts.load_csv_data

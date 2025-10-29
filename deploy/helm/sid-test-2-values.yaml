@@ -1,0 +1,30 @@
+# Helm values override for sid-test-2 (no auth/bypass mode)
+# Usage: helm upgrade spending-monitor ./deploy/helm/spending-monitor -n sid-test-2 -f deploy/helm/sid-test-2-values.yaml
+
+global:
+  imageRegistry: quay.io
+  imageRepository: skattoju  # Your Quay.io username
+  imageTag: latest
+
+secrets:
+  # Database secrets
+  POSTGRES_PASSWORD: "devpassword"
+  
+  # API secrets  
+  DATABASE_URL: "postgresql+asyncpg://user:devpassword@spending-monitor-db:5432/spending-monitor"
+  BYPASS_AUTH: "true"  # No authentication required
+  
+  # Keycloak not used in no-auth mode
+  KEYCLOAK_URL: "http://localhost:8080"
+  KEYCLOAK_REALM: "spending-monitor"
+  KEYCLOAK_CLIENT_ID: "spending-monitor"
+
+api:
+  replicas: 1
+
+ui:
+  replicas: 1
+
+# Keycloak disabled for no-auth deployment
+keycloak:
+  enabled: false
