@@ -76,8 +76,8 @@ def clear_existing_data(session) -> None:
         raise
 
 
-def load_users_from_csv(session, csv_file_path: str) -> dict[str, int]:
-    """Load users from CSV and return mapping of email to database ID"""
+def load_users_from_csv(session, csv_file_path: str) -> dict[str, str]:
+    """Load users from CSV and return mapping of user_id to user_id (for validation)"""
     print(f'📥 Loading users from {csv_file_path}...')
     user_id_mapping = {}
 
@@ -88,16 +88,24 @@ def load_users_from_csv(session, csv_file_path: str) -> dict[str, int]:
 
             for row in reader:
                 user = User(
+                    id=row['id'],
                     email=row['email'],
-                    name=row['name'],
-                    phone=row.get('phone'),
-                    address=row.get('address'),
+                    keycloak_id=row.get('keycloak_id'),
+                    first_name=row['first_name'],
+                    last_name=row['last_name'],
+                    phone_number=row.get('phone_number'),
                     created_at=parse_datetime(row['created_at'])
                     if row.get('created_at')
                     else datetime.now(UTC),
-                    last_login=parse_datetime(row['last_login'])
-                    if row.get('last_login')
-                    else None,
+                    updated_at=parse_datetime(row['updated_at'])
+                    if row.get('updated_at')
+                    else datetime.now(UTC),
+                    is_active=row.get('is_active', 'True') == 'True',
+                    address_street=row.get('address_street'),
+                    address_city=row.get('address_city'),
+                    address_state=row.get('address_state'),
+                    address_zipcode=row.get('address_zipcode'),
+                    address_country=row.get('address_country', 'US'),
                 )
                 users_to_add.append(user)
 
@@ -105,10 +113,9 @@ def load_users_from_csv(session, csv_file_path: str) -> dict[str, int]:
             session.bulk_save_objects(users_to_add, return_defaults=True)
             session.commit()
 
-            # Get all users back with their IDs
-            users_in_db = session.query(User).all()
-            for user in users_in_db:
-                user_id_mapping[user.email] = user.id
+            # Create mapping of user IDs (ID is already in CSV)
+            for user in users_to_add:
+                user_id_mapping[user.id] = user.id
 
             print(f'✅ Loaded {len(users_to_add)} users')
             return user_id_mapping
@@ -123,7 +130,7 @@ def load_users_from_csv(session, csv_file_path: str) -> dict[str, int]:
 
 
 def load_transactions_from_csv(
-    session, csv_file_path: str, user_id_mapping: dict[str, int]
+    session, csv_file_path: str, user_id_mapping: dict[str, str]
 ) -> None:
     """Load transactions from CSV"""
     print(f'📥 Loading transactions from {csv_file_path}...')
@@ -137,28 +144,41 @@ def load_transactions_from_csv(
             skipped = 0
 
             for i, row in enumerate(reader, 1):
-                user_email = row.get('user_email')
-                if not user_email or user_email not in user_id_mapping:
+                user_id = row.get('user_id')
+                if not user_id or user_id not in user_id_mapping:
                     skipped += 1
                     continue
 
                 try:
                     transaction = Transaction(
-                        user_id=user_id_mapping[user_email],
+                        id=row['id'],
+                        user_id=user_id,
+                        credit_card_num=row.get('credit_card_num'),
                         amount=Decimal(str(row['amount'])),
-                        category=row['category'],
+                        currency=row.get('currency', 'USD'),
                         description=row.get('description', ''),
-                        merchant=row.get('merchant', ''),
-                        location=row.get('location'),
-                        latitude=float(row['latitude'])
-                        if row.get('latitude')
-                        else None,
-                        longitude=float(row['longitude'])
-                        if row.get('longitude')
-                        else None,
+                        merchant_name=row.get('merchant_name', ''),
+                        merchant_category=row.get('merchant_category', ''),
                         transaction_date=parse_datetime(row['transaction_date']),
+                        transaction_type=row.get('transaction_type', 'PURCHASE'),
+                        merchant_latitude=float(row['merchant_latitude'])
+                        if row.get('merchant_latitude')
+                        else None,
+                        merchant_longitude=float(row['merchant_longitude'])
+                        if row.get('merchant_longitude')
+                        else None,
+                        merchant_zipcode=row.get('merchant_zipcode'),
+                        merchant_city=row.get('merchant_city'),
+                        merchant_state=row.get('merchant_state'),
+                        merchant_country=row.get('merchant_country', 'US'),
+                        status=row.get('status', 'APPROVED'),
+                        authorization_code=row.get('authorization_code'),
+                        trans_num=row.get('trans_num'),
                         created_at=parse_datetime(row['created_at'])
                         if row.get('created_at')
+                        else datetime.now(UTC),
+                        updated_at=parse_datetime(row['updated_at'])
+                        if row.get('updated_at')
                         else datetime.now(UTC),
                     )
                     transactions_to_add.append(transaction)
