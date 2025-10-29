@@ -4,7 +4,7 @@
 
 global:
   imageRegistry: quay.io
-  imageRepository: skattoju  # Your Quay.io username
+  imageRepository: <your-quay-username>  # Replace with your Quay.io username (e.g., skattoju)
   imageTag: latest
 
 secrets:

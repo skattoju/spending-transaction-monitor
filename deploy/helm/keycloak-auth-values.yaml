@@ -4,7 +4,7 @@
 
 global:
   imageRegistry: quay.io
-  imageRepository: skattoju  # Your Quay.io username
+  imageRepository: <your-quay-username>  # Replace with your Quay.io username (e.g., skattoju)
   imageTag: latest
 
 secrets:
@@ -16,7 +16,7 @@ secrets:
   BYPASS_AUTH: "false"
   
   # Keycloak configuration (API uses base URL, will append /realms/{realm})
-  KEYCLOAK_URL: "https://keycloak-route-sid-test-1.apps.ai-dev02.kni.syseng.devcluster.openshift.com"
+  KEYCLOAK_URL: "https://<your-keycloak-route-url>"  # Replace with your Keycloak route URL
   KEYCLOAK_REALM: "spending-monitor"
   KEYCLOAK_CLIENT_ID: "spending-monitor"
 
@@ -29,4 +29,4 @@ ui:
 # Keycloak is managed by Keycloak Operator
 keycloak:
   enabled: true
-  externalUrl: "https://keycloak-route-sid-test-1.apps.ai-dev02.kni.syseng.devcluster.openshift.com"
+  externalUrl: "https://<your-keycloak-route-url>"  # Replace with your Keycloak route URL

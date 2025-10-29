@@ -353,7 +353,6 @@ deploy: create-project check-env-prod
 	@echo "Deploying application using Helm with production environment variables..."
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
@@ -384,7 +383,6 @@ deploy-keycloak: create-project check-env-prod
 	@echo "🔐 Deploying in PRODUCTION mode with KEYCLOAK AUTH..."
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--values ./deploy/helm/spending-monitor/values-prod-keycloak.yaml \
@@ -404,7 +402,6 @@ deploy-dev: create-project check-env-prod
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@echo "Note: This is still a production deployment with reduced resources for development/testing"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
@@ -420,14 +417,19 @@ deploy-all: build-all push-all deploy
 	@echo "Complete deployment finished successfully"
 
 # OpenShift Build targets (build images in-cluster)
+# Override these variables as needed: make openshift-create-builds GIT_URI=https://... VITE_BYPASS_AUTH=true
+GIT_URI ?= https://github.com/rh-ai-quickstart/spending-transaction-monitor.git
+VITE_BYPASS_AUTH ?= false
+VITE_ENVIRONMENT ?= staging
+
 .PHONY: openshift-create-builds
 openshift-create-builds:
 	@echo "Creating OpenShift BuildConfigs and ImageStreams..."
 	@cat deploy/openshift-builds-template.yaml | \
-		sed 's|$${GIT_URI}|https://github.com/rh-ai-quickstart/spending-transaction-monitor.git|g' | \
+		sed 's|$${GIT_URI}|$(GIT_URI)|g' | \
 		sed 's|$${GIT_REF}|$(GIT_BRANCH)|g' | \
-		sed 's|$${VITE_BYPASS_AUTH}|false|g' | \
-		sed 's|$${VITE_ENVIRONMENT}|staging|g' | \
+		sed 's|$${VITE_BYPASS_AUTH}|$(VITE_BYPASS_AUTH)|g' | \
+		sed 's|$${VITE_ENVIRONMENT}|$(VITE_ENVIRONMENT)|g' | \
 		oc apply -f - -n $(NAMESPACE)
 	@echo "✅ BuildConfigs and ImageStreams created!"
 	@echo "To start builds, run: make openshift-build-all"
@@ -524,7 +526,6 @@ helm-template: check-env-prod
 	@echo "Rendering Helm templates with production environment variables..."
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm template $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
@@ -536,7 +537,6 @@ helm-debug: check-env-prod
 	@echo "Debugging Helm deployment with production environment variables..."
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
@@ -676,9 +676,9 @@ clean-ui-images:
 	@podman rmi -f spending-monitor-ui:local localhost/spending-transaction-monitor_ui:latest 2>/dev/null || true
 	@echo "✅ UI images removed"
 
-# Build and run locally with Keycloak authentication (default/production mode)
-.PHONY: build-run-local
-build-run-local: setup-dev-env clean-ui-images
+# Helper target for building local images (used by build-run-local and build-run-local-noauth)
+.PHONY: build-local-images
+build-local-images: setup-dev-env clean-ui-images
 	@echo "🔨 Building images (environment-agnostic)..."
 	podman-compose -f podman-compose.yml -f podman-compose.build.yml build --no-cache migrations api ui
 	@echo "Tagging built images as 'local'..."
@@ -686,6 +686,10 @@ build-run-local: setup-dev-env clean-ui-images
 	podman tag $(API_IMAGE) $(API_IMAGE_LOCAL) || true
 	podman tag $(DB_IMAGE) $(DB_IMAGE_LOCAL) || true
 	podman tag $(INGESTION_IMAGE) $(INGESTION_IMAGE_LOCAL) || true
+
+# Build and run locally with Keycloak authentication (default/production mode)
+.PHONY: build-run-local
+build-run-local: build-local-images
 	@echo ""
 	@echo "✅ Starting with Keycloak authentication (runtime config)..."
 	@echo "   - Login required (user1@example.com / password123)"
@@ -700,13 +704,7 @@ build-run-local: setup-dev-env clean-ui-images
 
 # Build and run locally with auth bypass (no authentication)
 .PHONY: build-run-local-noauth
-build-run-local-noauth: setup-dev-env clean-ui-images
-	@echo "🔨 Building images (environment-agnostic)..."
-	podman-compose -f podman-compose.yml -f podman-compose.build.yml build --no-cache migrations api ui
-	@echo "Tagging built images as 'local'..."
-	podman tag $(UI_IMAGE) $(UI_IMAGE_LOCAL) || true
-	podman tag $(API_IMAGE) $(API_IMAGE_LOCAL) || true
-	podman tag $(DB_IMAGE) $(DB_IMAGE_LOCAL) || true
+build-run-local-noauth: build-local-images
 	@echo ""
 	@echo "✅ Starting with auth bypass (runtime config)..."
 	@echo "   - No login required"

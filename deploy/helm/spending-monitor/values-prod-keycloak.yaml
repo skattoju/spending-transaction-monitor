@@ -12,7 +12,7 @@ secrets:
   POSTGRES_DB: "spending-monitor"
   POSTGRES_USER: "user"
   POSTGRES_PASSWORD: "CHANGE-ME-SECURE-PASSWORD"
-  DATABASE_URL: "postgresql+asyncpg://user:CHANGE-ME@spending-monitor-db:5432/spending-monitor"
+  DATABASE_URL: "postgresql+asyncpg://user:CHANGE-ME-SECURE-PASSWORD@spending-monitor-db:5432/spending-monitor"
   
   # LLM Configuration - MUST be overridden
   LLM_PROVIDER: "openai"
@@ -20,9 +20,9 @@ secrets:
   API_KEY: "CHANGE-ME-REAL-API-KEY"
   MODEL: "gpt-3.5-turbo"
   
-  # CORS - should be set to actual route URL after first deploy
-  CORS_ALLOWED_ORIGINS: "*"
-  ALLOWED_ORIGINS: "*"
+  # CORS - MUST be set to actual route URL for security
+  CORS_ALLOWED_ORIGINS: "https://<your-app-route-url>"  # Replace with your application route URL
+  ALLOWED_ORIGINS: "https://<your-app-route-url>"  # Replace with your application route URL
   
   # SMTP - MUST be configured for email notifications
   SMTP_HOST: "CHANGE-ME-smtp.example.com"
