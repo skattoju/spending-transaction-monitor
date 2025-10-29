@@ -37,10 +37,9 @@ data:
             listen 8080;
             server_name _;
 
-        # API endpoints - proxy to API service, strip /api prefix
-        # Note: trailing slash on proxy_pass strips the /api/ from the forwarded URL
+        # API endpoints - proxy to API service (keep /api prefix)
         location /api/ {
-            proxy_pass http://api_backend/;
+            proxy_pass http://api_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
