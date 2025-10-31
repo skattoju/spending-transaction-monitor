@@ -1,6 +1,7 @@
-# Production values - Keycloak Auth Mode
-# Use with: helm install -f values-prod-keycloak.yaml
+# Keycloak Auth Mode values
+# Use with: helm install -f values-keycloak.yaml
 # IMPORTANT: Override secrets via --set or external secret management
+# Note: This includes test data defaults (not for production use)
 
 # Override secrets for production with Keycloak
 secrets:
@@ -103,4 +104,6 @@ keycloak:
     create: true  # Automatically create realm and client
     name: "spending-monitor"
     clientId: "spending-monitor"
+  # User synchronization from database to Keycloak
+  defaultUserPassword: "password123"  # Default password for synced users
 

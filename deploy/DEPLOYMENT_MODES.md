@@ -121,7 +121,7 @@ make deploy-keycloak IMAGE_TAG=v1.0.0
 
 ### Configuration
 
-Uses `values-prod-keycloak.yaml` which sets:
+Uses `values-keycloak.yaml` which sets:
 ```yaml
 secrets:
   ENVIRONMENT: "production"
@@ -213,7 +213,7 @@ helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
 ```bash
 helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
   --namespace my-namespace \
-  --values ./deploy/helm/spending-monitor/values-prod-keycloak.yaml \
+  --values ./deploy/helm/spending-monitor/values-keycloak.yaml \
   --set secrets.KEYCLOAK_URL="https://keycloak.example.com"
 ```
 

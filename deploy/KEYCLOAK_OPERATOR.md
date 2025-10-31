@@ -191,7 +191,7 @@ KEYCLOAK_URL="https://$(oc get route spending-monitor-keycloak-route -n sid-test
 # Update deployment with correct URL
 helm upgrade spending-monitor ./deploy/helm/spending-monitor \
   --namespace sid-test \
-  --values ./deploy/helm/spending-monitor/values-prod-keycloak.yaml \
+  --values ./deploy/helm/spending-monitor/values-keycloak.yaml \
   --set secrets.KEYCLOAK_URL="$KEYCLOAK_URL" \
   --reuse-values
 ```

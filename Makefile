@@ -385,7 +385,7 @@ deploy-keycloak: create-project check-env-prod
 	@set -a; source $(ENV_FILE_PROD); set +a; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
-		--values ./deploy/helm/spending-monitor/values-prod-keycloak.yaml \
+		--values ./deploy/helm/spending-monitor/values-keycloak.yaml \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
 		--set global.imageTag=$(IMAGE_TAG) \
@@ -476,7 +476,7 @@ openshift-deploy-keycloak: create-project check-env-prod openshift-create-builds
 	@set -a; source $(ENV_FILE_PROD); set +a; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
-		--values ./deploy/helm/spending-monitor/values-prod-keycloak.yaml \
+		--values ./deploy/helm/spending-monitor/values-keycloak.yaml \
 		--set global.imageRegistry=image-registry.openshift-image-registry.svc:5000 \
 		--set global.imageRepository=$(NAMESPACE) \
 		--set global.imageTag=latest \

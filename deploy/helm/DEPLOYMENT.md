@@ -52,15 +52,13 @@ helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
   -n sid-test-1 \
   -f deploy/helm/keycloak-auth-values.yaml
 
-# Sync users to Keycloak
-# After deployment, sync database users to Keycloak:
-# 1. Port-forward to Keycloak and database
-# 2. Run: python3 packages/auth/scripts/sync_db_users_to_keycloak.py
+# Users are automatically synced to Keycloak via a Helm post-install hook
+# Check sync job status: oc get jobs -n sid-test-1 | grep user-sync
 ```
 
 **Test URL**: https://spending-monitor-nginx-route-sid-test-1.apps.ai-dev02.kni.syseng.devcluster.openshift.com/
 
-**Test Credentials**: Any synced user email with password: `password123`
+**Test Credentials**: Any database user email with password: `password123` (default)
 
 ### sid-test-2: No Authentication (Bypass Mode)
 
@@ -102,7 +100,15 @@ helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
    curl https://keycloak-route-sid-test-1.apps.ai-dev02.kni.syseng.devcluster.openshift.com/realms/spending-monitor
    ```
 
-2. **Sync users to Keycloak**:
+2. **User sync to Keycloak**:
+   
+   **Automated (Recommended)**: Users are automatically synced from the database to Keycloak via a Helm post-install/post-upgrade hook. Check the job status:
+   ```bash
+   oc get jobs -n sid-test-1 | grep user-sync
+   oc logs job/spending-monitor-keycloak-user-sync -n sid-test-1
+   ```
+   
+   **Manual (if needed)**: If the automatic sync fails or you need to re-sync:
    ```bash
    # Port forward services
    oc port-forward -n sid-test-1 svc/spending-monitor-keycloak-service 8080:8080 &
@@ -111,11 +117,11 @@ helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
    # Set environment variables
    export KEYCLOAK_URL="http://localhost:8080"
    export KEYCLOAK_ADMIN_USER=temp-admin
-   export KEYCLOAK_ADMIN_PASSWORD=<from secret>
+   export KEYCLOAK_ADMIN_PASSWORD=$(oc get secret spending-monitor-keycloak-initial-admin -n sid-test-1 -o jsonpath='{.data.password}' | base64 -d)
    export DATABASE_URL="postgresql://user:<password>@localhost:5432/spending-monitor"
    
-   # Run sync
-   python3 packages/auth/scripts/sync_db_users_to_keycloak.py
+   # Run sync using pnpm
+   pnpm --filter @*/auth sync-users
    ```
 
 3. **Test login**: Use any synced email with password `password123`
