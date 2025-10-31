@@ -590,7 +590,9 @@ setup-local: check-env-dev pull-local run-local
 .PHONY: seed-db
 seed-db:
 	@echo "🌱 Seeding database with sample data..."
-	pnpm seed:db
+	@echo "Running seed script inside API container..."
+	podman exec spending-monitor-api python -m db.scripts.seed
+	@echo "✅ Database seeded successfully"
 
 .PHONY: seed-keycloak
 seed-keycloak:
@@ -603,9 +605,8 @@ seed-keycloak-with-users:
 	pnpm seed:keycloak-with-users
 
 .PHONY: seed-all
-seed-all:
-	@echo "🌱 Seeding all data (database + Keycloak)..."
-	pnpm seed:all
+seed-all: seed-keycloak-with-users seed-db
+	@echo "✅ All data seeded successfully (database + Keycloak)"
 
 .PHONY: setup-data
 setup-data:

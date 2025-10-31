@@ -148,6 +148,8 @@ services:
         condition: service_started
     networks:
       - spending-monitor
+    volumes:
+      - ./data:/app/data
 
   # React Frontend
   ui:
