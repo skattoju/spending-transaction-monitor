@@ -221,13 +221,8 @@ help:
 	@echo ""
 	@echo "  OpenShift Builds (build images in-cluster):"
 	@echo "    openshift-create-builds       Create BuildConfigs and ImageStreams"
-	@echo "    openshift-build-all          Build all images in OpenShift"
-	@echo "    openshift-build-api          Build API image only"
-	@echo "    openshift-build-ui           Build UI image only"
-	@echo "    openshift-build-db           Build DB image only"
-	@echo "    openshift-build-ingestion    Build Ingestion image only"
-	@echo "    openshift-deploy-noauth      Build in OpenShift and deploy (no auth)"
-	@echo "    openshift-deploy-keycloak    Build in OpenShift and deploy (Keycloak)"
+	@echo "    openshift-build-all           Build all images in OpenShift"
+	@echo "                                  (then use 'make deploy' with OpenShift registry)"
 	@echo ""
 	@echo "  Undeploying:"
 	@echo "    undeploy           Remove application deployment"
@@ -401,53 +396,12 @@ openshift-build-all:
 	@oc start-build spending-monitor-db -n $(NAMESPACE) --follow &
 	@oc start-build spending-monitor-api -n $(NAMESPACE) --follow &
 	@oc start-build spending-monitor-ui -n $(NAMESPACE) --follow &
-	@oc start-build spending-monitor-ingestion -n $(NAMESPACE) --follow &
 	@wait
 	@echo "✅ All builds completed!"
-
-.PHONY: openshift-build-api
-openshift-build-api:
-	@echo "Building API in OpenShift..."
-	oc start-build spending-monitor-api -n $(NAMESPACE) --follow
-
-.PHONY: openshift-build-ui
-openshift-build-ui:
-	@echo "Building UI in OpenShift..."
-	oc start-build spending-monitor-ui -n $(NAMESPACE) --follow
-
-.PHONY: openshift-build-db
-openshift-build-db:
-	@echo "Building DB in OpenShift..."
-	oc start-build spending-monitor-db -n $(NAMESPACE) --follow
-
-.PHONY: openshift-build-ingestion
-openshift-build-ingestion:
-	@echo "Building Ingestion service in OpenShift..."
-	oc start-build spending-monitor-ingestion -n $(NAMESPACE) --follow
-
-.PHONY: openshift-deploy-noauth
-openshift-deploy-noauth: openshift-create-builds openshift-build-all
-	@echo "Deploying with OpenShift-built images (no auth)..."
-	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
-		--namespace $(NAMESPACE) \
-		--values ./deploy/helm/spending-monitor/values-dev-noauth.yaml \
-		--set global.imageRegistry=image-registry.openshift-image-registry.svc:5000 \
-		--set global.imageRepository=$(NAMESPACE) \
-		--set global.imageTag=latest
-	@echo "✅ Deployment complete with OpenShift-built images!"
-
-.PHONY: openshift-deploy-keycloak
-openshift-deploy-keycloak: create-project check-env-prod openshift-create-builds openshift-build-all
-	@echo "Deploying with OpenShift-built images (Keycloak auth)..."
-	@set -a; source $(ENV_FILE_PROD); set +a; \
-	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
-		--namespace $(NAMESPACE) \
-		--values ./deploy/helm/spending-monitor/values-prod-keycloak.yaml \
-		--set global.imageRegistry=image-registry.openshift-image-registry.svc:5000 \
-		--set global.imageRepository=$(NAMESPACE) \
-		--set global.imageTag=latest \
-		$(HELM_SECRET_PARAMS)
-	@echo "✅ Deployment complete with OpenShift-built images!"
+	@echo ""
+	@echo "💡 To deploy with OpenShift-built images:"
+	@echo "   make deploy MODE=noauth NAMESPACE=$(NAMESPACE)"
+	@echo "   (Add image registry settings: --set global.imageRegistry=image-registry.openshift-image-registry.svc:5000)"
 
 # Undeploy targets
 .PHONY: undeploy
