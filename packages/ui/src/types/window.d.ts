@@ -8,6 +8,8 @@ export interface RuntimeEnv {
   ENVIRONMENT: 'development' | 'staging' | 'production';
   KEYCLOAK_URL: string;
   KEYCLOAK_CLIENT_ID: string;
+  KEYCLOAK_REALM: string;
+  DEV?: boolean; // Debug logging flag
 }
 
 declare global {
