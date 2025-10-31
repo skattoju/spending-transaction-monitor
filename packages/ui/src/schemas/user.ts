@@ -79,5 +79,3 @@ export type UseCurrentUserResult = z.infer<typeof UseCurrentUserResultSchema> & 
   refreshUser: () => Promise<void>;
   logout: () => void;
 };
-
-

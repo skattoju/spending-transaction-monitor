@@ -53,5 +53,3 @@ export function createLocationHeaders(
     'X-User-Location-Accuracy': location.accuracy.toString(),
   };
 }
-
-

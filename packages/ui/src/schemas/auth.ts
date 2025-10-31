@@ -37,5 +37,3 @@ export interface AuthContextType {
   signinRedirect: () => void;
   error: Error | null;
 }
-
-

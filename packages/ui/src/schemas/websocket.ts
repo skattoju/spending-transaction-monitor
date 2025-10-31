@@ -28,5 +28,3 @@ export interface UseWebSocketOptions {
     recommendations: z.infer<typeof AlertRecommendationsResponseSchema>,
   ) => void;
 }
-
-

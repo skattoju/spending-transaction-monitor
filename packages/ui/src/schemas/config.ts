@@ -14,5 +14,3 @@ export const RuntimeEnvSchema = z.object({
 
 // Export type
 export type RuntimeEnv = z.infer<typeof RuntimeEnvSchema>;
-
-
