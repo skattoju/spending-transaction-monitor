@@ -7,7 +7,7 @@ import { renderHook, act } from '@testing-library/react';
 import { usePeriodicLocation } from '../usePeriodicLocation';
 import * as geolocationService from '@/services/geolocation';
 import { useAuth } from '@/hooks/useAuth';
-import type { AuthContextType } from '@/types/auth';
+import type { AuthContextType } from '@/schemas/auth';
 
 // Mock the geolocation service
 vi.mock('@/services/geolocation', () => ({
