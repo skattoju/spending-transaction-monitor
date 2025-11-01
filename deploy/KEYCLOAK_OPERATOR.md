@@ -336,7 +336,7 @@ oc create namespace keycloak-operator
 # Install via OperatorHub UI or CLI subscription
 
 # 2. Deploy Spending Monitor with Keycloak
-make deploy-keycloak NAMESPACE=sid-test
+make deploy MODE=keycloak NAMESPACE=sid-test
 
 # 3. Wait for Keycloak to be ready
 oc wait --for=condition=Ready keycloak/spending-monitor-keycloak -n sid-test --timeout=300s

@@ -17,14 +17,13 @@ This guide provides comprehensive instructions for deploying the Spending Transa
 The fastest way to deploy to OpenShift:
 
 ```bash
-# 1. Configure your production environment variables
+# 1. Configure your environment variables
 cp env.example .env.production
-# Edit .env.production with your production settings
 
 # 2. Login to OpenShift
 oc login --token=<your-token> --server=<your-server>
 
-# 3. Deploy with Keycloak authentication (production)
+# 3. Deploy with Keycloak authentication
 make deploy MODE=keycloak NAMESPACE=my-app
 
 # Or deploy without auth for development/testing
@@ -38,6 +37,8 @@ make openshift-create-builds NAMESPACE=my-app
 make openshift-build-all NAMESPACE=my-app
 make deploy MODE=keycloak NAMESPACE=my-app
 ```
+
+**See [QUICKSTART.md](./QUICKSTART.md) for a one-page cheat sheet.**
 
 ## 📦 Prerequisites
 
@@ -55,8 +56,8 @@ Before deploying, ensure you have:
 - Sufficient cluster resources (see [Resource Requirements](#resource-requirements))
 
 ### Configuration Files
-- `.env.production` - Production environment variables (copy from `env.example`)
-- `.env.development` - Development environment variables (for local testing)
+- `.env.production` - OpenShift deployment environment variables (copy from `env.example`)
+- `.env.development` - Local development environment variables
 
 ## 🏗 Architecture
 
@@ -74,67 +75,89 @@ The deployment consists of the following components:
 
 ### Resource Requirements
 
-**Development Environment:**
+**Development/Testing (MODE=noauth):**
 ```yaml
 Total CPU: ~600m
 Total Memory: ~1.5Gi
-Storage: 10Gi (database PVC)
+Storage: Optional (ephemeral)
 ```
 
-**Production Environment (recommended):**
+**Authenticated Deployment (MODE=keycloak, recommended):**
 ```yaml
 Total CPU: ~2000m (2 cores)
 Total Memory: ~4Gi
 Storage: 50Gi (database PVC)
 ```
 
-## 🎯 Deployment Options
+## 🎯 Deployment Modes
 
-### Option 1: Production Deployment (Keycloak Auth)
+The application supports three deployment modes via the `MODE` parameter:
 
-Deploy with Keycloak authentication for production:
+### MODE=keycloak (Authenticated Deployment)
 
+**Use Case:** Staging, production, or any environment requiring authentication  
+**Command:** `make deploy MODE=keycloak NAMESPACE=my-app`
+
+**Features:**
+- ✅ Keycloak SSO authentication required
+- ✅ Multiple replicas for high availability (API: 2, UI: 2)
+- ✅ Persistent database storage (50Gi)
+- ✅ Automatic user synchronization from database to Keycloak
+- ✅ Full resource allocation (2 CPU cores, 4Gi memory)
+- ✅ Debug mode disabled
+
+**Prerequisites:**
+- ⚠️ **Keycloak Operator must be installed** (see [KEYCLOAK_OPERATOR.md](./KEYCLOAK_OPERATOR.md))
+- Configure `.env.production` with Keycloak settings
+
+**Example:**
 ```bash
-# Deploy with Keycloak (requires Keycloak Operator installed)
-make deploy MODE=keycloak NAMESPACE=production
+make deploy MODE=keycloak NAMESPACE=staging
 ```
 
-This deployment includes:
-- ✅ Keycloak authentication
-- ✅ Multiple replicas (HA)
-- ✅ Persistent database storage
-- ✅ Production resource allocations
+---
 
-### Option 2: Development Deployment (No Auth)
+### MODE=noauth (Development/Testing)
 
-For testing with auth bypass:
+**Use Case:** Development, testing, demos  
+**Command:** `make deploy MODE=noauth NAMESPACE=dev-test`
 
+**Features:**
+- ✅ No authentication required (bypass enabled)
+- ✅ Single replicas (reduced resources)
+- ✅ No persistent storage (faster cleanup)
+- ✅ Debug mode enabled
+- ✅ All CORS origins allowed
+- ⚠️ **Not suitable for sensitive data**
+
+**Example:**
 ```bash
-# Deploy without authentication
 make deploy MODE=noauth NAMESPACE=dev-test
 ```
 
-This deployment includes:
-- ✅ Auth bypass enabled
-- ✅ Reduced resources
-- ✅ No persistent storage (optional)
-- ✅ Debug mode enabled
+---
 
-### Option 3: Dev Mode (Reduced Resources)
+### MODE=dev (Minimal Resources)
 
-For resource-constrained environments:
+**Use Case:** Resource-constrained environments, local testing  
+**Command:** `make deploy MODE=dev NAMESPACE=test`
 
-```bash
-# Deploy with minimal resources
-make deploy MODE=dev NAMESPACE=my-dev
-```
-
-This deployment:
-- Reduces replicas to 1
+**Features:**
+- Reduces all replicas to 1
 - Disables persistent storage
 - Uses minimal CPU/memory
+- Can be combined with Keycloak auth if needed
 
-### Option 4: OpenShift In-Cluster Builds
+**Example:**
+```bash
+make deploy MODE=dev NAMESPACE=test
+```
+
+---
+
+### Deployment Methods
+
+#### Using OpenShift In-Cluster Builds
 
 Build images directly in OpenShift (no registry access needed):
 
@@ -149,7 +172,9 @@ make openshift-build-all NAMESPACE=my-app
 make deploy MODE=keycloak NAMESPACE=my-app
 ```
 
-### Option 5: Using Pre-built Images
+See [OPENSHIFT_BUILDS.md](./OPENSHIFT_BUILDS.md) for details.
+
+#### Using Pre-built Images
 
 If images are already in a registry:
 
@@ -158,9 +183,25 @@ If images are already in a registry:
 make deploy MODE=keycloak IMAGE_TAG=v1.0.0 NAMESPACE=my-app
 ```
 
+---
+
+### Comparison Matrix
+
+| Feature | MODE=noauth | MODE=keycloak | MODE=dev |
+|---------|-------------|---------------|----------|
+| **Authentication** | ❌ Disabled | ✅ Keycloak SSO | Configurable |
+| **API Replicas** | 1 | 2 | 1 |
+| **UI Replicas** | 1 | 2 | 1 |
+| **Database Persistence** | ❌ No | ✅ Yes (50Gi) | ❌ No |
+| **Keycloak** | ❌ Disabled | ✅ Enabled | Optional |
+| **Debug Mode** | ✅ Yes | ❌ No | ✅ Yes |
+| **Memory (Total)** | ~1.5Gi | ~4Gi | ~1Gi |
+| **CPU (Total)** | ~0.6 cores | ~2 cores | ~0.4 cores |
+| **Use Case** | Dev/Test/Demo | Staging/Prod | Resource-limited |
+
 ## 🔧 Environment Configuration
 
-### Production Environment File
+### OpenShift Deployment Environment File
 
 Create `.env.production` from the example:
 
@@ -179,8 +220,7 @@ DATABASE_URL=postgresql+asyncpg://user:<password>@spending-monitor-db:5432/spend
 
 # API Security
 API_KEY=<your-api-key>
-BYPASS_AUTH=false
-ENVIRONMENT=production
+ENVIRONMENT=staging  # or 'production'
 
 # LLM Configuration
 LLM_PROVIDER=openai
@@ -193,7 +233,7 @@ SMTP_PORT=587
 SMTP_FROM_EMAIL=<from-email>
 SMTP_USE_TLS=true
 
-# Keycloak (if using authentication)
+# Keycloak (for MODE=keycloak)
 KEYCLOAK_URL=<keycloak-url>
 KEYCLOAK_REALM=spending-monitor
 KEYCLOAK_CLIENT_ID=spending-monitor
@@ -203,21 +243,23 @@ CORS_ALLOWED_ORIGINS=https://your-route-url
 ALLOWED_ORIGINS=https://your-route-url
 ```
 
-### Environment-Specific Settings
+### Mode-Specific Settings
 
-**Development:**
+**MODE=noauth (Development/Testing):**
 ```bash
 ENVIRONMENT=development
 DEBUG=true
-BYPASS_AUTH=true  # Optional: disable auth for testing
+BYPASS_AUTH=true
 ```
 
-**Production:**
+**MODE=keycloak (Staging/Production):**
 ```bash
-ENVIRONMENT=production
+ENVIRONMENT=staging  # or 'production'
 DEBUG=false
 BYPASS_AUTH=false
 ```
+
+**Note:** The `MODE` parameter in the Makefile automatically sets `BYPASS_AUTH` in the deployment, but you can also configure it via `.env.production` for fine-grained control.
 
 ## 📊 Makefile Commands Reference
 
@@ -225,9 +267,9 @@ BYPASS_AUTH=false
 
 ```bash
 # Deploy with different modes
-make deploy MODE=keycloak NAMESPACE=prod    # Production with auth
-make deploy MODE=noauth NAMESPACE=dev       # Development without auth
-make deploy MODE=dev NAMESPACE=test         # Reduced resources
+make deploy MODE=keycloak NAMESPACE=staging # With Keycloak auth
+make deploy MODE=noauth NAMESPACE=dev       # Without auth (dev/test)
+make deploy MODE=dev NAMESPACE=test         # Minimal resources
 
 # Undeploy
 make undeploy NAMESPACE=my-app              # Remove deployment
@@ -426,12 +468,13 @@ make deploy MODE=keycloak NAMESPACE=my-namespace
    - Never commit `.env.production` to git
    - Use strong passwords for database
    - Rotate API keys regularly
-   - Consider using External Secrets Operator for production
+   - Consider using External Secrets Operator for sensitive environments
 
 2. **Network Security**
-   - Keep `BYPASS_AUTH=false` in production
-   - Configure proper CORS origins
-   - Use TLS for all routes (enabled by default)
+   - Use `MODE=keycloak` for staging and production environments
+   - Never use `BYPASS_AUTH=true` with real user data
+   - Configure proper CORS origins (not `*`)
+   - Use TLS for all routes (enabled by default in OpenShift)
 
 3. **Resource Limits**
    - Set appropriate CPU/memory limits
@@ -439,7 +482,7 @@ make deploy MODE=keycloak NAMESPACE=my-namespace
    - Monitor resource usage
 
 4. **Database Security**
-   - Use persistent volumes for production
+   - Enable persistent volumes for long-term deployments
    - Backup database regularly
    - Restrict database access to cluster-internal only
 
@@ -498,10 +541,10 @@ The application includes health endpoints compatible with Prometheus:
 
 ## 📚 Additional Resources
 
-- [Deployment Modes Guide](./DEPLOYMENT_MODES.md) - Auth vs No-Auth deployment
+- [Quickstart Guide](./QUICKSTART.md) - One-page cheat sheet
 - [OpenShift Builds Guide](./OPENSHIFT_BUILDS.md) - In-cluster image building
 - [Keycloak Operator Setup](./KEYCLOAK_OPERATOR.md) - Keycloak installation guide
-- [Quick Deploy Reference](./QUICK_DEPLOY.md) - Quick reference card
+- [Helm Chart Documentation](./helm/DEPLOYMENT.md) - Helm-specific details
 - [Main README](../README.md) - Project overview and architecture
 - [Contributing Guide](../CONTRIBUTING.md) - Development guidelines
 
@@ -517,23 +560,23 @@ If you encounter issues:
 
 ## 📝 Summary
 
-Your deployment infrastructure is production-ready with:
+Your deployment infrastructure includes:
 
 ✅ Complete Helm chart for all services
-✅ Multiple deployment modes (Keycloak, No-Auth, Dev)
-✅ In-cluster builds (no registry needed)
+✅ Three deployment modes (keycloak, noauth, dev)
+✅ In-cluster builds (no registry access needed)
 ✅ Environment-based configuration
 ✅ Automated database migrations and seeding
+✅ Keycloak SSO with automatic user sync
 ✅ Health checks and monitoring
 ✅ Security best practices
-✅ Detailed documentation
 
 **Quick Deploy Commands:**
 ```bash
-# Production with auth
-make deploy MODE=keycloak NAMESPACE=prod
+# Authenticated deployment (staging/production)
+make deploy MODE=keycloak NAMESPACE=staging
 
-# Development without auth
+# Development/testing without auth
 make deploy MODE=noauth NAMESPACE=dev
 
 # With in-cluster builds (no registry access)
@@ -541,6 +584,8 @@ make openshift-create-builds NAMESPACE=my-app
 make openshift-build-all NAMESPACE=my-app
 make deploy MODE=keycloak NAMESPACE=my-app
 ```
+
+**See [QUICKSTART.md](./QUICKSTART.md) for a one-page cheat sheet.**
 
 That's it! You're ready to deploy to OpenShift.
 

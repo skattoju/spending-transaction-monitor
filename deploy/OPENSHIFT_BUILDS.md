@@ -392,6 +392,8 @@ triggers:
 
 ## 📚 Additional Resources
 
+- [Deployment Guide](./DEPLOYMENT_GUIDE.md) - Complete deployment instructions
+- [Quickstart Guide](./QUICKSTART.md) - One-page cheat sheet
 - [OpenShift Build Documentation](https://docs.openshift.com/container-platform/4.12/cicd/builds/understanding-image-builds.html)
 - [BuildConfig API Reference](https://docs.openshift.com/container-platform/4.12/rest_api/workloads_apis/buildconfig-build-openshift-io-v1.html)
 - [ImageStream Documentation](https://docs.openshift.com/container-platform/4.12/openshift_images/image-streams-manage.html)

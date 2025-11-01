@@ -262,8 +262,8 @@ oc delete project my-namespace
 
 ## 📚 Additional Resources
 
-- [Complete Deployment Guide](../DEPLOYMENT_GUIDE.md) - Full deployment instructions
-- [Deployment Modes Guide](../DEPLOYMENT_MODES.md) - Auth vs No-Auth
+- [Complete Deployment Guide](../DEPLOYMENT_GUIDE.md) - Full deployment instructions with all modes
+- [Quickstart Guide](../QUICKSTART.md) - One-page cheat sheet
 - [OpenShift Builds Guide](../OPENSHIFT_BUILDS.md) - In-cluster builds
 - [Keycloak Operator Setup](../KEYCLOAK_OPERATOR.md) - Keycloak installation
 

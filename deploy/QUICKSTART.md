@@ -1,18 +1,20 @@
-# Quick Deploy Reference Card
+# Quickstart Guide
 
-## 🚀 Quick Deploy
+One-page cheat sheet for deploying the Spending Transaction Monitor.
 
-**Production with Keycloak:**
+## 🚀 Deploy Commands
+
+**Authenticated Deployment (Staging/Production):**
 ```bash
-make deploy MODE=keycloak NAMESPACE=production
+make deploy MODE=keycloak NAMESPACE=staging
 ```
 
-**Development without Auth:**
+**Development/Testing (No Auth):**
 ```bash
 make deploy MODE=noauth NAMESPACE=dev-test
 ```
 
-**With OpenShift In-Cluster Builds (no registry):**
+**With OpenShift In-Cluster Builds:**
 ```bash
 make openshift-create-builds NAMESPACE=my-app
 make openshift-build-all NAMESPACE=my-app
@@ -109,12 +111,12 @@ make deploy MODE=keycloak
 - `API_KEY` - Your LLM API key
 - `BASE_URL` - LLM endpoint
 - `SMTP_HOST` - Email server (for alerts)
-- `KEYCLOAK_URL` - Keycloak server (for auth mode)
+- `KEYCLOAK_URL` - Keycloak server (for MODE=keycloak)
 
-**Production Settings:**
-- `ENVIRONMENT=production`
+**Recommended Settings for MODE=keycloak:**
+- `ENVIRONMENT=staging` or `production`
 - `DEBUG=false`
-- `BYPASS_AUTH=false` (use MODE=keycloak)
+- `BYPASS_AUTH=false`
 
 ## 🐛 Troubleshooting
 
@@ -181,11 +183,10 @@ make clean-images       # Clean local images
 ## 📚 Full Documentation
 
 For detailed information, see:
-- [Complete Deployment Guide](./DEPLOYMENT_GUIDE.md) - Comprehensive deployment instructions
-- [Deployment Modes Guide](./DEPLOYMENT_MODES.md) - Auth vs No-Auth configurations
-- [OpenShift Builds Guide](./OPENSHIFT_BUILDS.md) - In-cluster image building
-- [Keycloak Operator Setup](./KEYCLOAK_OPERATOR.md) - Keycloak installation
-- [Main README](../README.md) - Project overview
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment instructions with all modes
+- **[OPENSHIFT_BUILDS.md](./OPENSHIFT_BUILDS.md)** - In-cluster image building
+- **[KEYCLOAK_OPERATOR.md](./KEYCLOAK_OPERATOR.md)** - Keycloak installation guide
+- **[Main README](../README.md)** - Project overview
 
 ---
 
