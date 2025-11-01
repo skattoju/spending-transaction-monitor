@@ -1,17 +1,23 @@
 # Quick Deploy Reference Card
 
-## 🚀 One-Command Deploy
+## 🚀 Quick Deploy
 
+**Production with Keycloak:**
 ```bash
-make full-deploy
+make deploy MODE=keycloak NAMESPACE=production
 ```
 
-This single command:
-1. ✅ Logs into OpenShift registry
-2. ✅ Creates project
-3. ✅ Builds all images
-4. ✅ Pushes to registry
-5. ✅ Deploys with Helm
+**Development without Auth:**
+```bash
+make deploy MODE=noauth NAMESPACE=dev-test
+```
+
+**With OpenShift In-Cluster Builds (no registry):**
+```bash
+make openshift-create-builds NAMESPACE=my-app
+make openshift-build-all NAMESPACE=my-app
+make deploy MODE=keycloak NAMESPACE=my-app
+```
 
 ## 📋 Prerequisites
 
@@ -29,33 +35,36 @@ podman version  # Podman
 
 | Command | Description |
 |---------|-------------|
-| `make deploy` | Deploy to OpenShift (production) |
-| `make deploy-dev` | Deploy with reduced resources |
-| `make full-deploy` | Complete pipeline: build + push + deploy |
+| `make deploy MODE=keycloak` | Deploy with Keycloak auth |
+| `make deploy MODE=noauth` | Deploy without auth (dev/test) |
+| `make deploy MODE=dev` | Deploy with reduced resources |
 | `make undeploy` | Remove deployment |
 | `make status` | Show deployment status |
-| `make logs` | View all logs |
+| `make logs-local` | View local service logs |
 
 ## 🏗️ Build & Push
 
 ```bash
-make build-all    # Build all images
-make push-all     # Push all images
-make deploy       # Deploy using Helm
+make build-all    # Build all images locally
+make push-all     # Push all images to registry
+make deploy-all   # Build, push, and deploy
+```
+
+## 🏗️ OpenShift Builds
+
+```bash
+make openshift-create-builds NAMESPACE=my-app   # Create BuildConfigs
+make openshift-build-all NAMESPACE=my-app        # Build all images
 ```
 
 ## 🔍 Monitoring
 
 ```bash
-# Port forward services to localhost
-make port-forward-api    # API → localhost:8000
-make port-forward-ui     # UI → localhost:8080
-make port-forward-db     # DB → localhost:5432
+# Check status
+make status NAMESPACE=my-app
 
-# View logs
-make logs-api           # API logs
-make logs-ui            # UI logs
-make logs-db            # Database logs
+# View logs (local development)
+make logs-local
 ```
 
 ## 🌐 Access Your App
@@ -90,7 +99,7 @@ cp env.example .env.production
 # - KEYCLOAK settings (if using auth)
 
 # 3. Deploy
-make full-deploy
+make deploy MODE=keycloak
 ```
 
 ### Environment Variables
@@ -99,12 +108,13 @@ make full-deploy
 - `POSTGRES_PASSWORD` - Strong database password
 - `API_KEY` - Your LLM API key
 - `BASE_URL` - LLM endpoint
-- `SMTP_HOST` - Email server
+- `SMTP_HOST` - Email server (for alerts)
+- `KEYCLOAK_URL` - Keycloak server (for auth mode)
 
 **Production Settings:**
 - `ENVIRONMENT=production`
 - `DEBUG=false`
-- `BYPASS_AUTH=false`
+- `BYPASS_AUTH=false` (use MODE=keycloak)
 
 ## 🐛 Troubleshooting
 
@@ -125,34 +135,39 @@ make status
 oc get secret spending-monitor-secret -o yaml
 ```
 
-## 📦 Component Versions
+## 📦 Component Images
 
-Built images:
-- `quay.io/rh-ai-quickstart/spending-monitor-api:latest`
-- `quay.io/rh-ai-quickstart/spending-monitor-ui:latest`
-- `quay.io/rh-ai-quickstart/spending-monitor-db:latest`
-- `quay.io/rh-ai-quickstart/spending-monitor-ingestion:latest`
+Built images (default registry: quay.io/rh-ai-quickstart):
+- `spending-monitor-api:latest`
+- `spending-monitor-ui:latest`
+- `spending-monitor-db:latest`
+
+Or use OpenShift in-cluster builds (internal registry)
 
 ## 🔄 Update Deployment
 
 ```bash
-# Rebuild and redeploy
+# Option 1: Rebuild and redeploy with registry
 make build-all
 make push-all
-make deploy
+make deploy MODE=keycloak NAMESPACE=my-app
 
-# Or all at once
-make deploy-all
+# Option 2: Or all at once
+make deploy-all NAMESPACE=my-app
+
+# Option 3: With OpenShift builds
+make openshift-build-all NAMESPACE=my-app
+# Pods will auto-restart with new images
 ```
 
 ## 📊 Scaling
 
 ```bash
-# Via kubectl/oc
-oc scale deployment spending-monitor-api --replicas=3
+# Via oc
+oc scale deployment spending-monitor-api --replicas=3 -n my-namespace
 
 # Or update values.yaml and redeploy
-make deploy
+make deploy MODE=keycloak NAMESPACE=my-namespace
 ```
 
 ## 🧹 Cleanup
@@ -166,9 +181,11 @@ make clean-images       # Clean local images
 ## 📚 Full Documentation
 
 For detailed information, see:
-- [Complete Deployment Guide](./DEPLOYMENT_GUIDE.md)
-- [OpenShift Specific Guide](./OPENSHIFT_DEPLOYMENT.md)
-- [Main README](../README.md)
+- [Complete Deployment Guide](./DEPLOYMENT_GUIDE.md) - Comprehensive deployment instructions
+- [Deployment Modes Guide](./DEPLOYMENT_MODES.md) - Auth vs No-Auth configurations
+- [OpenShift Builds Guide](./OPENSHIFT_BUILDS.md) - In-cluster image building
+- [Keycloak Operator Setup](./KEYCLOAK_OPERATOR.md) - Keycloak installation
+- [Main README](../README.md) - Project overview
 
 ---
 

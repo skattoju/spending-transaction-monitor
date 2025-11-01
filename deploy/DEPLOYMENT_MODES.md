@@ -6,27 +6,26 @@ The Spending Transaction Monitor supports two distinct deployment modes:
 
 **Use Case:** Development, testing, demos  
 **Authentication:** Disabled (no login required)  
-**Command:** `make deploy-noauth`
+**Command:** `make deploy MODE=noauth`
 
 ### Features
 - ✅ No authentication required
 - ✅ Reduced resource requirements
 - ✅ No persistent storage (faster cleanup)
 - ✅ Debug mode enabled
-- ✅ Ingestion service disabled by default
 - ✅ All CORS origins allowed
 
 ### Quick Deploy
 
 ```bash
 # Deploy to current namespace
-make deploy-noauth
+make deploy MODE=noauth
 
 # Deploy to specific namespace
-make deploy-noauth NAMESPACE=my-test-namespace
+make deploy MODE=noauth NAMESPACE=my-test-namespace
 
 # Deploy with custom image tag
-make deploy-noauth IMAGE_TAG=dev
+make deploy MODE=noauth IMAGE_TAG=dev NAMESPACE=my-test
 ```
 
 ### Configuration
@@ -44,9 +43,6 @@ api:
 database:
   persistence:
     enabled: false
-
-ingestion:
-  enabled: false
 ```
 
 ### When to Use
@@ -63,15 +59,15 @@ ingestion:
 
 **Use Case:** Production, staging  
 **Authentication:** Keycloak SSO  
-**Command:** `make deploy-keycloak`
+**Command:** `make deploy MODE=keycloak`
 
 ### Features
 - ✅ Keycloak authentication required
 - ✅ Production-grade resource allocations
 - ✅ Persistent database storage
-- ✅ All services enabled (including ingestion)
 - ✅ Multiple replicas for high availability
 - ✅ Debug mode disabled
+- ✅ Automatic user synchronization from database to Keycloak
 
 ### Prerequisites
 
@@ -110,13 +106,13 @@ ingestion:
 
 ```bash
 # Deploy to current namespace
-make deploy-keycloak
+make deploy MODE=keycloak
 
 # Deploy to specific namespace
-make deploy-keycloak NAMESPACE=production
+make deploy MODE=keycloak NAMESPACE=production
 
 # Deploy with custom image tag
-make deploy-keycloak IMAGE_TAG=v1.0.0
+make deploy MODE=keycloak IMAGE_TAG=v1.0.0 NAMESPACE=production
 ```
 
 ### Configuration
@@ -139,7 +135,7 @@ database:
     enabled: true
     size: 50Gi
 
-ingestion:
+keycloak:
   enabled: true
 ```
 
@@ -159,7 +155,7 @@ ingestion:
 | **API Replicas** | 1 | 2 |
 | **UI Replicas** | 1 | 2 |
 | **Database Persistence** | ❌ No | ✅ Yes (50Gi) |
-| **Ingestion Service** | ❌ Disabled | ✅ Enabled |
+| **Keycloak** | ❌ Disabled | ✅ Enabled |
 | **Debug Mode** | ✅ Yes | ❌ No |
 | **Memory (Total)** | ~1.5Gi | ~4Gi |
 | **CPU (Total)** | ~0.6 cores | ~2 cores |
@@ -173,10 +169,10 @@ ingestion:
 ### From No-Auth to Keycloak
 
 ```bash
-# 1. Ensure Keycloak is deployed and configured
+# 1. Ensure Keycloak Operator is installed
 
 # 2. Update deployment
-make deploy-keycloak NAMESPACE=your-namespace
+make deploy MODE=keycloak NAMESPACE=your-namespace
 
 # The deployment will upgrade in-place
 # Database data is preserved
@@ -186,7 +182,7 @@ make deploy-keycloak NAMESPACE=your-namespace
 
 ```bash
 # 1. Redeploy in no-auth mode
-make deploy-noauth NAMESPACE=your-namespace
+make deploy MODE=noauth NAMESPACE=your-namespace
 
 # Warning: This will disable persistence by default
 # Export data first if needed
@@ -258,7 +254,7 @@ oc get secret spending-monitor-secret -n your-namespace -o jsonpath='{.data.BYPA
 oc get secret spending-monitor-secret -o yaml | grep BYPASS_AUTH
 
 # If wrong, update:
-make deploy-noauth NAMESPACE=your-namespace
+make deploy MODE=noauth NAMESPACE=your-namespace
 ```
 
 ### Keycloak Mode Issues
@@ -276,14 +272,14 @@ oc run test --rm -it --image=curlimages/curl -- curl http://spending-monitor-key
 **Problem:** Keycloak not deployed  
 **Solution:**
 ```bash
-# Option 1: Deploy Keycloak
-# (Add Keycloak helm chart or deployment)
+# Option 1: Ensure Keycloak Operator is installed
+# Then redeploy with MODE=keycloak
 
 # Option 2: Use external Keycloak
 # Update KEYCLOAK_URL in .env.production
 
 # Option 3: Switch to no-auth for testing
-make deploy-noauth
+make deploy MODE=noauth NAMESPACE=your-namespace
 ```
 
 ---
@@ -291,19 +287,21 @@ make deploy-noauth
 ## Best Practices
 
 ### Development
-1. Use `deploy-noauth` for rapid iteration
-2. Test auth flow separately with `deploy-keycloak`
+1. Use `make deploy MODE=noauth` for rapid iteration
+2. Test auth flow separately with `make deploy MODE=keycloak`
 3. Keep persistence disabled for faster cleanup
 4. Use unique namespaces per developer
+5. Use OpenShift in-cluster builds to avoid registry push
 
 ### Production
-1. Always use `deploy-keycloak`
+1. Always use `make deploy MODE=keycloak`
 2. Never use `BYPASS_AUTH=true` in production
 3. Enable persistence with adequate storage
 4. Configure proper CORS origins (not `*`)
 5. Use strong passwords and real API keys
 6. Set up monitoring and alerts
 7. Regular backups of database PVC
+8. Ensure Keycloak Operator is installed before deployment
 
 ---
 
@@ -311,17 +309,20 @@ make deploy-noauth
 
 ```bash
 # Development (no auth)
-make deploy-noauth NAMESPACE=dev-test
+make deploy MODE=noauth NAMESPACE=dev-test
 
 # Production (with Keycloak)
-make deploy-keycloak NAMESPACE=production
+make deploy MODE=keycloak NAMESPACE=production
+
+# Dev mode (reduced resources)
+make deploy MODE=dev NAMESPACE=test
 
 # Check status
 oc get pods -n your-namespace
 oc get route -n your-namespace
 
 # View logs
-make logs NAMESPACE=your-namespace
+make status NAMESPACE=your-namespace
 
 # Remove deployment
 make undeploy NAMESPACE=your-namespace
@@ -331,11 +332,12 @@ make undeploy NAMESPACE=your-namespace
 
 ## Summary
 
-- **🔓 Use `make deploy-noauth`** for development and testing
-- **🔐 Use `make deploy-keycloak`** for production deployments
-- Both modes use the same Helm chart with different values files
-- Easy to switch between modes
-- Clear visual indicators (🔓/🔐) in deployment output
+- **🔓 Use `make deploy MODE=noauth`** for development and testing
+- **🔐 Use `make deploy MODE=keycloak`** for production deployments
+- **⚙️ Use `make deploy MODE=dev`** for resource-constrained environments
+- All modes use the same Helm chart with different values files
+- Easy to switch between modes with a single command
+- Keycloak mode includes automatic user synchronization
 
 For detailed deployment instructions, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 

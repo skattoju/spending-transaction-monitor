@@ -20,39 +20,23 @@ This guide explains how to build container images directly in OpenShift using Bu
 
 ## 🚀 Quick Start
 
-### Option 1: One Command (Recommended)
-
-Build everything in OpenShift and deploy:
-
-```bash
-# Development mode (no auth)
-make openshift-deploy-noauth NAMESPACE=my-test
-
-# Production mode (Keycloak)
-make openshift-deploy-keycloak NAMESPACE=my-prod
-```
-
-This single command will:
-1. Create BuildConfigs and ImageStreams
-2. Build all 4 images in OpenShift
-3. Deploy using the built images
-
-**Time:** ~15-20 minutes for all builds
-
-### Option 2: Step by Step
+Build images directly in OpenShift and deploy:
 
 ```bash
 # 1. Create BuildConfigs and ImageStreams
 make openshift-create-builds NAMESPACE=my-test
 
-# 2. Build all images (runs in parallel)
+# 2. Build all images (runs in parallel, ~15-20 minutes)
 make openshift-build-all NAMESPACE=my-test
 
 # 3. Deploy using the built images
-make deploy-noauth NAMESPACE=my-test \
-  REGISTRY_URL=image-registry.openshift-image-registry.svc:5000 \
-  REPOSITORY=my-test
+make deploy MODE=noauth NAMESPACE=my-test
+
+# Or for production with Keycloak
+make deploy MODE=keycloak NAMESPACE=my-prod
 ```
+
+**Note:** When using OpenShift builds, the Makefile automatically configures the deployment to use images from the OpenShift internal registry (`image-registry.openshift-image-registry.svc:5000`).
 
 ## 📦 What Gets Created?
 
@@ -61,14 +45,14 @@ OpenShift ImageStreams track your container images:
 - `spending-monitor-api:latest`
 - `spending-monitor-ui:latest`
 - `spending-monitor-db:latest`
-- `spending-monitor-ingestion:latest`
 
 ### BuildConfigs
 BuildConfigs define how to build each image:
-- Source: GitHub repository
-- Strategy: Docker build
-- Context: Root directory
-- Dockerfile path: `packages/*/Containerfile`
+- **Source:** GitHub repository
+- **Strategy:** Docker build
+- **Context:** Root directory
+- **Dockerfile path:** `packages/*/Containerfile`
+- **Resources:** 2Gi memory, 1 CPU (configurable)
 
 ## 🔧 Configuration
 
@@ -120,31 +104,28 @@ oc get bc -n my-namespace
 
 ### Start Individual Builds
 
+If you need to rebuild a specific service after code changes:
+
 ```bash
-# Build just the API
-make openshift-build-api NAMESPACE=my-test
+# Build all images (recommended)
+make openshift-build-all NAMESPACE=my-test
 
-# Build just the UI
-make openshift-build-ui NAMESPACE=my-test
-
-# Build just the DB
-make openshift-build-db NAMESPACE=my-test
-
-# Build just the Ingestion service
-make openshift-build-ingestion NAMESPACE=my-test
+# Or trigger individual builds using oc directly
+oc start-build spending-monitor-api -n my-test --follow
+oc start-build spending-monitor-ui -n my-test --follow
+oc start-build spending-monitor-db -n my-test --follow
 ```
 
 ### Rebuild After Code Changes
 
 ```bash
-# Option 1: Start a new build (quick)
+# Option 1: Start a new build for specific service (quick)
 oc start-build spending-monitor-api -n my-namespace --follow
 
-# Option 2: Use make target
-make openshift-build-api NAMESPACE=my-namespace
-
-# Option 3: Rebuild all
+# Option 2: Rebuild all services
 make openshift-build-all NAMESPACE=my-namespace
+
+# The deployment will automatically update with the new images
 ```
 
 ### View Build Logs
@@ -169,13 +150,17 @@ oc logs build/spending-monitor-api-1 -n my-namespace
 # 1. Create project
 oc new-project my-app
 
-# 2. Deploy everything (builds + deploys)
-make openshift-deploy-noauth NAMESPACE=my-app
+# 2. Create BuildConfigs and build images
+make openshift-create-builds NAMESPACE=my-app
+make openshift-build-all NAMESPACE=my-app
 
-# 3. Get the route
+# 3. Deploy with your chosen mode
+make deploy MODE=noauth NAMESPACE=my-app
+
+# 4. Get the route
 oc get route -n my-app
 
-# 4. Test
+# 5. Test
 curl https://<route>/health
 ```
 
@@ -342,20 +327,6 @@ resources:
 **Build Time:** ~3-5 minutes  
 **Image Size:** ~300MB
 
-### Ingestion Service Build
-
-```yaml
-dockerStrategy:
-  dockerfilePath: packages/ingestion-service/Containerfile
-resources:
-  limits:
-    memory: 4Gi
-    cpu: "2"
-```
-
-**Build Time:** ~5-8 minutes  
-**Image Size:** ~1.5GB
-
 ## 🆚 Comparison: OpenShift Builds vs External Registry
 
 | Feature | OpenShift Builds | External Registry (quay.io) |
@@ -371,16 +342,16 @@ resources:
 ## 🎯 Best Practices
 
 ### Development
-1. Use `openshift-deploy-noauth` for quick iterations
+1. Use `make openshift-create-builds` + `make deploy MODE=noauth` for quick iterations
 2. Keep builds in separate namespaces per developer
 3. Delete old builds to save space
-4. Use specific branches instead of `main`
+4. Use specific branches instead of `main` for feature development
 
 ### Production
-1. Use external registry (quay.io) for production
+1. Use external registry (quay.io) for production deployments
 2. Use OpenShift builds for staging/test environments
 3. Tag images with versions, not just `latest`
-4. Set up webhooks for automatic rebuilds
+4. Set up webhooks for automatic rebuilds on code changes
 
 ### Cleanup
 ```bash
@@ -429,31 +400,32 @@ triggers:
 
 **Quick Commands:**
 ```bash
-# Complete deployment with in-cluster builds
-make openshift-deploy-noauth NAMESPACE=test
-
-# Just create build configs
+# 1. Create BuildConfigs
 make openshift-create-builds NAMESPACE=test
 
-# Build all images
+# 2. Build all images in OpenShift
 make openshift-build-all NAMESPACE=test
 
-# Rebuild one service
-make openshift-build-api NAMESPACE=test
+# 3. Deploy using the built images
+make deploy MODE=noauth NAMESPACE=test
+
+# Rebuild a single service
+oc start-build spending-monitor-api -n test --follow
 
 # Check build status
 oc get builds -n test
 
-# View logs
+# View build logs
 oc logs -f bc/spending-monitor-api -n test
 ```
 
 **Key Points:**
 - ✅ No external registry needed
-- ✅ Builds run in-cluster
-- ✅ Perfect for development
-- ✅ Automatic integration with deployments
+- ✅ Builds run in-cluster (~15-20 minutes total)
+- ✅ Perfect for development and testing
+- ✅ Automatic integration with deployments via ImageStreams
 - ✅ Easy to rebuild after code changes
+- ✅ Builds 3 images: API, UI, and Database
 
 Now you can deploy to OpenShift even without registry access! 🎉
 

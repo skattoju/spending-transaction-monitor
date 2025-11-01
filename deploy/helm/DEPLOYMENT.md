@@ -1,186 +1,293 @@
-# Helm Deployment Guide
+# Helm Chart Deployment
 
-## Overview
+This directory contains the Helm chart for deploying the Spending Monitor application to Kubernetes/OpenShift.
 
-This directory contains Helm charts and deployment configurations for the Spending Monitor application.
+## 📁 Directory Structure
 
-## Prerequisites
-
-1. OpenShift cluster access
-2. Helm 3.x installed
-3. Images pushed to container registry (Quay.io)
-4. Keycloak Operator installed (for auth-enabled deployments)
-
-## Image Building
-
-**Important**: Images must be built for AMD64 architecture for OpenShift deployment.
-
-### Building with Rosetta (macOS ARM64)
-
-On macOS with Apple Silicon, ensure Rosetta is enabled in your podman machine:
-
-```bash
-# Check if Rosetta is enabled
-podman machine inspect | grep Rosetta
-
-# Build images for AMD64
-podman build --platform linux/amd64 -t quay.io/YOUR_USERNAME/spending-monitor-api:latest -f packages/api/Containerfile .
-podman build --platform linux/amd64 -t quay.io/YOUR_USERNAME/spending-monitor-ui:latest -f packages/ui/Containerfile .
-podman build --platform linux/amd64 -t quay.io/YOUR_USERNAME/spending-monitor-db:latest -f packages/db/Containerfile .
-
-# Push to registry
-podman push quay.io/YOUR_USERNAME/spending-monitor-api:latest
-podman push quay.io/YOUR_USERNAME/spending-monitor-ui:latest
-podman push quay.io/YOUR_USERNAME/spending-monitor-db:latest
+```
+spending-monitor/
+├── Chart.yaml                  # Chart metadata
+├── values.yaml                 # Default configuration
+├── values-dev-noauth.yaml      # Dev mode (no auth)
+├── values-keycloak.yaml        # Production (Keycloak auth)
+├── templates/                  # Kubernetes manifests
+│   ├── api-deployment.yaml
+│   ├── ui-deployment.yaml
+│   ├── database-deployment.yaml
+│   ├── nginx-deployment.yaml
+│   ├── keycloak-cr.yaml        # Keycloak instance
+│   ├── keycloak-realm-cr.yaml # Keycloak realm
+│   ├── keycloak-user-sync-job.yaml
+│   ├── migration-job.yaml
+│   ├── routes.yaml
+│   └── ...
 ```
 
-## Deployment Configurations
+## 🚀 Quick Deployment
 
-### sid-test-1: With Keycloak Authentication
+### Using Makefile (Recommended)
 
-Deploy with full authentication using Keycloak:
+From the project root:
 
 ```bash
-# Create namespace
-oc new-project sid-test-1
+# Deploy with Keycloak authentication
+make deploy MODE=keycloak NAMESPACE=production
 
-# Install Keycloak (using Keycloak Operator)
-# Ensure Keycloak Operator is installed cluster-wide first
+# Deploy without authentication (dev/test)
+make deploy MODE=noauth NAMESPACE=dev-test
 
-# Deploy application
-helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
-  -n sid-test-1 \
-  -f deploy/helm/keycloak-auth-values.yaml
-
-# Users are automatically synced to Keycloak via a Helm post-install hook
-# Check sync job status: oc get jobs -n sid-test-1 | grep user-sync
+# Deploy with reduced resources
+make deploy MODE=dev NAMESPACE=test
 ```
 
-**Test URL**: https://spending-monitor-nginx-route-sid-test-1.apps.ai-dev02.kni.syseng.devcluster.openshift.com/
-
-**Test Credentials**: Any database user email with password: `password123` (default)
-
-### sid-test-2: No Authentication (Bypass Mode)
-
-Deploy without authentication for testing:
+### Direct Helm Usage
 
 ```bash
-# Create namespace
-oc new-project sid-test-2
+# Deploy with Keycloak authentication
+helm upgrade --install spending-monitor ./spending-monitor \
+  --namespace production \
+  --values ./spending-monitor/values-keycloak.yaml \
+  --set global.imageRegistry=quay.io \
+  --set global.imageRepository=rh-ai-quickstart \
+  --set global.imageTag=latest
 
-# Deploy application
-helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
-  -n sid-test-2 \
-  -f deploy/helm/no-auth-values.yaml
+# Deploy without authentication
+helm upgrade --install spending-monitor ./spending-monitor \
+  --namespace dev-test \
+  --values ./spending-monitor/values-dev-noauth.yaml \
+  --set global.imageRegistry=quay.io \
+  --set global.imageRepository=rh-ai-quickstart \
+  --set global.imageTag=latest
 ```
 
-**Test URL**: https://spending-monitor-nginx-route-sid-test-2.apps.ai-dev02.kni.syseng.devcluster.openshift.com/
+## 📊 Configuration Files
 
-## Configuration Files
+### values.yaml (Default)
+Base configuration with placeholders. Not recommended for direct use - use one of the specific values files instead.
 
-- `values.yaml` - Default values with placeholders
-- `keycloak-auth-values.yaml` - Override for auth-enabled deployment
-- `no-auth-values.yaml` - Override for no-auth deployment
+### values-keycloak.yaml (Production)
+**Use Case:** Production deployments with authentication
 
-### Key Configuration Parameters
+**Features:**
+- Keycloak SSO authentication
+- Multiple replicas (HA)
+- Persistent storage enabled
+- Production resource allocations
+- Automatic user synchronization
 
-| Parameter | Description | sid-test-1 | sid-test-2 |
-|-----------|-------------|------------|------------|
-| `BYPASS_AUTH` | Disable authentication | `false` | `true` |
-| `POSTGRES_PASSWORD` | Database password | Strong password | `devpassword` |
-| `KEYCLOAK_URL` | Keycloak base URL (API) | External route | N/A |
-| `KEYCLOAK_REALM` | Keycloak realm name | `spending-monitor` | N/A |
+**Prerequisites:**
+- Keycloak Operator must be installed
+- See [../KEYCLOAK_OPERATOR.md](../KEYCLOAK_OPERATOR.md)
 
-## Post-Deployment Steps
+### values-dev-noauth.yaml (Development)
+**Use Case:** Development and testing
 
-### For Auth-Enabled (sid-test-1)
+**Features:**
+- Authentication bypass (no login)
+- Single replicas
+- No persistent storage
+- Debug mode enabled
+- Reduced resources
 
-1. **Verify Keycloak is accessible**:
-   ```bash
-   curl https://keycloak-route-sid-test-1.apps.ai-dev02.kni.syseng.devcluster.openshift.com/realms/spending-monitor
-   ```
+## 🔧 Key Configuration Options
 
-2. **User sync to Keycloak**:
-   
-   **Automated (Recommended)**: Users are automatically synced from the database to Keycloak via a Helm post-install/post-upgrade hook. Check the job status:
-   ```bash
-   oc get jobs -n sid-test-1 | grep user-sync
-   oc logs job/spending-monitor-keycloak-user-sync -n sid-test-1
-   ```
-   
-   **Manual (if needed)**: If the automatic sync fails or you need to re-sync:
-   ```bash
-   # Port forward services
-   oc port-forward -n sid-test-1 svc/spending-monitor-keycloak-service 8080:8080 &
-   oc port-forward -n sid-test-1 svc/spending-monitor-db 5432:5432 &
-   
-   # Set environment variables
-   export KEYCLOAK_URL="http://localhost:8080"
-   export KEYCLOAK_ADMIN_USER=temp-admin
-   export KEYCLOAK_ADMIN_PASSWORD=$(oc get secret spending-monitor-keycloak-initial-admin -n sid-test-1 -o jsonpath='{.data.password}' | base64 -d)
-   export DATABASE_URL="postgresql://user:<password>@localhost:5432/spending-monitor"
-   
-   # Run sync using pnpm
-   pnpm --filter @*/auth sync-users
-   ```
+### Global Settings
 
-3. **Test login**: Use any synced email with password `password123`
-
-### For No-Auth (sid-test-2)
-
-1. **Verify API is accessible**:
-   ```bash
-   curl https://spending-monitor-nginx-route-sid-test-2.apps.ai-dev02.kni.syseng.devcluster.openshift.com/api/transactions/?limit=5
-   ```
-
-2. **Load sample data** (if needed):
-   - Data is automatically loaded during migration if CSV files are present
-
-## Troubleshooting
-
-### Image Pull Errors
-
-If you see `Exec format error`, the image was built for the wrong architecture:
-- Rebuild with `--platform linux/amd64`
-- Verify with: `podman inspect IMAGE_NAME --format '{{.Architecture}}'`
-
-### Database Password Mismatch
-
-If API can't connect to database:
-1. Check `DATABASE_URL` password matches `POSTGRES_PASSWORD`
-2. Update database password:
-   ```bash
-   oc exec DB_POD -- psql -U user -d spending-monitor -c "ALTER USER \"user\" WITH PASSWORD 'NEW_PASSWORD';"
-   ```
-
-### Keycloak Configuration Issues
-
-If authentication fails:
-1. Verify `KEYCLOAK_URL` is correct (base URL for API, full URL with realm for UI)
-2. Check JWKS endpoint: `KEYCLOAK_URL/realms/REALM/protocol/openid-connect/certs`
-3. Ensure Keycloak route is accessible externally
-
-## Updating Configuration
-
-To update runtime configuration without redeploying:
-
-```bash
-# Update secret
-oc patch secret spending-monitor-secret -n NAMESPACE --type='json' \
-  -p='[{"op": "replace", "path": "/data/KEY", "value": "BASE64_VALUE"}]'
-
-# Restart pods to pick up changes
-oc rollout restart deployment/spending-monitor-api -n NAMESPACE
-oc rollout restart deployment/spending-monitor-ui -n NAMESPACE
+```yaml
+global:
+  imageRegistry: quay.io
+  imageRepository: rh-ai-quickstart
+  imageTag: latest
 ```
 
-## Clean Up
+### Authentication Mode
+
+```yaml
+secrets:
+  BYPASS_AUTH: "true"   # No auth mode
+  # or
+  BYPASS_AUTH: "false"  # Keycloak mode
+```
+
+### Resource Allocation
+
+```yaml
+api:
+  replicas: 2
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+```
+
+### Database Persistence
+
+```yaml
+database:
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""  # Use cluster default
+```
+
+### Keycloak Configuration
+
+```yaml
+keycloak:
+  enabled: true
+  replicas: 1
+  adminUser: admin
+  adminPassword: admin  # Change for production!
+```
+
+## 🎯 Common Customizations
+
+### Using OpenShift Internal Registry
 
 ```bash
-# Delete deployment
-helm uninstall spending-monitor -n NAMESPACE
+helm upgrade --install spending-monitor ./spending-monitor \
+  --namespace my-namespace \
+  --values ./spending-monitor/values-keycloak.yaml \
+  --set global.imageRegistry=image-registry.openshift-image-registry.svc:5000 \
+  --set global.imageRepository=my-namespace \
+  --set global.imageTag=latest
+```
+
+### Custom Image Tags
+
+```bash
+helm upgrade --install spending-monitor ./spending-monitor \
+  --namespace production \
+  --values ./spending-monitor/values-keycloak.yaml \
+  --set global.imageTag=v1.0.0
+```
+
+### External Database
+
+```yaml
+database:
+  enabled: false  # Disable internal database
+
+secrets:
+  DATABASE_URL: "postgresql+asyncpg://user:password@external-db:5432/spending"
+```
+
+### Custom Route Hostname
+
+```yaml
+routes:
+  nginx:
+    enabled: true
+    host: spending-monitor.example.com
+```
+
+## 🔍 Verification
+
+### Check Deployment Status
+
+```bash
+# Get all resources
+oc get all -n my-namespace
+
+# Check pods
+oc get pods -n my-namespace
+
+# Check routes
+oc get route -n my-namespace
+```
+
+### Verify Keycloak
+
+```bash
+# Check Keycloak instance
+oc get keycloak -n my-namespace
+
+# Check Keycloak realm import
+oc get keycloakrealmimport -n my-namespace
+
+# Check user sync job
+oc get job -n my-namespace | grep user-sync
+```
+
+### Test Application
+
+```bash
+# Get the route
+ROUTE=$(oc get route spending-monitor-nginx-route -n my-namespace -o jsonpath='{.spec.host}')
+
+# Test API health
+curl https://$ROUTE/api/health
+
+# Test UI
+curl https://$ROUTE/
+```
+
+## 🔄 Upgrades
+
+### Upgrade with New Images
+
+```bash
+# Update with new image tag
+helm upgrade spending-monitor ./spending-monitor \
+  --namespace my-namespace \
+  --reuse-values \
+  --set global.imageTag=v1.1.0
+```
+
+### Change Configuration
+
+```bash
+# Update with new configuration
+helm upgrade spending-monitor ./spending-monitor \
+  --namespace my-namespace \
+  --values ./spending-monitor/values-keycloak.yaml \
+  --set database.persistence.size=100Gi
+```
+
+## 🧹 Cleanup
+
+```bash
+# Uninstall release (keeps PVCs)
+helm uninstall spending-monitor -n my-namespace
+
+# Delete PVC if needed
+oc delete pvc spending-monitor-db-pvc -n my-namespace
 
 # Delete namespace
-oc delete project NAMESPACE
+oc delete project my-namespace
 ```
 
+## 📚 Additional Resources
+
+- [Complete Deployment Guide](../DEPLOYMENT_GUIDE.md) - Full deployment instructions
+- [Deployment Modes Guide](../DEPLOYMENT_MODES.md) - Auth vs No-Auth
+- [OpenShift Builds Guide](../OPENSHIFT_BUILDS.md) - In-cluster builds
+- [Keycloak Operator Setup](../KEYCLOAK_OPERATOR.md) - Keycloak installation
+
+## 🎓 Helm Commands Reference
+
+```bash
+# Lint the chart
+helm lint ./spending-monitor
+
+# Render templates (dry-run)
+helm template spending-monitor ./spending-monitor \
+  --values ./spending-monitor/values-keycloak.yaml \
+  --debug
+
+# Show computed values
+helm get values spending-monitor -n my-namespace
+
+# Show deployment history
+helm history spending-monitor -n my-namespace
+
+# Rollback to previous version
+helm rollback spending-monitor -n my-namespace
+```
+
+---
+
+**For Makefile commands and automated deployment, see the [root README](../../README.md) and [DEPLOYMENT_GUIDE](../DEPLOYMENT_GUIDE.md).**

@@ -24,16 +24,20 @@ cp env.example .env.production
 # 2. Login to OpenShift
 oc login --token=<your-token> --server=<your-server>
 
-# 3. Deploy everything (builds, pushes, deploys)
-make full-deploy
+# 3. Deploy with Keycloak authentication (production)
+make deploy MODE=keycloak NAMESPACE=my-app
+
+# Or deploy without auth for development/testing
+make deploy MODE=noauth NAMESPACE=my-test
 ```
 
-That's it! The `make full-deploy` command will:
-- Login to the container registry
-- Create the OpenShift project
-- Build all container images
-- Push images to the registry
-- Deploy using Helm with your environment variables
+**For in-cluster builds (no registry access needed):**
+```bash
+# Build images in OpenShift and deploy
+make openshift-create-builds NAMESPACE=my-app
+make openshift-build-all NAMESPACE=my-app
+make deploy MODE=keycloak NAMESPACE=my-app
+```
 
 ## 📦 Prerequisites
 
@@ -64,9 +68,9 @@ The deployment consists of the following components:
 |-----------|------|----------|---------|
 | **Database** | 5432 | 1 | PostgreSQL database with persistent storage |
 | **API** | 8000 | 1+ | FastAPI backend service |
-| **Ingestion** | 8001 | 1+ | Transaction ingestion service |
 | **UI** | 8080 | 1+ | React frontend application |
-| **Nginx** | 8080 | 1+ | Reverse proxy (optional but recommended) |
+| **Nginx** | 8080 | 1+ | Reverse proxy (default, recommended) |
+| **Keycloak** | 8080 | 1+ | Authentication service (when MODE=keycloak) |
 
 ### Resource Requirements
 
@@ -86,62 +90,72 @@ Storage: 50Gi (database PVC)
 
 ## 🎯 Deployment Options
 
-### Option 1: Complete Deployment (Recommended)
+### Option 1: Production Deployment (Keycloak Auth)
 
-Deploy everything with a single command:
+Deploy with Keycloak authentication for production:
 
 ```bash
-make full-deploy
+# Deploy with Keycloak (requires Keycloak Operator installed)
+make deploy MODE=keycloak NAMESPACE=production
 ```
 
-This performs the complete workflow:
-1. Authenticates with OpenShift registry
-2. Creates/switches to project
-3. Builds all images
-4. Pushes images to registry
-5. Deploys with Helm
+This deployment includes:
+- ✅ Keycloak authentication
+- ✅ Multiple replicas (HA)
+- ✅ Persistent database storage
+- ✅ Production resource allocations
 
-### Option 2: Step-by-Step Deployment
+### Option 2: Development Deployment (No Auth)
 
-For more control, execute each step individually:
+For testing with auth bypass:
 
 ```bash
-# 1. Login to OpenShift
-oc login
-
-# 2. Create project
-make create-project NAMESPACE=my-app
-
-# 3. Build images
-make build-all
-
-# 4. Push to registry
-make push-all
-
-# 5. Deploy with Helm
-make deploy
+# Deploy without authentication
+make deploy MODE=noauth NAMESPACE=dev-test
 ```
 
-### Option 3: Development Deployment
+This deployment includes:
+- ✅ Auth bypass enabled
+- ✅ Reduced resources
+- ✅ No persistent storage (optional)
+- ✅ Debug mode enabled
 
-For testing with reduced resources:
+### Option 3: Dev Mode (Reduced Resources)
+
+For resource-constrained environments:
 
 ```bash
-make deploy-dev
+# Deploy with minimal resources
+make deploy MODE=dev NAMESPACE=my-dev
 ```
 
 This deployment:
+- Reduces replicas to 1
 - Disables persistent storage
-- Sets replicas to 1 for all services
-- Uses less memory/CPU
+- Uses minimal CPU/memory
 
-### Option 4: Using Pre-built Images
+### Option 4: OpenShift In-Cluster Builds
 
-If images are already in the registry:
+Build images directly in OpenShift (no registry access needed):
 
 ```bash
-# Just deploy using existing images
-make deploy IMAGE_TAG=v1.0.0
+# 1. Create BuildConfigs
+make openshift-create-builds NAMESPACE=my-app
+
+# 2. Build all images (runs in parallel, ~15-20 min)
+make openshift-build-all NAMESPACE=my-app
+
+# 3. Deploy using built images
+make deploy MODE=keycloak NAMESPACE=my-app
+```
+
+### Option 5: Using Pre-built Images
+
+If images are already in a registry:
+
+```bash
+# Deploy with specific image tag
+make deploy MODE=keycloak IMAGE_TAG=v1.0.0 NAMESPACE=my-app
 ```
 
 ## 🔧 Environment Configuration
@@ -207,68 +221,59 @@ BYPASS_AUTH=false
 
 ## 📊 Makefile Commands Reference
 
-### Building Images
+### Core Deployment Commands
 
 ```bash
-make build-all          # Build all images
-make build-api          # Build API only
-make build-ui           # Build UI only
-make build-db           # Build DB migrations only
-make build-ingestion    # Build ingestion service only
+# Deploy with different modes
+make deploy MODE=keycloak NAMESPACE=prod    # Production with auth
+make deploy MODE=noauth NAMESPACE=dev       # Development without auth
+make deploy MODE=dev NAMESPACE=test         # Reduced resources
+
+# Undeploy
+make undeploy NAMESPACE=my-app              # Remove deployment
+make undeploy-all NAMESPACE=my-app          # Remove deployment + namespace
 ```
 
-### Pushing Images
+### Building & Pushing Images
 
 ```bash
-make push-all           # Push all images
-make push-api           # Push API only
-make push-ui            # Push UI only
-make push-db            # Push DB only
-make push-ingestion     # Push ingestion service only
-```
-
-### Deployment
-
-```bash
-make deploy             # Deploy with production settings
-make deploy-dev         # Deploy with dev settings (reduced resources)
+make build-all          # Build all images locally
+make push-all           # Push all images to registry
 make deploy-all         # Build, push, and deploy
-make full-deploy        # Complete pipeline: login + build + push + deploy
 ```
 
-### Undeployment
+### OpenShift In-Cluster Builds
 
 ```bash
-make undeploy           # Remove deployment (keeps namespace)
-make undeploy-all       # Remove deployment and namespace
+make openshift-create-builds NAMESPACE=my-app    # Create BuildConfigs
+make openshift-build-all NAMESPACE=my-app        # Build all images
 ```
 
-### Development & Debugging
+### Local Development
 
 ```bash
-make port-forward-api   # Forward API to localhost:8000
-make port-forward-ui    # Forward UI to localhost:8080
-make port-forward-db    # Forward DB to localhost:5432
-make status             # Show deployment status
-make logs               # Show logs from all pods
-make logs-api           # Follow API logs
-make logs-ui            # Follow UI logs
-make logs-db            # Follow DB logs
+make build-run-local                # Build & run with Keycloak
+make build-run-local MODE=noauth    # Build & run without auth
+make setup-keycloak                 # Setup Keycloak with DB users
+make stop-local                     # Stop local services
+make logs-local                     # View local logs
 ```
 
-### Helm Operations
+### Data Management
 
 ```bash
-make helm-lint          # Validate Helm chart
-make helm-template      # Render templates (dry-run)
-make helm-debug         # Debug deployment
+make seed-db                      # Seed database
+make seed-keycloak-with-users     # Setup Keycloak + sync users
+make setup-data                   # Migrate + seed all
 ```
 
-### Cleanup
+### Utilities
 
 ```bash
-make clean-images       # Remove local images
-make clean-all          # Remove everything (deployment + images)
+make status           # Show deployment status
+make helm-lint        # Validate Helm chart
+make helm-template    # Render templates (dry-run)
+make clean-all        # Clean up all resources
 ```
 
 ## 🔍 Accessing Your Deployment
@@ -387,13 +392,13 @@ Scale individual components:
 
 ```bash
 # Scale API
-oc scale deployment spending-monitor-api --replicas=3
+oc scale deployment spending-monitor-api --replicas=3 -n my-namespace
 
 # Scale UI
-oc scale deployment spending-monitor-ui --replicas=3
+oc scale deployment spending-monitor-ui --replicas=3 -n my-namespace
 
-# Scale Ingestion
-oc scale deployment spending-monitor-ingestion --replicas=2
+# Scale Nginx
+oc scale deployment spending-monitor-nginx --replicas=3 -n my-namespace
 ```
 
 ### Helm-based Scaling
@@ -405,14 +410,14 @@ api:
   replicas: 3
 ui:
   replicas: 3
-ingestion:
-  replicas: 2
+nginx:
+  replicas: 3
 ```
 
 Then:
 
 ```bash
-make deploy
+make deploy MODE=keycloak NAMESPACE=my-namespace
 ```
 
 ## 🔐 Security Best Practices
@@ -445,10 +450,11 @@ make deploy
 Deploy with a custom registry:
 
 ```bash
-make deploy \
+make deploy MODE=keycloak \
   REGISTRY_URL=my-registry.com \
   REPOSITORY=my-org \
-  IMAGE_TAG=v1.0.0
+  IMAGE_TAG=v1.0.0 \
+  NAMESPACE=my-app
 ```
 
 ### Custom Namespace
@@ -456,7 +462,7 @@ make deploy \
 Deploy to a custom namespace:
 
 ```bash
-make deploy NAMESPACE=my-custom-namespace
+make deploy MODE=keycloak NAMESPACE=my-custom-namespace
 ```
 
 ### Helm Values Override
@@ -465,7 +471,8 @@ Create a custom values file and deploy:
 
 ```bash
 helm upgrade --install spending-monitor ./deploy/helm/spending-monitor \
-  --namespace spending-transaction-monitor \
+  --namespace my-namespace \
+  --values ./deploy/helm/spending-monitor/values-keycloak.yaml \
   -f my-custom-values.yaml
 ```
 
@@ -485,14 +492,16 @@ secrets:
 
 The application includes health endpoints compatible with Prometheus:
 
-- API: `/health`
-- UI: `/`
-- Nginx: `/health`
+- Nginx: `https://<route>/health`
+- API: `https://<route>/api/health`
+- UI: `https://<route>/`
 
 ## 📚 Additional Resources
 
-- [OpenShift Deployment Guide](./OPENSHIFT_DEPLOYMENT.md) - Detailed OpenShift-specific instructions
-- [Nginx Configuration](./deploy-nginx.md) - Nginx reverse proxy details
+- [Deployment Modes Guide](./DEPLOYMENT_MODES.md) - Auth vs No-Auth deployment
+- [OpenShift Builds Guide](./OPENSHIFT_BUILDS.md) - In-cluster image building
+- [Keycloak Operator Setup](./KEYCLOAK_OPERATOR.md) - Keycloak installation guide
+- [Quick Deploy Reference](./QUICK_DEPLOY.md) - Quick reference card
 - [Main README](../README.md) - Project overview and architecture
 - [Contributing Guide](../CONTRIBUTING.md) - Development guidelines
 
@@ -511,14 +520,27 @@ If you encounter issues:
 Your deployment infrastructure is production-ready with:
 
 ✅ Complete Helm chart for all services
-✅ Automated build and deployment pipeline
+✅ Multiple deployment modes (Keycloak, No-Auth, Dev)
+✅ In-cluster builds (no registry needed)
 ✅ Environment-based configuration
-✅ Comprehensive Makefile with 40+ commands
+✅ Automated database migrations and seeding
 ✅ Health checks and monitoring
 ✅ Security best practices
 ✅ Detailed documentation
 
-**Quick Deploy:** `make full-deploy`
+**Quick Deploy Commands:**
+```bash
+# Production with auth
+make deploy MODE=keycloak NAMESPACE=prod
+
+# Development without auth
+make deploy MODE=noauth NAMESPACE=dev
+
+# With in-cluster builds (no registry access)
+make openshift-create-builds NAMESPACE=my-app
+make openshift-build-all NAMESPACE=my-app
+make deploy MODE=keycloak NAMESPACE=my-app
+```
 
 That's it! You're ready to deploy to OpenShift.
 
