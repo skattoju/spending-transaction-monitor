@@ -6,16 +6,12 @@ REGISTRY_URL ?= quay.io
 REPOSITORY ?= rh-ai-quickstart
 NAMESPACE ?= spending-transaction-monitor
 IMAGE_TAG ?= latest
+GIT_BRANCH ?= main
 
 # Component image names
 UI_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-ui:$(IMAGE_TAG)
 API_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-api:$(IMAGE_TAG)
 DB_IMAGE = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-db:$(IMAGE_TAG)
-
-# Local development image names (tagged as 'local')
-UI_IMAGE_LOCAL = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-ui:local
-API_IMAGE_LOCAL = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-api:local
-DB_IMAGE_LOCAL = $(REGISTRY_URL)/$(REPOSITORY)/$(PROJECT_NAME)-db:local
 
 # Environment file paths
 ENV_FILE_DEV = .env.development
@@ -50,26 +46,6 @@ endef
 
 # Default target when running 'make' without arguments
 .DEFAULT_GOAL := help
-
-# Check if environment file exists
-.PHONY: check-env-file
-check-env-file:
-	@if [ ! -f "$(ENV_FILE)" ]; then \
-		echo "❌ Error: Environment file not found at $(ENV_FILE)"; \
-		echo ""; \
-		echo "Please create the environment file by copying the example:"; \
-		echo "  cp env.example $(ENV_FILE)"; \
-		echo ""; \
-		echo "Then edit $(ENV_FILE) and update the values for your environment."; \
-		echo ""; \
-		echo "Key variables to update:"; \
-		echo "  - API_KEY: Your OpenAI API key"; \
-		echo "  - BASE_URL: Your LLM provider base URL"; \
-		echo "  - POSTGRES_PASSWORD: Your database password"; \
-		echo ""; \
-		exit 1; \
-	fi
-	@echo "✅ Environment file found at $(ENV_FILE)"
 
 # Check if development environment file exists
 .PHONY: check-env-dev
@@ -126,162 +102,47 @@ create-env-file:
 	@echo "  - POSTGRES_PASSWORD: Your desired database password"
 	@echo "  - Other values as needed for your environment"
 
-# List available alert rule samples
-.PHONY: list-alert-samples
-list-alert-samples:
-	@echo "📋 Available Alert Rule Sample Files:"
-	@echo "============================================"
-	@echo ""
-	@for file in packages/db/src/db/scripts/json/*.json; do \
-		if [ -f "$$file" ]; then \
-			filename=$$(basename "$$file"); \
-			alert_text=$$(jq -r '.alert_text // "No alert_text found"' "$$file" 2>/dev/null || echo "Invalid JSON"); \
-			printf "🔹 %-45s\n" "$$filename"; \
-			printf "   %s\n\n" "$$alert_text"; \
-		fi; \
-	done
-
-# Interactive alert rule testing menu
-.PHONY: test-alert-rules
-test-alert-rules:
-	@echo "🧪 Alert Rule Testing Menu"
-	@echo "============================================"
-	@echo ""
-	@echo "Select an alert rule to test:"
-	@echo ""
-	@i=1; \
-	declare -a files; \
-	declare -a alert_texts; \
-	for file in packages/db/src/db/scripts/json/*.json; do \
-		if [ -f "$$file" ]; then \
-			filename=$$(basename "$$file"); \
-			alert_text=$$(jq -r '.alert_text // "No alert_text found"' "$$file" 2>/dev/null || echo "Invalid JSON"); \
-			files[$$i]="$$filename"; \
-			alert_texts[$$i]="$$alert_text"; \
-			printf "%-3s %s\n" "$$i)" "$$alert_text"; \
-			i=$$((i + 1)); \
-		fi; \
-	done; \
-	echo ""; \
-	printf "Enter your choice (1-$$((i-1))) or 'q' to quit: "; \
-	read choice; \
-	if [ "$$choice" = "q" ] || [ "$$choice" = "Q" ]; then \
-		echo "👋 Exiting..."; \
-		exit 0; \
-	fi; \
-	if [ "$$choice" -ge 1 ] && [ "$$choice" -le $$((i-1)) ] 2>/dev/null; then \
-		selected_file="$${files[$$choice]}"; \
-		selected_alert_text="$${alert_texts[$$choice]}"; \
-		echo ""; \
-		echo "📋 Selected Alert Rule: $$selected_alert_text"; \
-		echo "============================================"; \
-		echo ""; \
-		echo "📊 Data Preview will be shown by the test script..."; \
-		echo ""; \
-		printf "🤔 Do you want to proceed with this test? (y/N): "; \
-		read confirm; \
-		if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ] || [ "$$confirm" = "yes" ] || [ "$$confirm" = "Yes" ]; then \
-			echo ""; \
-			echo "🚀 Running test for: $$selected_alert_text"; \
-			echo "============================================"; \
-			cd packages/db/src/db/scripts && ./test_alert_rules.sh "$$selected_file"; \
-		else \
-			echo ""; \
-			echo "❌ Test cancelled. Returning to main menu..."; \
-			echo ""; \
-			make test-alert-rules; \
-		fi; \
-	else \
-		echo "❌ Invalid choice. Please enter a number between 1 and $$((i-1)), or 'q' to quit."; \
-		exit 1; \
-	fi
-
 # Default target
 .PHONY: help
 help:
-	@echo "Available targets:"
-	@echo "  Building:"
-	@echo "    build-all          Build all Podman images"
-	@echo "    build-ui           Build UI image"
-	@echo "    build-api          Build API image"
-	@echo "    build-db           Build database migration image (includes CSV data loading)"
+	@echo "Spending Transaction Monitor - Makefile Commands"
 	@echo ""
-	@echo "  Pushing:"
-	@echo "    push-all           Push all images to registry"
-	@echo "    push-ui            Push UI image to registry"
-	@echo "    push-api           Push API image to registry"
-	@echo "    push-db            Push database migration image to registry"
+	@echo "🚀 Common Commands:"
+	@echo "  Local Development:"
+	@echo "    make build-run-local              Build & run with Keycloak (default)"
+	@echo "    make build-run-local MODE=noauth  Build & run with auth bypass"
+	@echo "    make setup-keycloak               Setup Keycloak with DB users"
+	@echo "    make stop-local                   Stop local services"
 	@echo ""
-	@echo "  Deploying:"
-	@echo "    deploy             Deploy application using Helm"
-	@echo "    deploy-dev         Deploy in development mode"
-	@echo "    deploy-all         Build, push and deploy all components"
-	@echo "    full-deploy        Complete pipeline: login, build, push, deploy"
+	@echo "  OpenShift Deployment:"
+	@echo "    make deploy MODE=noauth           Deploy with auth bypass"
+	@echo "    make deploy MODE=keycloak         Deploy with Keycloak"
+	@echo "    make deploy MODE=dev              Deploy with reduced resources"
+	@echo "    make undeploy                     Remove deployment"
 	@echo ""
-	@echo "  Undeploying:"
-	@echo "    undeploy           Remove application deployment"
-	@echo "    undeploy-all       Remove deployment and namespace"
+	@echo "📦 Build & Push:"
+	@echo "  make build-all        Build all images"
+	@echo "  make push-all         Push all images to registry"
+	@echo "  make deploy-all       Build, push, and deploy"
 	@echo ""
-	@echo "  Development:"
-	@echo "    port-forward-api   Forward API service to localhost:8000"
-	@echo "    port-forward-ui    Forward UI service to localhost:8080"
-	@echo "    port-forward-db    Forward database to localhost:5432"
+	@echo "🗄️  Data Management:"
+	@echo "  make seed-db                      Seed database"
+	@echo "  make seed-keycloak-with-users     Setup Keycloak + sync users"
+	@echo "  make setup-data                   Migrate + seed all"
 	@echo ""
-	@echo   "  Local Development:"
-	@echo "    run-local          Start all services (always pull latest from quay.io registry)"
-	@echo "    build-local        Build local Podman images and tag them as 'local'"
-	@echo "    build-run-local    Build and run all services locally using 'local' tagged images"
-	@echo "    stop-local         Stop local Podman Compose services"
-	@echo "    logs-local         Show logs from local services"
-	@echo "    reset-local        Reset environment (pull latest, restart with fresh data)"
-	@echo "    pull-local         Pull latest images from quay.io registry"
-	@echo "    setup-local        Complete local setup (pull, run, migrate, seed)"
+	@echo "🔧 Utilities:"
+	@echo "  make status           Show deployment status"
+	@echo "  make logs-local       Show local service logs"
+	@echo "  make helm-lint        Lint Helm chart"
+	@echo "  make clean-all        Clean up all resources"
 	@echo ""
-	@echo "  Helm:"
-	@echo "    helm-lint          Lint Helm chart"
-	@echo "    helm-template      Render Helm templates"
-	@echo "    helm-debug         Debug Helm deployment"
+	@echo "📝 Environment Files:"
+	@echo "  .env.development      Local development"
+	@echo "  .env.production       OpenShift deployment"
 	@echo ""
-	@echo "  Testing:"
-	@echo "    test-alert-rules   Interactive menu to test alert rules"
-	@echo "    list-alert-samples List available sample alert rule files"
-	@echo ""
-	@echo "  Setup:"
-	@echo "    setup-data         Complete data setup (migrations + seed all)"
-	@echo ""
-	@echo "  Seeding:"
-	@echo "    seed-db            Seed database with sample data"
-	@echo "    seed-keycloak      Set up Keycloak realm (without DB user sync)"
-	@echo "    seed-keycloak-with-users  Set up Keycloak and sync DB users"
-	@echo "    seed-all           Seed both database and Keycloak with users"
-	@echo ""
-	@echo "  Utilities:"
-	@echo "    login              Login to OpenShift registry"
-	@echo "    create-project     Create OpenShift project"
-	@echo "    status             Show deployment status"
-	@echo "    clean-all          Clean up all resources"
-	@echo "    clean-images       Remove local Podman images"
-	@echo "    clean-local-images Remove local development images (tagged as 'local')"
-	@echo "    check-env-file     Check if environment file exists"
-	@echo "    create-env-file    Create environment file from example"
-	@echo ""
-	@echo "  Environment Setup:"
-	@echo "    This project uses separate environment files for different scenarios:"
-	@echo "      .env.development  - For local development (run-local, build-run-local, etc.)"
-	@echo "      .env.production   - For OpenShift deployment (deploy, deploy-dev, etc.)"
-	@echo ""
-	@echo "    Environment file checks:"
-	@echo "      make check-env-dev    # Check development environment file"
-	@echo "      make check-env-prod   # Check production environment file"
-	@echo "      make setup-dev-env    # Set up .env from .env.development for local use"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make setup-local                    # Complete local setup (pulls from quay.io)"
-	@echo "  make run-local                      # Start all services (pulls latest from quay.io)"
-	@echo "  make build-run-local                # Build and run with local images (tagged as 'local')"
-	@echo "  make test-alert-rules               # Interactive alert rule testing"
-	@echo "  make list-alert-samples             # List available alert samples"
-	@echo "  make NAMESPACE=my-app deploy        # Deploy to custom namespace"
+	@echo "💡 Examples:"
+	@echo "  make build-run-local MODE=noauth"
+	@echo "  make deploy MODE=keycloak NAMESPACE=my-app"
 
 # Login to OpenShift registry
 .PHONY: login
@@ -336,26 +197,45 @@ push-all: push-ui push-api push-db
 	@echo "All images pushed successfully"
 
 # Deploy targets
+# Usage: make deploy [MODE=noauth|keycloak|dev]
+# Examples:
+#   make deploy                  # Deploy with production settings
+#   make deploy MODE=noauth      # Deploy with auth bypass (dev/testing)
+#   make deploy MODE=keycloak    # Deploy with Keycloak authentication
+#   make deploy MODE=dev         # Deploy with reduced resources
+
+MODE ?= default
+
 .PHONY: deploy
-deploy: create-project check-env-prod
-	@echo "Deploying application using Helm with production environment variables..."
-	@echo "Using production environment file: $(ENV_FILE_PROD)"
-	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
+deploy: create-project
+ifeq ($(MODE),noauth)
+	@echo "🔓 Deploying with AUTH BYPASS (development/testing)..."
+	@echo "⚠️  WARNING: Authentication is DISABLED"
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
+		--values ./deploy/helm/spending-monitor/values-dev-noauth.yaml \
+		--set global.imageRegistry=$(REGISTRY_URL) \
+		--set global.imageRepository=$(REPOSITORY) \
+		--set global.imageTag=$(IMAGE_TAG)
+	@echo "✅ Deployment complete (no-auth mode)"
+	@echo "📍 Route: oc get route $(PROJECT_NAME)-nginx-route -n $(NAMESPACE)"
+else ifeq ($(MODE),keycloak)
+	$(MAKE) check-env-prod
+	@echo "🔐 Deploying with KEYCLOAK AUTHENTICATION..."
+	@set -a; source $(ENV_FILE_PROD); set +a; \
+	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
+		--namespace $(NAMESPACE) \
+		--values ./deploy/helm/spending-monitor/values-keycloak.yaml \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
 		--set global.imageTag=$(IMAGE_TAG) \
 		$(HELM_SECRET_PARAMS)
-
-.PHONY: deploy-dev
-deploy-dev: create-project check-env-prod
-	@echo "Deploying application in development mode with production environment variables..."
-	@echo "Using production environment file: $(ENV_FILE_PROD)"
-	@echo "Note: This is still a production deployment with reduced resources for development/testing"
+	@echo "✅ Deployment complete (Keycloak auth)"
+	@echo "📍 Route: oc get route $(PROJECT_NAME)-nginx-route -n $(NAMESPACE)"
+else ifeq ($(MODE),dev)
+	$(MAKE) check-env-prod
+	@echo "⚙️  Deploying with REDUCED RESOURCES (dev mode)..."
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
@@ -365,6 +245,19 @@ deploy-dev: create-project check-env-prod
 		--set api.replicas=1 \
 		--set ui.replicas=1 \
 		$(HELM_SECRET_PARAMS)
+	@echo "✅ Deployment complete (dev mode)"
+else
+	$(MAKE) check-env-prod
+	@echo "🚀 Deploying with PRODUCTION SETTINGS..."
+	@set -a; source $(ENV_FILE_PROD); set +a; \
+	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
+		--namespace $(NAMESPACE) \
+		--set global.imageRegistry=$(REGISTRY_URL) \
+		--set global.imageRepository=$(REPOSITORY) \
+		--set global.imageTag=$(IMAGE_TAG) \
+		$(HELM_SECRET_PARAMS)
+	@echo "✅ Deployment complete (production)"
+endif
 
 .PHONY: deploy-all
 deploy-all: build-all push-all deploy
@@ -413,7 +306,6 @@ helm-template: check-env-prod
 	@echo "Rendering Helm templates with production environment variables..."
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm template $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--set global.imageRegistry=$(REGISTRY_URL) \
 		--set global.imageRepository=$(REPOSITORY) \
@@ -425,7 +317,6 @@ helm-debug: check-env-prod
 	@echo "Debugging Helm deployment with production environment variables..."
 	@echo "Using production environment file: $(ENV_FILE_PROD)"
 	@set -a; source $(ENV_FILE_PROD); set +a; \
-	export POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL API_KEY BASE_URL LLM_PROVIDER MODEL ENVIRONMENT DEBUG BYPASS_AUTH CORS_ALLOWED_ORIGINS ALLOWED_ORIGINS ALLOWED_HOSTS SMTP_HOST SMTP_PORT SMTP_FROM_EMAIL SMTP_USE_TLS SMTP_USE_SSL KEYCLOAK_URL KEYCLOAK_REALM KEYCLOAK_CLIENT_ID VITE_API_BASE_URL; \
 	helm upgrade --install $(PROJECT_NAME) ./deploy/helm/spending-monitor \
 		--namespace $(NAMESPACE) \
 		--set global.imageRegistry=$(REGISTRY_URL) \
@@ -443,7 +334,7 @@ clean-images:
 .PHONY: clean-local-images
 clean-local-images:
 	@echo "Cleaning up local development images..."
-	@podman rmi $(UI_IMAGE_LOCAL) $(API_IMAGE_LOCAL) $(DB_IMAGE_LOCAL) || true
+	@podman rmi spending-monitor-ui:local spending-monitor-api:local spending-monitor-db:local || true
 
 .PHONY: clean-all
 clean-all: undeploy-all clean-images clean-local-images
@@ -524,7 +415,7 @@ stop-local:
 build-local:
 	@echo "Building local Podman images with 'local' tag..."
 	podman-compose -f podman-compose.yml -f podman-compose.build.yml build
-	@echo "✅ Local images built and tagged successfully"
+	@echo "✅ Local images built successfully"
 
 .PHONY: pull-local
 pull-local:
@@ -554,32 +445,74 @@ reset-local: setup-dev-env
 	@echo ""
 	@echo "✅ Local environment has been reset and database is ready!"
 
+# Clean UI images to ensure fresh build with correct environment variables
+.PHONY: clean-ui-images
+clean-ui-images:
+	@echo "🗑️  Removing old UI images to ensure clean build..."
+	@podman rmi -f spending-monitor-ui:local localhost/spending-transaction-monitor_ui:latest 2>/dev/null || true
+	@echo "✅ UI images removed"
+
+# Helper target for building local images (used by build-run-local and build-run-local-noauth)
+.PHONY: build-local-images
+build-local-images: setup-dev-env clean-ui-images
+	@echo "🔨 Building images (environment-agnostic)..."
+	podman-compose -f podman-compose.yml -f podman-compose.build.yml build --no-cache migrations api ui
+	@echo "✅ Images built successfully"
+
+# Build and run locally
+# Usage: make build-run-local [MODE=noauth]
+# Examples:
+#   make build-run-local              # Build and run with Keycloak auth (default)
+#   make build-run-local MODE=noauth  # Build and run with auth bypass
+
 .PHONY: build-run-local
-build-run-local: setup-dev-env build-local
-	@echo "Starting all services locally with freshly built images (tagged as 'local')..."
-	@echo "This will start: PostgreSQL, API, UI, nginx proxy, and SMTP server"
-	@echo "Services will be available at:"
-	@echo "  - Frontend: http://localhost:3000"
-	@echo "  - API (proxied): http://localhost:3000/api/*"
-	@echo "  - API (direct): http://localhost:8000"
-	@echo "  - API Docs: http://localhost:8000/docs"
-	@echo "  - SMTP Web UI: http://localhost:3002"
-	@echo "  - Database: localhost:5432"
+build-run-local: build-local-images
+ifeq ($(MODE),noauth)
 	@echo ""
-	IMAGE_TAG=local podman-compose -f podman-compose.yml -f podman-compose.build.yml up -d
+	@echo "✅ Starting with AUTH BYPASS (runtime config)..."
+	@echo "   - No login required"
+	@echo "   - Yellow dev banner visible"
+	@echo "   - Frontend: http://localhost:3000"
+	@echo "   - API (proxied): http://localhost:3000/api/*"
+	@echo "   - API (direct): http://localhost:8000"
 	@echo ""
-	@echo "Waiting for database to be ready..."
-	@sleep 15
-	@echo "Database migrations and seeding are handled automatically by the migrations container..."
+	IMAGE_TAG=local BYPASS_AUTH=true VITE_BYPASS_AUTH=true VITE_ENVIRONMENT=development \
+		podman-compose -f podman-compose.yml up -d --no-build
+	@echo "Waiting for services to be ready..."
+	@sleep 30
+	@echo "Running database migrations..."
+	@pnpm db:upgrade || (echo "❌ Database upgrade failed." && exit 1)
+	@echo "Seeding database with test data..."
+	@pnpm db:seed || (echo "❌ Database seeding failed." && exit 1)
+	@echo "✅ All services started and database ready!"
+else
 	@echo ""
-	@echo "✅ All services started and database is ready!"
+	@echo "✅ Starting with KEYCLOAK AUTHENTICATION (runtime config)..."
+	@echo "   - Login required (user1@example.com / password123)"
+	@echo "   - Keycloak authentication enabled"
+	@echo "   - Frontend: http://localhost:3000"
+	@echo "   - API (proxied): http://localhost:3000/api/*"
+	@echo "   - API (direct): http://localhost:8000"
+	@echo "   - Keycloak: http://localhost:8080"
 	@echo ""
-	@echo "To also start pgAdmin for database management, run:"
-	@echo "  IMAGE_TAG=local podman-compose -f podman-compose.yml -f podman-compose.build.yml --profile tools up -d pgadmin"
-	@echo "  Then access pgAdmin at: http://localhost:8080"
+	IMAGE_TAG=local BYPASS_AUTH=false VITE_BYPASS_AUTH=false VITE_ENVIRONMENT=staging \
+		podman-compose -f podman-compose.yml up -d --no-build
+	@echo "✅ Services started with Keycloak!"
+	@echo "Setup Keycloak: make setup-keycloak"
+endif
 	@echo ""
-	@echo "To view logs: make logs-local"
-	@echo "To stop services: make stop-local"
+	@echo "💡 To view logs: make logs-local"
+	@echo "💡 To stop: make stop-local"
+
+# Setup Keycloak with database users using pnpm
+.PHONY: setup-keycloak
+setup-keycloak: setup-dev-env
+	@echo "Setting up Keycloak with database users using pnpm..."
+	@echo "Waiting for Keycloak to be ready..."
+	@timeout 60 bash -c 'until curl -sf http://localhost:8080/health/ready >/dev/null 2>&1; do sleep 2; done' || (echo "❌ Keycloak not ready after 60s" && exit 1)
+	@echo "Keycloak is ready, running setup..."
+	pnpm auth:setup-keycloak-with-users
+	@echo "✅ Keycloak setup completed!"
 
 .PHONY: setup-local
 setup-local: check-env-dev pull-local run-local
