@@ -8,7 +8,11 @@ Run with:
 """
 
 import asyncio
+from pathlib import Path
 import sys
+
+# Add src/ to path so we can import services.*
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'src'))
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
